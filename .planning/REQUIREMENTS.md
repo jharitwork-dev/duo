@@ -1,7 +1,7 @@
 # Requirements: Duo
 
 **Defined:** 2026-09-17
-**Core Value:** Teachers and student groups can plan, execute, and track project-based work through a clear phase→to-do progression — with teacher approval gating advancement.
+**Core Value:** Teachers and student groups can plan, execute, and track project-based work through a clear phase->to-do progression -- with teacher approval gating advancement.
 
 ## v1 Requirements
 
@@ -26,7 +26,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **GRP-01**: Teacher can create groups (student teams) within a classroom
 - [ ] **GRP-02**: Teacher can assign students to groups
 - [ ] **GRP-03**: Student can see their group and group members
-- [ ] **GRP-04**: Groups are independent — each has its own phases and to-dos
+- [ ] **GRP-04**: Groups are independent -- each has its own phases and to-dos
 
 ### Phases
 
@@ -69,8 +69,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **UI-01**: Student sees a Duolingo-style visual path showing all phases (locked/active/completed)
 - [ ] **UI-02**: Visual path shows progress within each phase (to-dos completed vs total)
-- [ ] **UI-03**: Phase nodes are interactive — click to enter the phase and see to-dos
-- [ ] **UI-04**: Responsive design — works on mobile (Thai students primarily use phones)
+- [ ] **UI-03**: Phase nodes are interactive -- click to enter the phase and see to-dos
+- [ ] **UI-04**: Responsive design -- works on mobile (Thai students primarily use phones)
 
 ### Notifications
 
@@ -106,11 +106,11 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Feature | Reason |
 |---------|--------|
-| Gamification (XP, streaks, leaderboards) | Not the product — Duolingo-style is UI/visual only, not reward mechanics |
+| Gamification (XP, streaks, leaderboards) | Not the product -- Duolingo-style is UI/visual only, not reward mechanics |
 | Real-time chat/messaging | Students use LINE/Discord; building chat is a massive scope sink |
 | Grading/scoring system | Approve/reject + comments is the feedback model; no numerical grades |
 | Peer review | Teacher reviews only; < 100 users doesn't justify the complexity |
-| AI auto-grading | Submissions are project work (pitch decks, business plans) — not gradable by AI |
+| AI auto-grading | Submissions are project work (pitch decks, business plans) -- not gradable by AI |
 | Mobile native app | Responsive web sufficient for < 100 users; PWA touches optional |
 | Calendar view | Due dates shown inline on progression path; no separate calendar UI |
 | Discussion forums | Comments on submissions are sufficient; general chat happens on LINE |
@@ -123,13 +123,55 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated by roadmapper) | | |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| AUTH-04 | Phase 1 | Pending |
+| L10N-01 | Phase 1 | Pending |
+| L10N-02 | Phase 1 | Pending |
+| CLASS-01 | Phase 2 | Pending |
+| CLASS-02 | Phase 2 | Pending |
+| CLASS-03 | Phase 2 | Pending |
+| CLASS-04 | Phase 2 | Pending |
+| GRP-01 | Phase 2 | Pending |
+| GRP-02 | Phase 2 | Pending |
+| GRP-03 | Phase 2 | Pending |
+| GRP-04 | Phase 2 | Pending |
+| PHASE-01 | Phase 2 | Pending |
+| PHASE-02 | Phase 2 | Pending |
+| PHASE-03 | Phase 2 | Pending |
+| PHASE-04 | Phase 2 | Pending |
+| TODO-01 | Phase 2 | Pending |
+| TODO-02 | Phase 2 | Pending |
+| TODO-03 | Phase 2 | Pending |
+| TODO-04 | Phase 2 | Pending |
+| SUB-01 | Phase 3 | Pending |
+| SUB-02 | Phase 3 | Pending |
+| SUB-03 | Phase 3 | Pending |
+| SUB-04 | Phase 3 | Pending |
+| SUB-05 | Phase 3 | Pending |
+| SUB-06 | Phase 3 | Pending |
+| REV-01 | Phase 4 | Pending |
+| REV-02 | Phase 4 | Pending |
+| REV-03 | Phase 4 | Pending |
+| REV-04 | Phase 4 | Pending |
+| PHASE-05 | Phase 4 | Pending |
+| UI-01 | Phase 5 | Pending |
+| UI-02 | Phase 5 | Pending |
+| UI-03 | Phase 5 | Pending |
+| UI-04 | Phase 5 | Pending |
+| TOOL-01 | Phase 6 | Pending |
+| TOOL-02 | Phase 6 | Pending |
+| TOOL-03 | Phase 6 | Pending |
+| NOTIF-01 | Phase 6 | Pending |
+| NOTIF-02 | Phase 6 | Pending |
+| NOTIF-03 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 35 total
-- Mapped to phases: 0
-- Unmapped: 35
+- v1 requirements: 43 total
+- Mapped to phases: 43
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-09-17*
-*Last updated: 2026-09-17 after initial definition*
+*Last updated: 2026-09-17 after roadmap creation*
