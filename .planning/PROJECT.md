@@ -12,7 +12,11 @@ Teachers and student groups can plan, execute, and track project-based work thro
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ Clerk auth with teacher/student/superadmin roles — Phase 1
+- ✓ Server Action authorization (not just middleware) — Phase 1
+- ✓ Full DB schema deployed (classrooms through comments) — Phase 1
+- ✓ Thai UI with Buddhist Era dates — Phase 1
+- ✓ R2 presigned URL infrastructure ready — Phase 1
 
 ### Active
 
@@ -85,4 +89,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-17 after initialization*
+*Last updated: 2026-09-18 after Phase 1 completion*
