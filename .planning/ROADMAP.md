@@ -31,7 +31,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Unauthorized users cannot access protected routes or invoke Server Actions for the wrong role
   4. Thai UI text renders correctly with English technical terms mixed in, and dates display in Buddhist Era format
   5. Database schema is deployed with all tables needed for the full data model (classrooms through submissions)
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 01-01-PLAN.md -- Install dependencies, configure Drizzle + Neon WebSocket, deploy full database schema (10 tables), initialize shadcn/ui and Vitest
+- [ ] 01-02-PLAN.md -- Clerk auth with 3-role system (superadmin/teacher/student), middleware, sign-in/sign-up pages, role promotion, teacher approval Server Actions
+- [ ] 01-03-PLAN.md -- Dashboard shells (teacher/student/admin), R2 presigned URL infrastructure, Thai date formatting utilities, end-to-end verification
 
 ### Phase 2: Content Structure
 **Goal**: Teachers can create the full content hierarchy -- classrooms with student groups, ordered phases, and to-do items -- so the platform has structured project work ready for student interaction
@@ -102,7 +106,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5/6 (5 and 6 can run in par
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Auth | 0/TBD | Not started | - |
+| 1. Foundation & Auth | 0/3 | Planning complete | - |
 | 2. Content Structure | 0/TBD | Not started | - |
 | 3. Submissions | 0/TBD | Not started | - |
 | 4. Review & Progression | 0/TBD | Not started | - |
