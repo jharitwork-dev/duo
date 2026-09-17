@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-09-17T18:46:36.519Z"
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-09-17T18:47:18.903Z"
 last_activity: 2026-09-17
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 ## Current Position
 
 Phase: 01 (foundation-auth) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-09-17
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01 P02 | 10min | 2 tasks | 13 files |
+| Phase 01 P01 | 11min | 2 tasks | 32 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,9 @@ Recent decisions affecting current work:
 - [Phase 01]: Role promotion via afterSignUpUrl redirect to onboarding page (not webhook) -- simpler for <100 users
 - [Phase 01]: Middleware is convenience redirect only; requireRole() in Server Actions is the real security boundary
 - [Phase 01]: teacher_pending as distinct role value prevents premature teacher access before superadmin approval
+- [Phase 01]: Neon WebSocket Pool driver for transaction support (D-08)
+- [Phase 01]: All table PKs use text+cuid2, user FKs are plain Clerk userId text columns (D-07)
+- [Phase 01]: Relations centralized in single relations.ts to prevent circular imports
 
 ### Pending Todos
 
@@ -80,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-17T18:46:36.515Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-09-17T18:47:18.899Z
+Stopped at: Completed 01-01-PLAN.md
 Resume file: None

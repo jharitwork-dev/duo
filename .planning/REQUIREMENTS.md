@@ -80,7 +80,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Localization
 
-- [ ] **L10N-01**: UI is Thai primary with English technical terms mixed in
+- [x] **L10N-01**: UI is Thai primary with English technical terms mixed in
 - [ ] **L10N-02**: Dates displayed in Thai Buddhist calendar format (BE)
 
 ## v2 Requirements
@@ -127,7 +127,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-02 | Phase 1 | Complete |
 | AUTH-03 | Phase 1 | Complete |
 | AUTH-04 | Phase 1 | Complete |
-| L10N-01 | Phase 1 | Pending |
+| L10N-01 | Phase 1 | Complete |
 | L10N-02 | Phase 1 | Pending |
 | CLASS-01 | Phase 2 | Pending |
 | CLASS-02 | Phase 2 | Pending |
