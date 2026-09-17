@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 3 plans
 Plans:
 - [ ] 01-01-PLAN.md -- Install dependencies, configure Drizzle + Neon WebSocket, deploy full database schema (10 tables), initialize shadcn/ui and Vitest
-- [ ] 01-02-PLAN.md -- Clerk auth with 3-role system (superadmin/teacher/student), middleware, sign-in/sign-up pages, role promotion, teacher approval Server Actions
+- [x] 01-02-PLAN.md -- Clerk auth with 3-role system (superadmin/teacher/student), middleware, sign-in/sign-up pages, role promotion, teacher approval Server Actions
 - [ ] 01-03-PLAN.md -- Dashboard shells (teacher/student/admin), R2 presigned URL infrastructure, Thai date formatting utilities, end-to-end verification
 
 ### Phase 2: Content Structure

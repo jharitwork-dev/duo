@@ -9,10 +9,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Authentication
 
-- [ ] **AUTH-01**: Teacher can sign in and access teacher dashboard
-- [ ] **AUTH-02**: Student can sign in and access student view
-- [ ] **AUTH-03**: Clerk enforces role-based access (teacher vs student) on all routes and actions
-- [ ] **AUTH-04**: Authorization checked in Server Actions, not just middleware
+- [x] **AUTH-01**: Teacher can sign in and access teacher dashboard
+- [x] **AUTH-02**: Student can sign in and access student view
+- [x] **AUTH-03**: Clerk enforces role-based access (teacher vs student) on all routes and actions
+- [x] **AUTH-04**: Authorization checked in Server Actions, not just middleware
 
 ### Classrooms
 
@@ -123,10 +123,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
+| AUTH-04 | Phase 1 | Complete |
 | L10N-01 | Phase 1 | Pending |
 | L10N-02 | Phase 1 | Pending |
 | CLASS-01 | Phase 2 | Pending |
