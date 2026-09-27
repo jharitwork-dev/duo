@@ -51,7 +51,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md -- Schema migration (inviteCode, maxGroupSize, isArchived, phaseTemplates) + install @dnd-kit/react + shadcn components + Classroom/Group Server Actions + query helpers
 - [x] 02-02-PLAN.md -- Phase/Todo Server Actions (CRUD, soft delete, transactional reorder) + Template actions + seed 4 built-in templates
-- [ ] 02-03-PLAN.md -- Teacher classroom UI (list, create, dashboard with groups/settings tabs, group management)
+- [x] 02-03-PLAN.md -- Teacher classroom UI (list, create, dashboard with groups/settings tabs, group management)
 - [ ] 02-04-PLAN.md -- Teacher phase/todo management UI (collapsible outline, inline add/edit, drag-and-drop reorder)
 - [ ] 02-05-PLAN.md -- Student UI (home with auto-redirect, group phase view, todo detail page) + template picker + join route
 **UI hint**: yes
