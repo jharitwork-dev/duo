@@ -59,12 +59,16 @@ export default async function TodoDetailPage({ params }: Props) {
           </div>
         </div>
         {isTeacher && (
-          <Button variant="outline" size="sm" asChild>
-            <Link
-              href={`/teacher/classrooms/${classroom.id}/group/${group.id}`}
-            >
-              แก้ไข
-            </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            render={
+              <Link
+                href={`/teacher/classrooms/${classroom.id}/group/${group.id}`}
+              />
+            }
+          >
+            แก้ไข
           </Button>
         )}
       </div>

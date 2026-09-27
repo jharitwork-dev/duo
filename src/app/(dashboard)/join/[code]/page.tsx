@@ -46,8 +46,8 @@ export default async function JoinPage({ params }: Props) {
         </CardHeader>
         <CardContent className="space-y-4 text-center">
           <p className="text-muted-foreground text-sm">{error}</p>
-          <Button asChild>
-            <Link href="/student">กลับหน้าหลัก</Link>
+          <Button render={<Link href="/student" />}>
+            กลับหน้าหลัก
           </Button>
         </CardContent>
       </Card>

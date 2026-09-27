@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useTransition } from 'react';
 import { getAttachmentDownloadUrl } from '@/server/actions/todo';
 import { Button } from '@/components/ui/button';
 import { FileIcon, Download } from 'lucide-react';
