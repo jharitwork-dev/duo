@@ -2,8 +2,8 @@ import Image from 'next/image';
 import RegisterForm from '@/register/components/RegisterForm';
 
 export const metadata = {
-  title: 'อัพเดทสมาชิกทีม | Innovator\'s',
-  description: 'อัพเดทข้อมูลสมาชิกทีม Innovator\'s Cocoon',
+  title: 'อัพเดทข้อมูลทีม | Innovator\'s',
+  description: 'อัพเดทข้อมูลทีม Innovator\'s Cocoon',
 };
 
 export default function RegisterPage() {
@@ -78,7 +78,7 @@ export default function RegisterPage() {
             color: '#0269A7',
           }}
         >
-          อัพเดทสมาชิกทีม
+          อัพเดทข้อมูลทีม
         </h1>
         <p
           className="mb-8 text-lg"
@@ -87,7 +87,7 @@ export default function RegisterPage() {
             color: 'rgba(2,105,167,0.7)',
           }}
         >
-          Update Team Members
+          Update Team Info
         </p>
       </div>
 
