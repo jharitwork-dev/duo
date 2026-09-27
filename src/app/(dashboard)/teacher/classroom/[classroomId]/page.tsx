@@ -82,14 +82,16 @@ export default async function ClassroomDashboard({
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
-          <InviteCodeDisplay
-            classroomId={classroomId}
-            inviteCode={classroom.inviteCode}
-          />
+          {classroom.inviteCode && (
+            <InviteCodeDisplay
+              classroomId={classroomId}
+              inviteCode={classroom.inviteCode}
+            />
+          )}
           <ClassroomSettingsForm
             classroomId={classroomId}
             name={classroom.name}
-            description={classroom.description}
+            description={classroom.description ?? ''}
             maxGroupSize={classroom.maxGroupSize}
             members={classroom.members}
           />

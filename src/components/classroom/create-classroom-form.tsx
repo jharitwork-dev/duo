@@ -33,7 +33,7 @@ export function CreateClassroomForm() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as never,
     defaultValues: {
       name: '',
       description: '',
@@ -46,7 +46,7 @@ export function CreateClassroomForm() {
         name: data.name,
         description: data.description || undefined,
         maxGroupSize:
-          data.maxGroupSize && data.maxGroupSize !== ''
+          data.maxGroupSize && data.maxGroupSize !== ('' as never)
             ? Number(data.maxGroupSize)
             : undefined,
       });

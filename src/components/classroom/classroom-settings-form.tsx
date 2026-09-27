@@ -38,7 +38,7 @@ interface ClassroomMember {
 interface ClassroomSettingsFormProps {
   classroomId: string;
   name: string;
-  description: string | null;
+  description: string;
   maxGroupSize: number | null;
   members: ClassroomMember[];
 }
@@ -58,7 +58,7 @@ export function ClassroomSettingsForm({
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<SettingsFormData>({
-    resolver: zodResolver(settingsSchema),
+    resolver: zodResolver(settingsSchema) as never,
     defaultValues: {
       name,
       description: description ?? '',
@@ -73,7 +73,7 @@ export function ClassroomSettingsForm({
         name: data.name,
         description: data.description || undefined,
         maxGroupSize:
-          data.maxGroupSize && data.maxGroupSize !== ''
+          data.maxGroupSize && data.maxGroupSize !== ('' as never)
             ? Number(data.maxGroupSize)
             : null,
       });

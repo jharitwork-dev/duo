@@ -15,11 +15,9 @@ export default async function TeacherDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">ห้องเรียนของฉัน</h1>
-        <Button asChild>
-          <Link href="/teacher/classroom/new">
+        <Button render={<Link href="/teacher/classroom/new" />} nativeButton={false}>
             <Plus className="mr-2 size-4" />
             สร้างห้องเรียน
-          </Link>
         </Button>
       </div>
 
@@ -28,11 +26,9 @@ export default async function TeacherDashboard() {
           <p className="mb-4 text-muted-foreground">
             ยังไม่มีห้องเรียน — สร้างห้องเรียนแรกของคุณ
           </p>
-          <Button asChild>
-            <Link href="/teacher/classroom/new">
+          <Button render={<Link href="/teacher/classroom/new" />} nativeButton={false}>
               <Plus className="mr-2 size-4" />
               สร้างห้องเรียน
-            </Link>
           </Button>
         </div>
       ) : (

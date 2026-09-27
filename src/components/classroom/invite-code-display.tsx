@@ -94,15 +94,18 @@ export function InviteCodeDisplay({
           </Button>
 
           <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isRegenerating}
-              >
+            <AlertDialogTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isRegenerating}
+                  nativeButton={false}
+                />
+              }
+            >
                 <RefreshCw className="mr-2 size-4" />
                 สร้างรหัสใหม่
-              </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>

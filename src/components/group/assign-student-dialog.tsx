@@ -59,10 +59,8 @@ export function AssignStudentDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
+      <DialogTrigger render={<Button variant="ghost" size="sm" nativeButton={false} />}>
           <UserPlus className="size-4" />
-        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

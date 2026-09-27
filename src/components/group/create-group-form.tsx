@@ -50,11 +50,9 @@ export function CreateGroupForm({ classroomId }: CreateGroupFormProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm">
+      <DialogTrigger render={<Button size="sm" nativeButton={false} />}>
           <Plus className="mr-2 size-4" />
           สร้างกลุ่ม
-        </Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit}>
