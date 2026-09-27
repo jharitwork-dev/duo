@@ -33,10 +33,10 @@ export default async function Home() {
         </p>
       </div>
       <div className="flex gap-4">
-        <Button render={<Link href={ROUTES.SIGN_IN} />} size="lg">
+        <Button render={<Link href={ROUTES.SIGN_IN} />} nativeButton={false} size="lg">
           เข้าสู่ระบบ
         </Button>
-        <Button render={<Link href={ROUTES.SIGN_UP} />} size="lg" variant="outline">
+        <Button render={<Link href={ROUTES.SIGN_UP} />} nativeButton={false} size="lg" variant="outline">
           สมัครสมาชิก
         </Button>
       </div>
