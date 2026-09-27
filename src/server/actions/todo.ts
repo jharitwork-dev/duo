@@ -3,9 +3,11 @@
 import { z } from 'zod';
 import { db } from '@/db';
 import { todos } from '@/db/schema/todos';
+import { todoAttachments } from '@/db/schema/todos';
 import { eq, and, max, inArray } from 'drizzle-orm';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
+import { presignGet } from '@/lib/r2';
 
 const createTodoSchema = z.object({
   phaseId: z.string().min(1),
@@ -134,4 +136,30 @@ export async function restoreTodo(input: z.infer<typeof restoreTodoSchema>) {
     .where(eq(todos.id, data.todoId));
 
   return { success: true };
+}
+
+const getAttachmentUrlSchema = z.object({
+  attachmentId: z.string().min(1),
+});
+
+/**
+ * Returns a presigned download URL for a todo attachment.
+ * Any authenticated user with classroom membership can download.
+ */
+export async function getAttachmentDownloadUrl(input: z.infer<typeof getAttachmentUrlSchema>) {
+  await getCurrentUserId();
+  const data = getAttachmentUrlSchema.parse(input);
+
+  const attachment = await db.query.todoAttachments.findFirst({
+    where: eq(todoAttachments.id, data.attachmentId),
+  });
+
+  if (!attachment) {
+    throw new Error('Attachment not found');
+  }
+
+  const disposition = `attachment; filename="${encodeURIComponent(attachment.fileName)}"`;
+  const url = await presignGet(attachment.fileKey, 3600, disposition);
+
+  return { url, fileName: attachment.fileName };
 }
