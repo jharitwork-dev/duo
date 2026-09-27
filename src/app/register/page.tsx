@@ -12,29 +12,60 @@ export default function RegisterPage() {
       className="relative isolate mx-auto flex min-h-dvh w-full max-w-[480px] flex-col overflow-hidden px-6 pb-12 pt-8"
       style={{ fontFamily: 'var(--font-thai), sans-serif' }}
     >
-      {/* Backdrop gradient washes */}
+      {/* ── Backdrop ── */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
         style={{ background: '#FFFAF3' }}
       >
+        {/* Top-right peach/orange watercolor wash */}
         <div
-          className="absolute -right-32 -top-32 h-[600px] w-[600px]"
+          className="absolute -right-28 -top-28 h-[26rem] w-[26rem] rounded-full blur-2xl"
           style={{
             background:
               'radial-gradient(circle, rgba(240,74,36,0.20), rgba(251,169,25,0.16) 42%, rgba(255,250,243,0) 70%)',
           }}
         />
+        {/* Bottom-left blue watercolor wash */}
         <div
-          className="absolute -bottom-32 -left-32 h-[600px] w-[600px]"
+          className="absolute -bottom-28 -left-28 h-[26rem] w-[26rem] rounded-full blur-2xl"
           style={{
             background:
               'radial-gradient(circle, rgba(2,105,167,0.20), rgba(8,168,107,0.12) 42%, rgba(255,250,243,0) 70%)',
           }}
         />
+
+        {/* Yellow Cocoon sparkle — left edge, partly off-canvas */}
+        <Image
+          src="/logos/shapes-11.webp"
+          alt=""
+          width={240}
+          height={240}
+          className="absolute -left-12 top-32 h-auto w-44"
+        />
+
+        {/* Blue squiggle — right edge, partly off-canvas */}
+        <Image
+          src="/logos/shapes-10.webp"
+          alt=""
+          width={240}
+          height={240}
+          className="absolute -right-16 top-1/2 h-auto w-44 -translate-y-1/2"
+        />
       </div>
 
-      {/* Logo + Header */}
+      {/* ── Cocoon pill (ตัวกลม) — top right corner ── */}
+      <div className="absolute -right-4 top-6 z-10">
+        <Image
+          src="/logos/cocoon-pill-color-on-white.webp"
+          alt="Cocoon"
+          width={80}
+          height={80}
+          className="h-16 w-16 drop-shadow-lg"
+        />
+      </div>
+
+      {/* ── Logo + Header ── */}
       <div className="relative mb-6 flex flex-col items-start">
         <div
           aria-hidden
