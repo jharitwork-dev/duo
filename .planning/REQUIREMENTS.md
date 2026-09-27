@@ -30,18 +30,18 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Phases
 
-- [ ] **PHASE-01**: Teacher can create ordered phases for a group (e.g., "Phase 1: Market Research")
-- [ ] **PHASE-02**: Phases have state: locked / active / completed
-- [ ] **PHASE-03**: Teacher can set a phase as free-access (no approval prerequisite)
-- [ ] **PHASE-04**: Teacher can set optional deadlines on phases
+- [x] **PHASE-01**: Teacher can create ordered phases for a group (e.g., "Phase 1: Market Research")
+- [x] **PHASE-02**: Phases have state: locked / active / completed
+- [x] **PHASE-03**: Teacher can set a phase as free-access (no approval prerequisite)
+- [x] **PHASE-04**: Teacher can set optional deadlines on phases
 - [ ] **PHASE-05**: Phase unlocks when teacher approves all required to-dos in previous phase (unless free-access)
 
 ### To-dos
 
-- [ ] **TODO-01**: Teacher can create to-do items within a phase (e.g., "Create questionnaire", "Interview customers")
-- [ ] **TODO-02**: Each to-do has a submission mode: "group" or "individual"
-- [ ] **TODO-03**: Teacher can set optional deadlines on to-dos
-- [ ] **TODO-04**: Each to-do opens a detail page with: notes area, downloadable attachments, submission form
+- [x] **TODO-01**: Teacher can create to-do items within a phase (e.g., "Create questionnaire", "Interview customers")
+- [x] **TODO-02**: Each to-do has a submission mode: "group" or "individual"
+- [x] **TODO-03**: Teacher can set optional deadlines on to-dos
+- [x] **TODO-04**: Each to-do opens a detail page with: notes area, downloadable attachments, submission form
 
 ### Submissions
 
@@ -137,14 +137,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GRP-02 | Phase 2 | Pending |
 | GRP-03 | Phase 2 | Pending |
 | GRP-04 | Phase 2 | Pending |
-| PHASE-01 | Phase 2 | Pending |
-| PHASE-02 | Phase 2 | Pending |
-| PHASE-03 | Phase 2 | Pending |
-| PHASE-04 | Phase 2 | Pending |
-| TODO-01 | Phase 2 | Pending |
-| TODO-02 | Phase 2 | Pending |
-| TODO-03 | Phase 2 | Pending |
-| TODO-04 | Phase 2 | Pending |
+| PHASE-01 | Phase 2 | Complete |
+| PHASE-02 | Phase 2 | Complete |
+| PHASE-03 | Phase 2 | Complete |
+| PHASE-04 | Phase 2 | Complete |
+| TODO-01 | Phase 2 | Complete |
+| TODO-02 | Phase 2 | Complete |
+| TODO-03 | Phase 2 | Complete |
+| TODO-04 | Phase 2 | Complete |
 | SUB-01 | Phase 3 | Pending |
 | SUB-02 | Phase 3 | Pending |
 | SUB-03 | Phase 3 | Pending |
