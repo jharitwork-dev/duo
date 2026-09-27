@@ -131,17 +131,17 @@ export default function RegisterForm() {
           className="text-2xl font-bold leading-[1.2]"
           style={{ color: '#0269A7' }}
         >
-          ลงทะเบียนสำเร็จ!
+          อัพเดทสำเร็จ!
         </span>
         <span className="flex flex-col gap-0.5">
           <span className="text-base leading-relaxed text-[#1A1A1A]/75">
-            ขอบคุณที่ลงทะเบียนล่วงหน้า เราจะติดต่อกลับเร็ว ๆ นี้
+            ขอบคุณที่ช่วยอัพเดทข้อมูลให้นะ เราจะติดต่อกลับเร็ว ๆ นี้
           </span>
           <span
             className="text-sm leading-relaxed text-[#1A1A1A]/55"
             style={{ fontFamily: 'var(--font-heading), sans-serif' }}
           >
-            Thank you for pre-registering. We will contact you soon.
+            Thank you for updating your info. We will contact you soon.
           </span>
         </span>
         <a
@@ -488,7 +488,7 @@ export default function RegisterForm() {
             </span>
           ) : (
             <span className="flex flex-col">
-              <span>ลงทะเบียน</span>
+              <span>ส่งข้อมูล</span>
               <span
                 className="text-sm font-normal opacity-90"
                 style={{ fontFamily: 'var(--font-heading), sans-serif' }}

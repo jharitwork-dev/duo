@@ -54,6 +54,29 @@ export async function submitRegistration(
     }
 
     const api = sheetsApi(cfg.email, cfg.privateKey);
+
+    // Check if header row exists — if sheet is empty, add headers first
+    const existing = await api.spreadsheets.values.get({
+      spreadsheetId: cfg.sheetId,
+      range: `'${REGISTRATIONS_TAB}'!A1:M1`,
+    });
+    if (!existing.data.values || existing.data.values.length === 0) {
+      await api.spreadsheets.values.append({
+        spreadsheetId: cfg.sheetId,
+        range: `'${REGISTRATIONS_TAB}'!A1`,
+        valueInputOption: 'RAW',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: {
+          values: [[
+            'Timestamp', 'Registration ID', 'ชื่อทีม/แบรนด์',
+            'สมาชิกคนที่', 'จำนวนสมาชิก', 'ชื่อ-นามสกุล', 'ชื่อเล่น',
+            'อายุ', 'ระดับชั้น', 'มหาวิทยาลัย/โรงเรียน',
+            'เบอร์โทรศัพท์', 'ไลน์ไอดี', 'อีเมล',
+          ]],
+        },
+      });
+    }
+
     await withSheetsRetry(() =>
       api.spreadsheets.values.append({
         spreadsheetId: cfg.sheetId,
