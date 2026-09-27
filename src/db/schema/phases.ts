@@ -10,6 +10,7 @@ export const phases = pgTable('phases', {
   orderIndex: integer('order_index').notNull().default(0),
   status: text('status', { enum: ['locked', 'active', 'completed'] }).notNull().default('locked'),
   isFreeAccess: boolean('is_free_access').notNull().default(false),
+  isArchived: boolean('is_archived').notNull().default(false),
   deadline: timestamp('deadline'),
   createdBy: text('created_by').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

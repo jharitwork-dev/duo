@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, boolean } from 'drizzle-orm/pg-core';
 import { createId } from '@/lib/ids';
 import { phases } from './phases';
 
@@ -10,6 +10,7 @@ export const todos = pgTable('todos', {
   notes: text('notes'),
   orderIndex: integer('order_index').notNull().default(0),
   submissionMode: text('submission_mode', { enum: ['group', 'individual'] }).notNull().default('group'),
+  isArchived: boolean('is_archived').notNull().default(false),
   deadline: timestamp('deadline'),
   createdBy: text('created_by').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

@@ -4,4 +4,5 @@ export * from './phases';
 export * from './todos';
 export * from './submissions';
 export * from './comments';
+export * from './phaseTemplates';
 export * from './relations';

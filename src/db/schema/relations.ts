@@ -5,6 +5,7 @@ import { phases } from './phases';
 import { todos, todoAttachments } from './todos';
 import { submissions, submissionFiles } from './submissions';
 import { comments } from './comments';
+import { phaseTemplates } from './phaseTemplates';
 
 // Classrooms relations
 export const classroomsRelations = relations(classrooms, ({ many }) => ({
