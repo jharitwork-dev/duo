@@ -54,17 +54,6 @@ export default function RegisterPage() {
         />
       </div>
 
-      {/* ── Cocoon pill (ตัวกลม) — top right corner ── */}
-      <div className="absolute -right-4 top-6 z-10">
-        <Image
-          src="/logos/cocoon-pill-color-on-white.webp"
-          alt="Cocoon"
-          width={80}
-          height={80}
-          className="h-16 w-16 drop-shadow-lg"
-        />
-      </div>
-
       {/* ── Logo + Header ── */}
       <div className="relative mb-6 flex flex-col items-start">
         <div
