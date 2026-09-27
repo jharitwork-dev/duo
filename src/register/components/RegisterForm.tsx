@@ -136,7 +136,7 @@ export default function RegisterForm() {
         </span>
         <span className="flex flex-col gap-0.5">
           <span className="text-base leading-relaxed text-[#1A1A1A]/75">
-            ขอบคุณที่ช่วยอัพเดทข้อมูลให้นะ เราจะติดต่อกลับเร็ว ๆ นี้
+            ขอบคุณที่ช่วยอัพเดทข้อมูลให้นะ!
           </span>
           <span
             className="text-sm leading-relaxed text-[#1A1A1A]/55"
