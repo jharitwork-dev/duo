@@ -15,19 +15,27 @@ import { submitRegistration } from '@/register/submit-registration';
 type FormValues = z.input<typeof registrationSchema>;
 
 const INPUT_CLASS =
-  'min-h-[48px] w-full rounded-xl border border-gray-300 bg-white px-4 text-base text-gray-900 focus:border-blue-500 focus:outline-none';
+  'min-h-[48px] w-full rounded-xl border border-[#1A1A1A]/15 bg-white px-4 text-base text-[#1A1A1A] focus:border-[#0269A7] focus:outline-none';
 
 const SELECT_CLASS =
-  'min-h-[48px] w-full rounded-xl border border-gray-300 bg-white px-4 text-base text-gray-900 focus:border-blue-500 focus:outline-none appearance-none';
+  'min-h-[48px] w-full rounded-xl border border-[#1A1A1A]/15 bg-white px-4 text-base text-[#1A1A1A] focus:border-[#0269A7] focus:outline-none appearance-none';
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   const [th, ...rest] = message.split(' / ');
   const en = rest.join(' / ');
   return (
-    <p role="alert" className="text-sm text-red-500">
+    <p role="alert" className="text-sm text-[#F04A24]">
       <span>{th}</span>
-      {en && <span className="text-xs opacity-75"> / {en}</span>}
+      {en && (
+        <span
+          style={{ fontFamily: 'var(--font-heading), sans-serif' }}
+          className="text-xs"
+        >
+          {' '}
+          / {en}
+        </span>
+      )}
     </p>
   );
 }
@@ -45,19 +53,24 @@ function FieldLabel({
 }) {
   return (
     <label htmlFor={htmlFor} className="flex flex-col gap-0.5">
-      <span className="flex items-center gap-2 text-base font-bold text-gray-900">
+      <span className="flex items-center gap-2 text-base font-bold text-[#1A1A1A]">
         <span
           aria-hidden
-          className="inline-block h-3 w-3 rounded-full bg-blue-500"
+          className="inline-block h-3 w-3 rounded-full bg-[#0269A7]"
         />
         {thai}
         {required && (
-          <span aria-hidden className="text-red-500">
+          <span aria-hidden className="text-[#F04A24]">
             *
           </span>
         )}
       </span>
-      <span className="pl-5 text-sm text-gray-400">{english}</span>
+      <span
+        className="pl-5 text-sm text-[#1A1A1A]/55"
+        style={{ fontFamily: 'var(--font-heading), sans-serif' }}
+      >
+        {english}
+      </span>
     </label>
   );
 }
@@ -114,17 +127,40 @@ export default function RegisterForm() {
   if (done) {
     return (
       <div className="flex w-full flex-col gap-6 rounded-3xl bg-white p-6 text-center shadow-lg">
-        <span className="text-2xl font-bold leading-[1.2] text-blue-600">
+        <span
+          className="text-2xl font-bold leading-[1.2]"
+          style={{ color: '#0269A7' }}
+        >
           ลงทะเบียนสำเร็จ!
         </span>
         <span className="flex flex-col gap-0.5">
-          <span className="text-base leading-relaxed text-gray-600">
+          <span className="text-base leading-relaxed text-[#1A1A1A]/75">
             ขอบคุณที่ลงทะเบียนล่วงหน้า เราจะติดต่อกลับเร็ว ๆ นี้
           </span>
-          <span className="text-sm leading-relaxed text-gray-400">
+          <span
+            className="text-sm leading-relaxed text-[#1A1A1A]/55"
+            style={{ fontFamily: 'var(--font-heading), sans-serif' }}
+          >
             Thank you for pre-registering. We will contact you soon.
           </span>
         </span>
+        <a
+          href="https://www.instagram.com/innovators.th/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex min-h-[56px] w-full flex-col items-center justify-center rounded-full px-8 text-white shadow-lg transition-transform active:scale-[0.98]"
+          style={{
+            background: 'linear-gradient(135deg, #0269A7, #08A86B)',
+          }}
+        >
+          <span className="text-lg font-bold">ติดตามข่าวสารทาง IG</span>
+          <span
+            className="text-sm font-normal opacity-90"
+            style={{ fontFamily: 'var(--font-heading), sans-serif' }}
+          >
+            Follow us on IG
+          </span>
+        </a>
       </div>
     );
   }
@@ -134,16 +170,8 @@ export default function RegisterForm() {
       <form
         noValidate
         onSubmit={handleSubmit(onSubmit)}
-        className="flex w-full flex-col gap-8 rounded-3xl bg-white p-6 shadow-lg sm:p-8"
+        className="flex w-full flex-col gap-6 rounded-3xl bg-white p-6 shadow-lg"
       >
-        {/* ── Header ── */}
-        <div className="flex flex-col gap-1 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">
-            ลงทะเบียนล่วงหน้า
-          </h1>
-          <p className="text-sm text-gray-400">Pre-Registration</p>
-        </div>
-
         {/* ── ชื่อทีม/แบรนด์ ── */}
         <div className="flex flex-col gap-2">
           <FieldLabel
@@ -151,7 +179,7 @@ export default function RegisterForm() {
             thai="ชื่อทีม/ชื่อแบรนด์"
             english="Team / Brand Name"
           />
-          <p className="pl-5 text-xs text-gray-400">
+          <p className="pl-5 text-xs text-[#1A1A1A]/40">
             เปลี่ยนภายหลังได้ / Can be changed later
           </p>
           <input
@@ -165,19 +193,20 @@ export default function RegisterForm() {
         </div>
 
         {/* ── Team Members ── */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-gray-900">
-              สมาชิกทีม ({fields.length} คน)
-            </span>
-            <span className="text-sm text-gray-400">
-              Team Members ({fields.length})
-            </span>
-          </div>
-          {errors.members?.message && (
-            <FieldError message={errors.members.message} />
-          )}
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-bold text-[#1A1A1A]">
+            สมาชิกทีม ({fields.length} คน)
+          </span>
+          <span
+            className="text-sm text-[#1A1A1A]/55"
+            style={{ fontFamily: 'var(--font-heading), sans-serif' }}
+          >
+            Team Members ({fields.length})
+          </span>
         </div>
+        {errors.members?.message && (
+          <FieldError message={errors.members.message} />
+        )}
 
         {fields.map((field, index) => {
           const memberErrors = errors.members?.[index];
@@ -187,18 +216,27 @@ export default function RegisterForm() {
           return (
             <div
               key={field.id}
-              className="flex flex-col gap-6 rounded-2xl border border-gray-200 bg-gray-50 p-5"
+              className="flex flex-col gap-6 rounded-2xl border border-[#1A1A1A]/10 bg-[#FFFAF3]/50 p-5"
             >
               {/* Member header */}
               <div className="flex items-center justify-between">
-                <span className="text-base font-bold text-blue-600">
-                  สมาชิกคนที่ {index + 1} / Member {index + 1}
+                <span
+                  className="text-base font-bold"
+                  style={{ color: '#0269A7' }}
+                >
+                  สมาชิกคนที่ {index + 1}
+                  <span
+                    className="ml-1 font-normal"
+                    style={{ fontFamily: 'var(--font-heading), sans-serif' }}
+                  >
+                    / Member {index + 1}
+                  </span>
                 </span>
                 {fields.length > 1 && (
                   <button
                     type="button"
                     onClick={() => remove(index)}
-                    className="rounded-lg px-3 py-1 text-sm text-red-500 transition-colors hover:bg-red-50"
+                    className="rounded-lg px-3 py-1 text-sm text-[#F04A24] transition-colors hover:bg-[#F04A24]/10"
                   >
                     ลบ / Remove
                   </button>
@@ -287,10 +325,10 @@ export default function RegisterForm() {
                   <div className="flex flex-col gap-2 pt-2">
                     <label
                       htmlFor={`members.${index}.educationLevelOther`}
-                      className="pl-5 text-sm text-gray-600"
+                      className="pl-5 text-sm text-[#1A1A1A]/60"
                     >
                       ระบุระดับชั้น / Specify level{' '}
-                      <span className="text-red-500">*</span>
+                      <span className="text-[#F04A24]">*</span>
                     </label>
                     <input
                       id={`members.${index}.educationLevelOther`}
@@ -379,10 +417,15 @@ export default function RegisterForm() {
         <button
           type="button"
           onClick={() => append({ ...EMPTY_MEMBER })}
-          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-300 text-blue-600 transition-colors hover:border-blue-500 hover:bg-blue-50"
+          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#0269A7]/30 text-[#0269A7] transition-colors hover:border-[#0269A7] hover:bg-[#0269A7]/5"
         >
           <span className="text-xl">+</span>
-          <span className="font-bold">เพิ่มสมาชิก / Add Member</span>
+          <span className="font-bold">
+            เพิ่มสมาชิก{' '}
+            <span style={{ fontFamily: 'var(--font-heading), sans-serif' }}>
+              / Add Member
+            </span>
+          </span>
         </button>
 
         {/* ── PDPA Consent ── */}
@@ -390,42 +433,41 @@ export default function RegisterForm() {
           <label className="flex items-start gap-3">
             <input
               type="checkbox"
-              className="mt-1 h-5 w-5 rounded border-gray-300"
+              className="mt-1 h-5 w-5 rounded border-[#1A1A1A]/30 accent-[#0269A7]"
               {...register('pdpaConsent')}
             />
             <span className="flex flex-col gap-0.5">
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-[#1A1A1A]/70">
                 ข้าพเจ้ายินยอมให้เก็บรวบรวมและใช้ข้อมูลส่วนบุคคลตาม
                 <button
                   type="button"
                   onClick={() => setPdpaOpen(true)}
-                  className="text-blue-600 underline"
+                  className="text-[#0269A7] underline"
                 >
                   นโยบาย PDPA
                 </button>
               </span>
-              <span className="text-xs text-gray-400">
+              <span
+                className="text-xs text-[#1A1A1A]/45"
+                style={{ fontFamily: 'var(--font-heading), sans-serif' }}
+              >
                 I consent to the collection and use of personal data per the{' '}
                 <button
                   type="button"
                   onClick={() => setPdpaOpen(true)}
-                  className="text-blue-600 underline"
+                  className="text-[#0269A7] underline"
                 >
                   PDPA policy
                 </button>
               </span>
             </span>
           </label>
-          <FieldError
-            message={
-              errors.pdpaConsent?.message
-            }
-          />
+          <FieldError message={errors.pdpaConsent?.message} />
         </div>
 
         {/* ── Submit error ── */}
         {submitError && (
-          <p role="alert" className="text-center text-sm text-red-500">
+          <p role="alert" className="text-center text-sm text-[#F04A24]">
             {submitError}
           </p>
         )}
@@ -434,7 +476,10 @@ export default function RegisterForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex min-h-[56px] w-full items-center justify-center rounded-full bg-blue-600 px-8 text-lg font-bold text-white shadow-lg transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
+          className="flex min-h-[56px] w-full items-center justify-center rounded-full px-8 text-lg font-bold text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
+          style={{
+            background: 'linear-gradient(135deg, #0269A7, #08A86B)',
+          }}
         >
           {isSubmitting ? (
             <span className="flex items-center gap-2">
@@ -444,7 +489,12 @@ export default function RegisterForm() {
           ) : (
             <span className="flex flex-col">
               <span>ลงทะเบียน</span>
-              <span className="text-sm font-normal opacity-90">Register</span>
+              <span
+                className="text-sm font-normal opacity-90"
+                style={{ fontFamily: 'var(--font-heading), sans-serif' }}
+              >
+                Register
+              </span>
             </span>
           )}
         </button>
@@ -460,25 +510,29 @@ export default function RegisterForm() {
             className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="mb-4 text-lg font-bold text-gray-900">
+            <h2 className="mb-4 text-lg font-bold text-[#1A1A1A]">
               นโยบายความเป็นส่วนตัว / PDPA Policy
             </h2>
-            <div className="flex flex-col gap-3 text-sm text-gray-600">
+            <div className="flex flex-col gap-3 text-sm text-[#1A1A1A]/60">
               <p>
-                Innovator's Academy
+                Innovator&apos;s Academy
                 เก็บรวบรวมข้อมูลส่วนบุคคลของท่านเพื่อใช้ในการดำเนินโครงการเท่านั้น
                 ข้อมูลจะถูกเก็บรักษาอย่างปลอดภัยและไม่เปิดเผยต่อบุคคลภายนอก
               </p>
-              <p>
-                Innovator's Academy collects your personal data solely for
+              <p
+                style={{ fontFamily: 'var(--font-heading), sans-serif' }}
+              >
+                Innovator&apos;s Academy collects your personal data solely for
                 program operations. Data is securely stored and not shared with
                 third parties.
               </p>
               <p>
-                ท่านสามารถขอเข้าถึง แก้ไข หรือลบข้อมูลส่วนบุคคลของท่านได้
-                โดยติดต่อทีมงาน
+                ท่านสามารถขอเข้าถึง แก้ไข
+                หรือลบข้อมูลส่วนบุคคลของท่านได้โดยติดต่อทีมงาน
               </p>
-              <p>
+              <p
+                style={{ fontFamily: 'var(--font-heading), sans-serif' }}
+              >
                 You may request access, correction, or deletion of your data by
                 contacting our team.
               </p>
@@ -486,7 +540,10 @@ export default function RegisterForm() {
             <button
               type="button"
               onClick={() => setPdpaOpen(false)}
-              className="mt-6 w-full rounded-xl bg-blue-600 px-4 py-3 font-bold text-white"
+              className="mt-6 w-full rounded-xl px-4 py-3 font-bold text-white"
+              style={{
+                background: 'linear-gradient(135deg, #0269A7, #08A86B)',
+              }}
             >
               ปิด / Close
             </button>
