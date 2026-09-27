@@ -16,17 +16,17 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Classrooms
 
-- [ ] **CLASS-01**: Teacher can create a classroom (e.g., "Innovator's Academy", "Cocoon Incubation")
-- [ ] **CLASS-02**: Teacher can add students to a classroom
-- [ ] **CLASS-03**: Student can see classrooms they belong to
-- [ ] **CLASS-04**: Teacher can manage multiple classrooms
+- [x] **CLASS-01**: Teacher can create a classroom (e.g., "Innovator's Academy", "Cocoon Incubation")
+- [x] **CLASS-02**: Teacher can add students to a classroom
+- [x] **CLASS-03**: Student can see classrooms they belong to
+- [x] **CLASS-04**: Teacher can manage multiple classrooms
 
 ### Groups
 
-- [ ] **GRP-01**: Teacher can create groups (student teams) within a classroom
-- [ ] **GRP-02**: Teacher can assign students to groups
-- [ ] **GRP-03**: Student can see their group and group members
-- [ ] **GRP-04**: Groups are independent -- each has its own phases and to-dos
+- [x] **GRP-01**: Teacher can create groups (student teams) within a classroom
+- [x] **GRP-02**: Teacher can assign students to groups
+- [x] **GRP-03**: Student can see their group and group members
+- [x] **GRP-04**: Groups are independent -- each has its own phases and to-dos
 
 ### Phases
 
@@ -129,14 +129,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-04 | Phase 1 | Complete |
 | L10N-01 | Phase 1 | Complete |
 | L10N-02 | Phase 1 | Complete |
-| CLASS-01 | Phase 2 | Pending |
-| CLASS-02 | Phase 2 | Pending |
-| CLASS-03 | Phase 2 | Pending |
-| CLASS-04 | Phase 2 | Pending |
-| GRP-01 | Phase 2 | Pending |
-| GRP-02 | Phase 2 | Pending |
-| GRP-03 | Phase 2 | Pending |
-| GRP-04 | Phase 2 | Pending |
+| CLASS-01 | Phase 2 | Complete |
+| CLASS-02 | Phase 2 | Complete |
+| CLASS-03 | Phase 2 | Complete |
+| CLASS-04 | Phase 2 | Complete |
+| GRP-01 | Phase 2 | Complete |
+| GRP-02 | Phase 2 | Complete |
+| GRP-03 | Phase 2 | Complete |
+| GRP-04 | Phase 2 | Complete |
 | PHASE-01 | Phase 2 | Complete |
 | PHASE-02 | Phase 2 | Complete |
 | PHASE-03 | Phase 2 | Complete |
