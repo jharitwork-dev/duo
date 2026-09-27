@@ -58,7 +58,7 @@ export async function submitRegistration(
     // Check if header row exists — if sheet is empty, add headers first
     const existing = await api.spreadsheets.values.get({
       spreadsheetId: cfg.sheetId,
-      range: `'${REGISTRATIONS_TAB}'!A1:M1`,
+      range: `'${REGISTRATIONS_TAB}'!A1:N1`,
     });
     if (!existing.data.values || existing.data.values.length === 0) {
       await api.spreadsheets.values.append({
@@ -69,9 +69,9 @@ export async function submitRegistration(
         requestBody: {
           values: [[
             'Timestamp', 'Registration ID', 'ชื่อทีม/แบรนด์',
-            'สมาชิกคนที่', 'จำนวนสมาชิก', 'ชื่อ-นามสกุล', 'ชื่อเล่น',
-            'อายุ', 'ระดับชั้น', 'มหาวิทยาลัย/โรงเรียน',
-            'เบอร์โทรศัพท์', 'ไลน์ไอดี', 'อีเมล',
+            'รายละเอียดสินค้า', 'สมาชิกคนที่', 'จำนวนสมาชิก',
+            'ชื่อ-นามสกุล', 'ชื่อเล่น', 'อายุ', 'ระดับชั้น',
+            'มหาวิทยาลัย/โรงเรียน', 'เบอร์โทรศัพท์', 'ไลน์ไอดี', 'อีเมล',
           ]],
         },
       });

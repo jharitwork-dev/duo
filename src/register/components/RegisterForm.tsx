@@ -98,6 +98,7 @@ export default function RegisterForm() {
     resolver: zodResolver(registrationSchema),
     defaultValues: {
       teamName: '',
+      productDescription: '',
       members: [{ ...EMPTY_MEMBER }],
       pdpaConsent: false as unknown as true,
     },
@@ -190,6 +191,26 @@ export default function RegisterForm() {
             {...register('teamName')}
           />
           <FieldError message={errors.teamName?.message} />
+        </div>
+
+        {/* ── รายละเอียดสินค้าอย่างสั้น ── */}
+        <div className="flex flex-col gap-2">
+          <FieldLabel
+            htmlFor="productDescription"
+            thai="รายละเอียดสินค้าอย่างสั้น"
+            english="Brief Product Description"
+          />
+          <p className="pl-5 text-xs text-[#1A1A1A]/40">
+            ไม่เกิน 5 บรรทัด / Max 5 lines
+          </p>
+          <textarea
+            id="productDescription"
+            rows={5}
+            aria-invalid={errors.productDescription ? 'true' : undefined}
+            className={`${INPUT_CLASS} min-h-[120px] py-3`}
+            {...register('productDescription')}
+          />
+          <FieldError message={errors.productDescription?.message} />
         </div>
 
         {/* ── Team Members ── */}

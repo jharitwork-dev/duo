@@ -2,9 +2,9 @@
 // Each team member becomes one row. The team name and registration ID
 // are repeated on every row for easy filtering.
 //
-// Columns: A=timestamp, B=registrationId, C=teamName, D=memberNumber,
-// E=totalMembers, F=fullName, G=nickname, H=age, I=educationLevel,
-// J=institution, K=phone, L=lineId, M=email
+// Columns: A=timestamp, B=registrationId, C=teamName, D=productDescription,
+// E=memberNumber, F=totalMembers, G=fullName, H=nickname, I=age,
+// J=educationLevel, K=institution, L=phone, M=lineId, N=email
 
 import type { RegistrationInput } from './schema';
 
@@ -23,16 +23,17 @@ export function buildRegistrationRows(
       timestamp,                          // A: timestamp
       registrationId,                     // B: registrationId
       data.teamName,                      // C: teamName
-      String(i + 1),                      // D: memberNumber
-      String(data.members.length),        // E: totalMembers
-      member.fullName,                    // F: fullName
-      member.nickname,                    // G: nickname
-      String(member.age),                 // H: age
-      eduLevel,                           // I: educationLevel
-      member.institution,                 // J: institution
-      member.phone,                       // K: phone
-      member.lineId ?? '',                // L: lineId
-      member.email,                       // M: email
+      data.productDescription,            // D: productDescription
+      String(i + 1),                      // E: memberNumber
+      String(data.members.length),        // F: totalMembers
+      member.fullName,                    // G: fullName
+      member.nickname,                    // H: nickname
+      String(member.age),                 // I: age
+      eduLevel,                           // J: educationLevel
+      member.institution,                 // K: institution
+      member.phone,                       // L: phone
+      member.lineId ?? '',                // M: lineId
+      member.email,                       // N: email
     ];
   });
 }

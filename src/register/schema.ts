@@ -76,6 +76,11 @@ export const registrationSchema = z.object({
     .string({ error: 'กรุณากรอกชื่อทีม/แบรนด์ / Please enter team/brand name' })
     .trim()
     .min(1, { error: 'กรุณากรอกชื่อทีม/แบรนด์ / Please enter team/brand name' }),
+  productDescription: z
+    .string({ error: 'กรุณากรอกรายละเอียดสินค้า / Please enter product description' })
+    .trim()
+    .min(1, { error: 'กรุณากรอกรายละเอียดสินค้า / Please enter product description' })
+    .max(500, { error: 'ไม่เกิน 500 ตัวอักษร / Max 500 characters' }),
   members: z
     .array(memberSchema)
     .min(1, { error: 'ต้องมีสมาชิกอย่างน้อย 1 คน / At least 1 member required' }),
