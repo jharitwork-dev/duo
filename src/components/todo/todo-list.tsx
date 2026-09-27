@@ -1,0 +1,78 @@
+'use client';
+
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { DragDropProvider } from '@dnd-kit/react';
+import { TodoItem } from './todo-item';
+import { InlineAddTodo } from './inline-add-todo';
+import { reorderTodos } from '@/server/actions/todo';
+
+type Todo = {
+  id: string;
+  phaseId: string;
+  title: string;
+  description: string | null;
+  notes: string | null;
+  orderIndex: number;
+  submissionMode: 'group' | 'individual';
+  isArchived: boolean;
+  deadline: Date | null;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export function TodoList({
+  initialTodos,
+  phaseId,
+}: {
+  initialTodos: Todo[];
+  phaseId: string;
+}) {
+  const [todos, setTodos] = useState(initialTodos);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
+  return (
+    <div className="space-y-1">
+      <h4 className="text-sm font-medium text-muted-foreground">
+        สิ่งที่ต้องทำ ({todos.length})
+      </h4>
+
+      <DragDropProvider
+        onDragEnd={(event) => {
+          const { source, target } = event.operation;
+          if (!source || !target || source.id === target.id) return;
+
+          const sourceIndex = todos.findIndex((t) => t.id === source.id);
+          const targetIndex = todos.findIndex((t) => t.id === target.id);
+          if (sourceIndex === -1 || targetIndex === -1) return;
+
+          // Reorder locally
+          const updated = [...todos];
+          const [moved] = updated.splice(sourceIndex, 1);
+          updated.splice(targetIndex, 0, moved);
+          setTodos(updated);
+
+          // Persist to server
+          startTransition(async () => {
+            await reorderTodos({
+              phaseId,
+              orderedIds: updated.map((t) => t.id),
+            });
+            router.refresh();
+          });
+        }}
+      >
+        {todos.map((todo, index) => (
+          <TodoItem key={todo.id} todo={todo} index={index} />
+        ))}
+      </DragDropProvider>
+
+      <InlineAddTodo
+        phaseId={phaseId}
+        onCreated={() => router.refresh()}
+      />
+    </div>
+  );
+}
