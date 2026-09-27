@@ -1,0 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai+Looped:wght@400;700&family=League+Spartan:wght@400;700&display=swap');
+
+@font-face {
+  font-family: 'FC Rainbow';
+  src: url('/fonts/FCRainbow-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+.font-thai {
+  --font-thai: 'IBM Plex Sans Thai Looped', sans-serif;
+  --font-heading: 'League Spartan', sans-serif;
+  --font-display: 'FC Rainbow', 'IBM Plex Sans Thai Looped', sans-serif;
+}
