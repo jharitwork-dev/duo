@@ -1,4 +1,5 @@
 import { IBM_Plex_Sans_Thai_Looped, League_Spartan } from 'next/font/google';
+import localFont from 'next/font/local';
 
 const ibmPlexThaiLooped = IBM_Plex_Sans_Thai_Looped({
   subsets: ['thai', 'latin'],
@@ -14,13 +15,19 @@ const leagueSpartan = League_Spartan({
   display: 'swap',
 });
 
+const fcRainbow = localFont({
+  src: '../../../public/fonts/FCRainbow-Regular.ttf',
+  variable: '--font-display',
+  display: 'swap',
+});
+
 export default function RegisterLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className={`${ibmPlexThaiLooped.variable} ${leagueSpartan.variable}`}>
+    <div className={`${ibmPlexThaiLooped.variable} ${leagueSpartan.variable} ${fcRainbow.variable}`}>
       {children}
     </div>
   );

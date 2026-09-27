@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import RegisterForm from '@/register/components/RegisterForm';
 
 export const metadata = {
@@ -11,7 +12,7 @@ export default function RegisterPage() {
       className="relative isolate mx-auto flex min-h-dvh w-full max-w-[480px] flex-col overflow-hidden px-6 pb-12 pt-8"
       style={{ fontFamily: 'var(--font-thai), sans-serif' }}
     >
-      {/* Backdrop gradient washes — same as Cocoon */}
+      {/* Backdrop gradient washes */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"
@@ -33,24 +34,29 @@ export default function RegisterPage() {
         />
       </div>
 
-      {/* Header */}
+      {/* Logo + Header */}
       <div className="relative mb-6 flex flex-col items-start">
         <div
           aria-hidden
           className="absolute -inset-x-4 -inset-y-3 -z-10 rounded-[2rem] bg-white/55 blur-2xl"
         />
-        <p
-          className="text-sm tracking-wide"
-          style={{
-            fontFamily: 'var(--font-heading), sans-serif',
-            color: '#0269A7',
-          }}
-        >
-          innovator&apos;s
-        </p>
+
+        {/* Cocoon logo lockup */}
+        <Image
+          src="/logos/cocoon-lockup-color.webp"
+          alt="Innovator's Cocoon"
+          width={200}
+          height={80}
+          className="mb-4"
+          priority
+        />
+
         <h1
           className="text-4xl font-bold leading-[1.25]"
-          style={{ color: '#0269A7' }}
+          style={{
+            fontFamily: 'var(--font-display), var(--font-thai), sans-serif',
+            color: '#0269A7',
+          }}
         >
           ลงทะเบียนล่วงหน้า
         </h1>
