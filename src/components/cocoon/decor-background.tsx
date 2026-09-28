@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- decorative Figma SVGs, sized by their container */
 import type { CSSProperties } from 'react';
+import { HandIllustration } from './illustrations';
 
 // Decorative Cocoon shapes (book, rocket, target, lightbulb / star, puzzle, briefcase, heads)
 // taken from the Figma "Iphone" frames. Positions are percentages of a 402×874 artboard.
@@ -46,6 +47,25 @@ function Shape({ inset, src, rotate, w, h, bleed }: ShapeProps) {
 
 const f = (name: string) => `/figma/${name}`;
 
+/**
+ * Rocket composed from its Figma parts. Positions are relative to a 402×874 artboard;
+ * the rocket occupies roughly x −52..60, y 336..443 of it (centre ≈ 4, 390).
+ */
+export function RocketShapes() {
+  return (
+    <>
+      <Shape inset="38.48% 85.61% 51.34% -7.74%" src={f('466ff.svg')} rotate="8.63deg" w="hypot(86.8067cqw, 13.1662cqh)" h="hypot(-13.1933cqw, 86.8338cqh)" />
+      <Shape inset="43.09% 97.38% 51.41% -9.33%" src={f('3f4d1.svg')} rotate="8.63deg" w="hypot(86.8054cqw, 13.1649cqh)" h="hypot(-13.1946cqw, 86.8351cqh)" />
+      <Shape inset="46.42% 94.1% 49.28% -4.09%" src={f('93001.svg')} rotate="8.63deg" w="hypot(87.8108cqw, 14.2378cqh)" h="hypot(-12.1892cqw, 85.7622cqh)" />
+      <Shape inset="40.86% 103.05% 54.55% -12.44%" src={f('3d67c.svg')} rotate="8.63deg" w="hypot(85.8181cqw, 12.2383cqh)" h="hypot(-14.1819cqw, 87.7617cqh)" />
+      <Shape inset="41.34% 91.39% 55.31% 1.34%" src={f('d7794.svg')} rotate="8.63deg" w="hypot(86.8232cqw, 13.1827cqh)" h="hypot(-13.1768cqw, 86.8173cqh)" />
+      <Shape inset="45.86% 104.65% 50.27% -13.06%" src={f('81842.svg')} rotate="8.63deg" w="hypot(86.8344cqw, 13.194cqh)" h="hypot(-13.1656cqw, 86.806cqh)" />
+      <Shape inset="46.98% 103.02% 49.96% -9.68%" src={f('0f974.svg')} rotate="8.63deg" w="hypot(86.8034cqw, 13.1629cqh)" h="hypot(-13.1966cqw, 86.8371cqh)" />
+      <Shape inset="44.95% 106.27% 51.99% -12.93%" src={f('0bb99.svg')} rotate="8.63deg" w="hypot(86.8067cqw, 13.1663cqh)" h="hypot(-13.1933cqw, 86.8337cqh)" />
+    </>
+  );
+}
+
 function LeftShapes() {
   return (
     <>
@@ -56,15 +76,7 @@ function LeftShapes() {
       <Shape inset="92.48% 91.71% 4.37% -0.25%" src={f('0c852.svg')} rotate="28.39deg" w="hypot(80.0198cqw, 53.91cqh)" h="hypot(-19.9802cqw, 46.09cqh)" bleed="-12.19% -5.63%" />
       <Shape inset="93.61% 93.1% 3.24% -1.64%" src={f('d8053.svg')} rotate="28.39deg" w="hypot(80.0198cqw, 53.91cqh)" h="hypot(-19.9802cqw, 46.09cqh)" bleed="-12.19% -5.63%" />
 
-      {/* Rocket */}
-      <Shape inset="38.48% 85.61% 51.34% -7.74%" src={f('466ff.svg')} rotate="8.63deg" w="hypot(86.8067cqw, 13.1662cqh)" h="hypot(-13.1933cqw, 86.8338cqh)" />
-      <Shape inset="43.09% 97.38% 51.41% -9.33%" src={f('3f4d1.svg')} rotate="8.63deg" w="hypot(86.8054cqw, 13.1649cqh)" h="hypot(-13.1946cqw, 86.8351cqh)" />
-      <Shape inset="46.42% 94.1% 49.28% -4.09%" src={f('93001.svg')} rotate="8.63deg" w="hypot(87.8108cqw, 14.2378cqh)" h="hypot(-12.1892cqw, 85.7622cqh)" />
-      <Shape inset="40.86% 103.05% 54.55% -12.44%" src={f('3d67c.svg')} rotate="8.63deg" w="hypot(85.8181cqw, 12.2383cqh)" h="hypot(-14.1819cqw, 87.7617cqh)" />
-      <Shape inset="41.34% 91.39% 55.31% 1.34%" src={f('d7794.svg')} rotate="8.63deg" w="hypot(86.8232cqw, 13.1827cqh)" h="hypot(-13.1768cqw, 86.8173cqh)" />
-      <Shape inset="45.86% 104.65% 50.27% -13.06%" src={f('81842.svg')} rotate="8.63deg" w="hypot(86.8344cqw, 13.194cqh)" h="hypot(-13.1656cqw, 86.806cqh)" />
-      <Shape inset="46.98% 103.02% 49.96% -9.68%" src={f('0f974.svg')} rotate="8.63deg" w="hypot(86.8034cqw, 13.1629cqh)" h="hypot(-13.1966cqw, 86.8371cqh)" />
-      <Shape inset="44.95% 106.27% 51.99% -12.93%" src={f('0bb99.svg')} rotate="8.63deg" w="hypot(86.8067cqw, 13.1663cqh)" h="hypot(-13.1933cqw, 86.8337cqh)" />
+      <RocketShapes />
 
       {/* Target */}
       <Shape inset="66.42% 84.95% 21.26% -13.63%" src={f('987f9.svg')} rotate="36.51deg" w="hypot(68.3158cqw, 54.1654cqh)" h="hypot(-31.6842cqw, 45.8346cqh)" />
@@ -95,14 +107,42 @@ function RightShapes() {
   );
 }
 
+// Desktop (lg+) arrangement measured from design/mac/home.png (1280×832). Edge shapes are
+// anchored to their nearest viewport edge; bottom shapes use % of width so they spread on wide screens.
+function DesktopShapes() {
+  return (
+    <>
+      {/* Yellow hand, top-right */}
+      <div className="absolute top-[222px] right-[-58px] size-[190px] rotate-[-28deg]">
+        <HandIllustration outlined className="size-full" />
+      </div>
+      {/* Orange briefcase, right edge */}
+      <img alt="" src={f('03336.svg')} className="absolute top-[528px] right-[-92px] w-[250px] max-w-none rotate-[18deg]" />
+      {/* Blue puzzle, left edge */}
+      <img alt="" src={f('5215b.svg')} className="absolute top-[440px] left-[-78px] w-[132px] max-w-none rotate-[-28deg]" />
+      {/* Green heads, bottom-left */}
+      <img alt="" src={f('5ebe1.svg')} className="absolute bottom-[-70px] left-[-64px] w-[190px] max-w-none rotate-[24deg]" />
+      {/* Yellow star, bottom */}
+      <img alt="" src={f('0141a.svg')} className="absolute bottom-[-78px] left-[18%] w-[130px] max-w-none rotate-[36deg]" />
+      {/* Green eye / lightbulb rays, bottom-centre */}
+      <img alt="" src={f('987f9.svg')} className="absolute bottom-[-120px] left-[38.5%] w-[250px] max-w-none rotate-[-18deg]" />
+      {/* Blue book + pencil, bottom-right */}
+      <img alt="" src={f('cbd85.svg')} className="absolute right-[12%] bottom-[-60px] w-[200px] max-w-none rotate-[-8deg]" />
+    </>
+  );
+}
+
 export function DecorBackground() {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-cocoon-cream">
-      <div className="absolute top-0 left-0 aspect-[402/874] h-full">
+      <div className="absolute top-0 left-0 aspect-[402/874] h-full lg:hidden">
         <LeftShapes />
       </div>
-      <div className="absolute top-0 right-0 aspect-[402/874] h-full">
+      <div className="absolute top-0 right-0 aspect-[402/874] h-full lg:hidden">
         <RightShapes />
+      </div>
+      <div className="absolute inset-0 hidden lg:block">
+        <DesktopShapes />
       </div>
     </div>
   );

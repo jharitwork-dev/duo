@@ -10,7 +10,7 @@ type CocoonHeaderProps =
 export function CocoonHeader({ variant, backHref }: CocoonHeaderProps) {
   if (variant === 'back') {
     return (
-      <header className="relative flex items-center justify-center pt-[calc(env(safe-area-inset-top)+23px)]">
+      <header className="relative flex items-center justify-center pt-[calc(env(safe-area-inset-top)+23px)] lg:hidden">
         <Link
           href={backHref}
           aria-label="ย้อนกลับ"
@@ -24,7 +24,7 @@ export function CocoonHeader({ variant, backHref }: CocoonHeaderProps) {
   }
 
   return (
-    <header className="flex items-center justify-between pt-[calc(env(safe-area-inset-top)+23px)] pr-[33px] pl-[14px]">
+    <header className="flex items-center justify-between pt-[calc(env(safe-area-inset-top)+23px)] pr-[33px] pl-[14px] lg:hidden">
       <CocoonLogo />
       <img src="/figma/2bba0.svg" alt="การแจ้งเตือน" width={26} height={30} className="h-[30px] w-[26px]" />
     </header>

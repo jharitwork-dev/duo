@@ -19,7 +19,7 @@
   --color-cocoon-blue-soft: #f0f9ff;
   --color-cocoon-orange: #ef4924;
   --color-cocoon-yellow: #faa819;
-  --color-cocoon-green: #1a9e55;
+  --color-cocoon-green: #00a86b;
   --color-cocoon-ink: #1d2531;
   --color-cocoon-heading: #213547;
   --color-cocoon-muted: #878ea8;
@@ -67,30 +67,31 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  /* Cocoon CI (260928-jkg) */
+  --background: #fffaf3;
+  --foreground: #1d2531;
+  --card: #fff;
+  --card-foreground: #1d2531;
+  --popover: #fff;
+  --popover-foreground: #1d2531;
+  --primary: #ef4924;
+  --primary-foreground: #fff;
+  --secondary: #f0f9ff;
+  --secondary-foreground: #0069a6;
+  --muted: #f5f3ef;
+  --muted-foreground: #878ea8;
+  --accent: #fff0ea;
+  --accent-foreground: #ef4924;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: #e4e1dc;
+  --input: #e4e1dc;
+  --ring: #0069a6;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);

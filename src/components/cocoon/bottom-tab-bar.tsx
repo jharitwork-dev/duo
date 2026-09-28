@@ -2,61 +2,29 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Calendar, House, SquareCheck, User, type LucideIcon } from 'lucide-react';
 import { cn } from 'cn';
+import { navItemsFor, type NavRole } from './nav-items';
 
-interface Tab {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-  isActive: (pathname: string) => boolean;
-}
-
-const startsWith = (pathname: string, prefix: string) =>
-  pathname === prefix || pathname.startsWith(`${prefix}/`);
-
-const TABS: Tab[] = [
-  {
-    href: '/student',
-    label: 'หน้าแรก',
-    icon: House,
-    isActive: (p) => p === '/student' || startsWith(p, '/student/classroom') || startsWith(p, '/todo'),
-  },
-  {
-    href: '/student/tasks',
-    label: 'งานของฉัน',
-    icon: SquareCheck,
-    isActive: (p) => startsWith(p, '/student/tasks'),
-  },
-  {
-    href: '/student/deadlines',
-    label: 'กำหนดส่ง',
-    icon: Calendar,
-    isActive: (p) => startsWith(p, '/student/deadlines'),
-  },
-  {
-    href: '/student/profile',
-    label: 'โปรไฟล์',
-    icon: User,
-    isActive: (p) => startsWith(p, '/student/profile'),
-  },
-];
-
-export function BottomTabBar() {
+// Mobile/tablet navigation (< lg). At lg the destinations move into DesktopHeader.
+export function BottomTabBar({ role }: { role: NavRole }) {
   const pathname = usePathname() ?? '';
+  const items = navItemsFor(role);
 
   return (
     <nav
       aria-label="เมนูหลัก"
-      className="fixed inset-x-0 bottom-0 z-40 flex justify-between border-t border-cocoon-line bg-white px-6 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] md:inset-x-auto md:bottom-6 md:left-1/2 md:w-full md:max-w-md md:-translate-x-1/2 md:rounded-full md:border md:px-10 md:pb-3 md:shadow-lg"
+      className={cn(
+        'fixed inset-x-0 bottom-0 z-40 flex border-t border-cocoon-line bg-white px-6 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] md:inset-x-auto md:bottom-6 md:left-1/2 md:w-full md:max-w-md md:-translate-x-1/2 md:rounded-full md:border md:px-10 md:pb-3 md:shadow-lg lg:hidden',
+        items.length < 4 ? 'justify-around' : 'justify-between',
+      )}
     >
-      {TABS.map((tab) => {
-        const active = tab.isActive(pathname);
-        const Icon = tab.icon;
+      {items.map((item) => {
+        const active = item.match(pathname);
+        const Icon = item.icon;
         return (
           <Link
-            key={tab.href}
-            href={tab.href}
+            key={item.href}
+            href={item.href}
             aria-current={active ? 'page' : undefined}
             className={cn(
               'flex min-w-14 flex-col items-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-cocoon-blue/40 rounded-md',
@@ -64,7 +32,7 @@ export function BottomTabBar() {
             )}
           >
             <Icon size={22} strokeWidth={1.75} aria-hidden />
-            <span className="text-[11px] leading-normal font-bold">{tab.label}</span>
+            <span className="text-[11px] leading-normal font-bold">{item.label}</span>
           </Link>
         );
       })}

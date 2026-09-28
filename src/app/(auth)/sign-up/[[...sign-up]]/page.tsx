@@ -1,5 +1,5 @@
-import { SignUp } from '@clerk/nextjs';
+import { CocoonSignUp } from '@/components/auth/cocoon-sign-up';
 
 export default function SignUpPage() {
-  return <SignUp />;
+  return <CocoonSignUp />;
 }
