@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 Phase: 3
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-09-28
+Last activity: 2026-09-28 - Completed quick task 260928-iwi: Cocoon UI redesign from Figma — student flow (shell, login, node-path home, submission)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -100,6 +100,15 @@ None yet.
 - Neon region (Singapore/ap-southeast-1) must be verified during Phase 1 setup
 - R2 CORS configuration via Wrangler CLI needed before Phase 3
 - Tiptap version confidence is MEDIUM -- validate API during Phase 2
+- Student uploads now go browser → R2 directly: bucket CORS must allow PUT + content-type from build.innovators.co.th and localhost
+- getAttachmentDownloadUrl lacks a classroom-membership check (pre-existing)
+- Node-level row locks are UI-only; server gates at phase level (TODO Phase 4)
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260928-iwi | Cocoon UI redesign from Figma — student flow (shell, login, node-path home, submission) | 2026-09-28 | 98606bf | [260928-iwi-cocoon-ui-redesign-from-figma-student-fl](./quick/260928-iwi-cocoon-ui-redesign-from-figma-student-fl/) |
 
 ## Session Continuity
 
