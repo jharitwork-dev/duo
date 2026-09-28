@@ -14,6 +14,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { UserPlus } from 'lucide-react';
+import { cn } from 'cn';
+import { BTN_TERTIARY, DIALOG_PANEL, DIALOG_TITLE } from '@/components/cocoon/ui';
 
 interface ClassroomMember {
   id: string;
@@ -59,13 +61,14 @@ export function AssignStudentDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="ghost" size="sm" nativeButton={false} />}>
+      <DialogTrigger render={<Button variant="outline" className={cn(BTN_TERTIARY, 'h-10 px-4 text-[14px]')} />}>
           <UserPlus className="size-4" />
+          เพิ่มนักเรียน
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className={DIALOG_PANEL}>
         <DialogHeader>
-          <DialogTitle>เพิ่มนักเรียนเข้ากลุ่ม</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className={DIALOG_TITLE}>เพิ่มนักเรียนเข้ากลุ่ม</DialogTitle>
+          <DialogDescription className="text-center text-[14px] text-cocoon-muted">
             เลือกนักเรียนที่ต้องการเพิ่มเข้ากลุ่ม
           </DialogDescription>
         </DialogHeader>
@@ -78,12 +81,12 @@ export function AssignStudentDialog({
             unassignedStudents.map((member) => (
               <div
                 key={member.id}
-                className="flex items-center justify-between rounded-lg border p-3"
+                className="flex items-center justify-between rounded-[12px] border border-[#e4e8ee] bg-[#fafbfc] px-4 py-3"
               >
-                <span className="text-sm">{member.userId}</span>
+                <span className="truncate text-[14px] font-medium text-cocoon-ink">{member.userId}</span>
                 <Button
-                  size="sm"
                   variant="outline"
+                  className={cn(BTN_TERTIARY, 'h-9 px-4 text-[14px]')}
                   onClick={() => handleAssign(member.userId)}
                   disabled={assigningUserId === member.userId}
                 >

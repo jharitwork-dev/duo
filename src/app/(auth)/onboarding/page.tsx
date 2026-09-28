@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from '@clerk/nextjs';
 import { promoteRole } from '@/server/actions/auth';
 import type { UserRole } from '@/lib/constants';
+import { Hourglass } from 'lucide-react';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -52,12 +53,17 @@ export default function OnboardingPage() {
     promote();
   }, [router, isLoaded, session]);
 
+  const card =
+    'mx-[33px] flex w-[calc(100%-66px)] max-w-[440px] flex-col items-center gap-3 rounded-[16px] border border-[#f1ece5] bg-white p-8 text-center lg:mx-auto lg:mt-[54px] lg:w-full';
+
   if (status === 'pending') {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-lg border p-8 shadow-sm">
-        <div className="text-4xl">&#x23F3;</div>
-        <h1 className="text-xl font-semibold">รอการอนุมัติจากผู้ดูแลระบบ</h1>
-        <p className="text-muted-foreground text-center max-w-sm">
+      <div className={card}>
+        <div className="flex size-14 items-center justify-center rounded-[14px] bg-[#fff0ea]">
+          <Hourglass className="size-7 text-cocoon-orange" aria-hidden />
+        </div>
+        <h1 className="text-[22px] leading-normal font-bold text-cocoon-ink">รอการอนุมัติจากผู้ดูแลระบบ</h1>
+        <p className="text-[14px] leading-normal font-medium text-cocoon-muted">
           บัญชีครูของคุณกำลังรอการอนุมัติ กรุณารอสักครู่แล้วลองเข้าสู่ระบบอีกครั้ง
         </p>
       </div>
@@ -66,12 +72,12 @@ export default function OnboardingPage() {
 
   if (status === 'error') {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-lg border p-8 shadow-sm">
-        <h1 className="text-xl font-semibold">เกิดข้อผิดพลาด</h1>
-        <p className="text-muted-foreground">ไม่สามารถตั้งค่าบัญชีได้ กรุณาลองอีกครั้ง</p>
+      <div className={card}>
+        <h1 className="text-[22px] leading-normal font-bold text-cocoon-ink">เกิดข้อผิดพลาด</h1>
+        <p className="text-[14px] leading-normal font-medium text-cocoon-muted">ไม่สามารถตั้งค่าบัญชีได้ กรุณาลองอีกครั้ง</p>
         <button
           onClick={() => window.location.reload()}
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
+          className="mt-2 h-[49px] w-full rounded-[12px] bg-cocoon-orange text-[16px] font-bold text-white hover:opacity-90"
         >
           ลองอีกครั้ง
         </button>
@@ -81,9 +87,9 @@ export default function OnboardingPage() {
 
   // Loading state
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      <p className="text-muted-foreground">กำลังตั้งค่าบัญชี...</p>
+    <div className={card}>
+      <div className="size-9 animate-spin rounded-full border-4 border-cocoon-blue border-t-transparent" />
+      <p className="text-[16px] leading-normal font-medium text-cocoon-muted">กำลังตั้งค่าบัญชี...</p>
     </div>
   );
 }

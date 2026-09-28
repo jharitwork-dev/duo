@@ -4,13 +4,8 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { regenerateInviteCode } from '@/server/actions/classroom';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { cn } from 'cn';
+import { BTN_PRIMARY, BTN_TERTIARY, CARD, CARD_META, CARD_TITLE, DIALOG_PANEL } from '@/components/cocoon/ui';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,26 +64,22 @@ export function InviteCodeDisplay({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">รหัสเชิญ</CardTitle>
-        <CardDescription>
-          แชร์รหัสนี้ให้นักเรียนเพื่อเข้าร่วมห้องเรียน
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-center rounded-lg bg-muted p-4">
-          <span className="font-mono text-3xl font-bold tracking-widest">
+    <section className={CARD}>
+      <h2 className={CARD_TITLE}>รหัสเชิญ</h2>
+      <p className={CARD_META}>แชร์รหัสนี้ให้นักเรียนเพื่อเข้าร่วมห้องเรียน</p>
+      <div className="mt-4 space-y-4">
+        <div className="flex items-center justify-center rounded-[12px] bg-cocoon-blue-soft p-5">
+          <span className="font-latin text-[32px] leading-none font-bold tracking-[0.2em] text-cocoon-blue">
             {inviteCode}
           </span>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={copyCode}>
+          <Button variant="outline" onClick={copyCode} className={cn(BTN_TERTIARY, 'h-10 text-[14px]')}>
             <Copy className="mr-2 size-4" />
             คัดลอกรหัส
           </Button>
-          <Button variant="outline" size="sm" onClick={copyLink}>
+          <Button variant="outline" onClick={copyLink} className={cn(BTN_TERTIARY, 'h-10 text-[14px]')}>
             <LinkIcon className="mr-2 size-4" />
             คัดลอกลิงก์
           </Button>
@@ -98,16 +89,15 @@ export function InviteCodeDisplay({
               render={
                 <Button
                   variant="outline"
-                  size="sm"
+                  className={cn(BTN_TERTIARY, 'h-10 text-[14px]')}
                   disabled={isRegenerating}
-                  nativeButton={false}
                 />
               }
             >
                 <RefreshCw className="mr-2 size-4" />
                 สร้างรหัสใหม่
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className={DIALOG_PANEL}>
               <AlertDialogHeader>
                 <AlertDialogTitle>สร้างรหัสเชิญใหม่?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -117,14 +107,14 @@ export function InviteCodeDisplay({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                <AlertDialogAction onClick={handleRegenerate}>
+                <AlertDialogAction onClick={handleRegenerate} className={BTN_PRIMARY}>
                   สร้างรหัสใหม่
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

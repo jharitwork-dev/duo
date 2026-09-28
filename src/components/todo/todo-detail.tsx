@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CARD, CARD_TITLE } from '@/components/cocoon/ui';
 
 interface TodoDetailProps {
   notes: string | null;
@@ -12,32 +12,26 @@ export function TodoDetail({ notes, description }: TodoDetailProps) {
 
   if (!hasContent) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">โน้ตจากครู</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-sm">ยังไม่มีโน้ต</p>
-        </CardContent>
-      </Card>
+      <section className={CARD}>
+        <h2 className={CARD_TITLE}>รายละเอียดงาน</h2>
+        <p className="mt-2 text-[14px] text-cocoon-muted lg:text-[16px]">ยังไม่มีโน้ต</p>
+      </section>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">โน้ตจากครู</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <section className={CARD}>
+      <h2 className={CARD_TITLE}>รายละเอียดงาน</h2>
+      <div className="mt-3 space-y-3">
         {description && (
-          <p className="text-muted-foreground text-sm">{description}</p>
+          <p className="text-[14px] leading-normal whitespace-pre-wrap text-cocoon-ink lg:text-[16px]">{description}</p>
         )}
         {notes && (
-          <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">
+          <pre className="font-sans text-[14px] leading-relaxed break-words whitespace-pre-wrap text-cocoon-subtle lg:text-[16px]">
             {notes}
           </pre>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

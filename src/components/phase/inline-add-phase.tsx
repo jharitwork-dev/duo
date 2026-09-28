@@ -5,6 +5,7 @@ import { Plus, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createPhase } from '@/server/actions/phase';
+import { ADD_ROW, INPUT } from '@/components/cocoon/ui';
 
 export function InlineAddPhase({
   groupId,
@@ -36,23 +37,23 @@ export function InlineAddPhase({
 
   if (!isAdding) {
     return (
-      <Button
-        variant="ghost"
-        className="w-full justify-start text-muted-foreground"
+      <button
+        type="button"
+        className={ADD_ROW}
         onClick={() => {
           setIsAdding(true);
           // Focus input after render
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
       >
-        <Plus className="mr-2 size-4" />
-        +เพิ่ม Phase
-      </Button>
+        <Plus className="size-4" />
+        เพิ่ม Phase
+      </button>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-lg border p-2">
+    <div className="flex items-center gap-2 rounded-[12px] border border-[#f1ece5] bg-white p-2">
       <Input
         ref={inputRef}
         value={name}
@@ -62,6 +63,7 @@ export function InlineAddPhase({
           if (e.key === 'Escape') handleCancel();
         }}
         placeholder="ชื่อ Phase ใหม่"
+        className={INPUT}
         disabled={isPending}
         autoFocus
       />

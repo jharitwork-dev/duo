@@ -2,7 +2,11 @@ import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { getGroupById } from '@/server/queries/group';
 import { getActivePhases } from '@/server/queries/phase';
+import { getClassroomById } from '@/server/queries/classroom';
 import { PhaseList } from '@/components/phase/phase-list';
+import { CocoonHeader } from '@/components/cocoon/cocoon-header';
+import { PageHeader } from '@/components/cocoon/page-header';
+import { EMPTY_CARD, PAGE_BODY } from '@/components/cocoon/ui';
 
 export default async function GroupPage({
   params,
@@ -17,28 +21,34 @@ export default async function GroupPage({
   const group = await getGroupById(groupId, userId);
   if (!group) redirect(`/teacher/classroom/${classroomId}`);
 
-  const phases = await getActivePhases(groupId);
+  const [phases, classroom] = await Promise.all([
+    getActivePhases(groupId),
+    getClassroomById(classroomId, userId),
+  ]);
+  const classroomHref = `/teacher/classroom/${classroomId}`;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6">
-      {/* Breadcrumb */}
-      <nav className="text-sm text-muted-foreground">
-        <span>ห้องเรียน</span>
-        <span className="mx-1">/</span>
-        <span>{group.name}</span>
-      </nav>
+    <>
+      <CocoonHeader variant="back" backHref={classroomHref} />
+      <PageHeader
+        backHref={classroomHref}
+        backLabel={classroom?.name ?? 'ห้องเรียน'}
+        title={group.name}
+        subtitle="จัดการ Phase และงานของกลุ่ม"
+      />
 
-      <h1 className="text-2xl font-bold">{group.name}</h1>
+      <div className={`${PAGE_BODY} space-y-4 lg:space-y-5`}>
+        {phases.length === 0 && (
+          <div className={EMPTY_CARD}>
+            <p className="text-[18px] leading-normal font-bold text-cocoon-ink">ยังไม่มี Phase</p>
+            <p className="text-[14px] leading-normal font-medium text-cocoon-muted">
+              เพิ่ม Phase แรกด้านล่าง หรือเลือกจากเทมเพลตในหน้ากลุ่ม
+            </p>
+          </div>
+        )}
 
-      {phases.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center">
-          <p className="text-muted-foreground">
-            ยังไม่มี Phase — เพิ่ม Phase แรกหรือเลือกจากเทมเพลต
-          </p>
-        </div>
-      ) : null}
-
-      <PhaseList initialPhases={phases} groupId={groupId} />
-    </div>
+        <PhaseList initialPhases={phases} groupId={groupId} />
+      </div>
+    </>
   );
 }

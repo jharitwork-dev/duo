@@ -2,11 +2,11 @@
 
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { applyTemplate } from '@/server/actions/template';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { cn } from 'cn';
+import { applyTemplate } from '@/server/actions/template';
+import { Button } from '@/components/ui/button';
+import { BTN_PRIMARY, CARD, CARD_TITLE } from '@/components/cocoon/ui';
 
 interface Template {
   id: string;
@@ -42,54 +42,45 @@ export function TemplatePicker({ groupId, templates }: TemplatePickerProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-semibold">เลือก Template เริ่มต้น</h2>
+    <div className="space-y-6 lg:space-y-8">
+      <h2 className={CARD_TITLE}>เลือก Template เริ่มต้น</h2>
 
       {builtInTemplates.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-muted-foreground text-sm font-medium">
-            Template พื้นฐาน
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {builtInTemplates.map((template) => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                onApply={handleApply}
-                isPending={isPending}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {builtInTemplates.length > 0 && customTemplates.length > 0 && (
-        <Separator />
+        <TemplateGroup title="Template พื้นฐาน" templates={builtInTemplates} onApply={handleApply} isPending={isPending} />
       )}
 
       {customTemplates.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-muted-foreground text-sm font-medium">
-            Template ของคุณ
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {customTemplates.map((template) => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                onApply={handleApply}
-                isPending={isPending}
-              />
-            ))}
-          </div>
-        </div>
+        <TemplateGroup title="Template ของคุณ" templates={customTemplates} onApply={handleApply} isPending={isPending} />
       )}
 
       {templates.length === 0 && (
-        <p className="text-muted-foreground text-center text-sm">
+        <div className={cn(CARD, 'text-center text-[14px] font-medium text-cocoon-muted')}>
           ยังไม่มี Template ให้เลือก
-        </p>
+        </div>
       )}
+    </div>
+  );
+}
+
+function TemplateGroup({
+  title,
+  templates,
+  onApply,
+  isPending,
+}: {
+  title: string;
+  templates: Template[];
+  onApply: (id: string) => void;
+  isPending: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-[14px] leading-normal font-bold text-cocoon-muted">{title}</h3>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+        {templates.map((template) => (
+          <TemplateCard key={template.id} template={template} onApply={onApply} isPending={isPending} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -104,25 +95,14 @@ function TemplateCard({
   isPending: boolean;
 }) {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">{template.name}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {template.description && (
-          <p className="text-muted-foreground text-sm">
-            {template.description}
-          </p>
-        )}
-        <Button
-          size="sm"
-          onClick={() => onApply(template.id)}
-          disabled={isPending}
-          className="w-full"
-        >
-          {isPending ? 'กำลังใช้...' : 'ใช้ Template'}
-        </Button>
-      </CardContent>
-    </Card>
+    <div className={cn(CARD, 'flex flex-col gap-3')}>
+      <p className="text-[18px] leading-normal font-bold text-cocoon-ink">{template.name}</p>
+      {template.description && (
+        <p className="text-[14px] leading-normal font-medium text-cocoon-muted">{template.description}</p>
+      )}
+      <Button onClick={() => onApply(template.id)} disabled={isPending} className={cn(BTN_PRIMARY, 'mt-auto w-full')}>
+        {isPending ? 'กำลังใช้...' : 'ใช้เทมเพลตนี้'}
+      </Button>
+    </div>
   );
 }

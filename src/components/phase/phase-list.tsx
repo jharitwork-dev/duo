@@ -50,7 +50,7 @@ export function PhaseList({
   const router = useRouter();
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4 lg:space-y-5">
       <DragDropProvider
         onDragEnd={(event) => {
           const { source, target } = event.operation;

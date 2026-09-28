@@ -3,7 +3,8 @@
 import { useTransition } from 'react';
 import { getAttachmentDownloadUrl } from '@/server/actions/todo';
 import { Button } from '@/components/ui/button';
-import { FileIcon, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
+import { fileTypeTag } from '@/lib/format';
 import { toast } from 'sonner';
 
 interface Attachment {
@@ -41,11 +42,13 @@ function AttachmentRow({ attachment }: { attachment: Attachment }) {
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-md border px-3 py-2">
-      <FileIcon className="text-muted-foreground h-4 w-4 shrink-0" />
+    <div className="flex items-center gap-3 rounded-[10px] border border-[#e4e8ee] bg-[#fafbfc] px-3 py-2 lg:px-4">
+      <span className="w-9 shrink-0 truncate text-[11px] leading-normal font-bold text-[#f04a24] lg:text-[12px]">
+        {fileTypeTag(attachment.fileName)}
+      </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{attachment.fileName}</p>
-        <p className="text-muted-foreground text-xs">
+        <p className="truncate text-[14px] font-bold text-cocoon-ink">{attachment.fileName}</p>
+        <p className="text-[12px] text-cocoon-muted">
           {formatFileSize(attachment.fileSize)}
         </p>
       </div>
@@ -54,6 +57,8 @@ function AttachmentRow({ attachment }: { attachment: Attachment }) {
         size="sm"
         onClick={handleDownload}
         disabled={isPending}
+        aria-label="ดาวน์โหลดไฟล์"
+        className="text-cocoon-blue hover:bg-cocoon-blue-soft hover:text-cocoon-blue"
       >
         <Download className="h-4 w-4" />
       </Button>
@@ -64,7 +69,7 @@ function AttachmentRow({ attachment }: { attachment: Attachment }) {
 export function TodoAttachmentsList({ attachments }: TodoAttachmentsListProps) {
   if (attachments.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">ไม่มีไฟล์แนบ</p>
+      <p className="text-[14px] text-cocoon-muted">ไม่มีไฟล์แนบ</p>
     );
   }
 

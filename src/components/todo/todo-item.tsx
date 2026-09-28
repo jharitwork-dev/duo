@@ -17,9 +17,9 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { TodoEditForm } from './todo-edit-form';
 import { archiveTodo } from '@/server/actions/todo';
+import { formatDateShort } from '@/lib/format';
 
 type Todo = {
   id: string;
@@ -67,28 +67,31 @@ export function TodoItem({
   return (
     <div
       ref={ref}
-      className="rounded-md border bg-background"
+      className="rounded-[12px] border border-[#e4e8ee] bg-[#fafbfc]"
       style={{ opacity: isDragging ? 0.5 : 1 }}
     >
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="flex items-center gap-2 px-3 py-2">
+        <div className="flex items-center gap-2 px-3 py-3 lg:px-4">
           {/* Drag handle */}
           <button
             ref={handleRef}
-            className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
+            className="cursor-grab touch-none rounded-md text-cocoon-disabled hover:text-cocoon-blue"
             aria-label="ลากเพื่อจัดเรียง"
           >
             <GripVertical className="size-4" />
           </button>
 
           {/* Todo title + trigger */}
-          <CollapsibleTrigger className="flex flex-1 items-center gap-2 text-left">
-            <span className="text-sm">{todo.title}</span>
-            <Badge variant="outline" className="text-xs">
-              {modeLabels[todo.submissionMode]}
-            </Badge>
+          <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-cocoon-blue/40">
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-[16px] leading-normal font-bold text-cocoon-ink">{todo.title}</span>
+              <span className="text-[13px] leading-normal font-medium text-cocoon-muted">
+                {modeLabels[todo.submissionMode]}
+                {todo.deadline && ` · กำหนดส่ง ${formatDateShort(todo.deadline)}`}
+              </span>
+            </span>
             <ChevronDown
-              className={`ml-auto size-3 transition-transform ${
+              className={`ml-auto size-4 shrink-0 text-cocoon-blue transition-transform ${
                 isOpen ? 'rotate-180' : ''
               }`}
             />
@@ -96,8 +99,8 @@ export function TodoItem({
 
           {/* Actions dropdown */}
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-7" />}>
-              <MoreHorizontal className="size-3" />
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8 rounded-full text-cocoon-muted hover:bg-cocoon-blue-soft hover:text-cocoon-blue" />}>
+              <MoreHorizontal className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
@@ -120,7 +123,7 @@ export function TodoItem({
         </div>
 
         <CollapsibleContent>
-          <div className="border-t px-3 pb-3 pt-3">
+          <div className="border-t border-[#e4e8ee] px-3 pt-3 pb-3 lg:px-4 lg:pb-4">
             <TodoEditForm todo={todo} />
           </div>
         </CollapsibleContent>

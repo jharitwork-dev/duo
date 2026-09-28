@@ -1,4 +1,8 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { cn } from 'cn';
+import { PageHeader } from '@/components/cocoon/page-header';
+import { BTN_INFO, PAGE_BODY } from '@/components/cocoon/ui';
 import { getCurrentUserId, getCurrentRole } from '@/lib/auth';
 import { getGroupById } from '@/server/queries/group';
 import { getActivePhases } from '@/server/queries/phase';
@@ -54,28 +58,46 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
 
   if (isTeacher) {
     // Empty state: show template picker for teachers
+    const { classroomId } = await params;
+    const editorHref = `/teacher/classroom/${classroomId}/group/${groupId}`;
+    const classroomHref = `/teacher/classroom/${classroomId}`;
+
     if (phases.length === 0) {
       const templates = await getTemplates(userId);
       return (
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold">{group.name}</h1>
-            <p className="text-muted-foreground text-sm">
-              กลุ่มนี้ยังไม่มีเนื้อหา เลือก Template เพื่อเริ่มต้น
-            </p>
+        <>
+          <CocoonHeader variant="back" backHref={classroomHref} />
+          <PageHeader
+            backHref={classroomHref}
+            backLabel="ห้องเรียน"
+            title={group.name}
+            subtitle="กลุ่มนี้ยังไม่มีเนื้อหา เลือก Template เพื่อเริ่มต้น"
+          />
+          <div className={PAGE_BODY}>
+            <TemplatePicker groupId={groupId} templates={templates} />
           </div>
-          <TemplatePicker groupId={groupId} templates={templates} />
-        </div>
+        </>
       );
     }
 
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">{group.name}</h1>
+      <>
+        <CocoonHeader variant="back" backHref={classroomHref} />
+        <PageHeader
+          backHref={classroomHref}
+          backLabel="ห้องเรียน"
+          title={group.name}
+          subtitle="ภาพรวม Phase และงานของกลุ่ม"
+          actions={
+            <Link href={editorHref} className={cn(BTN_INFO, 'inline-flex items-center')}>
+              จัดการ Phase
+            </Link>
+          }
+        />
+        <div className={PAGE_BODY}>
+          <GroupPhaseView phases={phases} />
         </div>
-        <GroupPhaseView phases={phases} />
-      </div>
+      </>
     );
   }
 

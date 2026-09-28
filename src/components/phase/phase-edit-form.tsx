@@ -1,5 +1,7 @@
 'use client';
 
+import { cn } from 'cn';
+import { BTN_PRIMARY, INPUT, LABEL, TEXTAREA } from '@/components/cocoon/ui';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarIcon } from 'lucide-react';
@@ -45,11 +47,12 @@ export function PhaseEditForm({ phase }: { phase: Phase }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 rounded-[12px] bg-cocoon-cream/60 p-4 lg:grid lg:grid-cols-2 lg:gap-x-6 lg:gap-y-4 lg:space-y-0">
       <div className="space-y-2">
-        <Label htmlFor={`phase-name-${phase.id}`}>ชื่อ Phase</Label>
+        <Label htmlFor={`phase-name-${phase.id}`} className={LABEL}>ชื่อ Phase</Label>
         <Input
           id={`phase-name-${phase.id}`}
+          className={INPUT}
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={handleSave}
@@ -57,10 +60,11 @@ export function PhaseEditForm({ phase }: { phase: Phase }) {
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor={`phase-desc-${phase.id}`}>รายละเอียด</Label>
+      <div className="space-y-2 lg:col-span-2 lg:row-start-2">
+        <Label htmlFor={`phase-desc-${phase.id}`} className={LABEL}>รายละเอียด</Label>
         <Textarea
           id={`phase-desc-${phase.id}`}
+          className={TEXTAREA}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           onBlur={handleSave}
@@ -70,11 +74,11 @@ export function PhaseEditForm({ phase }: { phase: Phase }) {
       </div>
 
       <div className="space-y-2">
-        <Label>กำหนดส่ง</Label>
+        <Label className={LABEL}>กำหนดส่ง</Label>
         <Popover>
           <PopoverTrigger
             render={
-              <Button variant="outline" className="w-full justify-start text-left font-normal">
+              <Button variant="outline" className={cn(INPUT, 'w-full justify-start text-left font-normal text-cocoon-ink')}>
                 <CalendarIcon className="mr-2 size-4" />
                 {deadline ? formatDateShort(deadline) : 'เลือกวันกำหนดส่ง'}
               </Button>
@@ -121,7 +125,7 @@ export function PhaseEditForm({ phase }: { phase: Phase }) {
         </Popover>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 lg:col-span-2">
         <Switch
           checked={isFreeAccess}
           onCheckedChange={(checked) => {
@@ -135,13 +139,13 @@ export function PhaseEditForm({ phase }: { phase: Phase }) {
             });
           }}
         />
-        <Label>เข้าถึงอิสระ (ไม่ต้องรออนุมัติ)</Label>
+        <Label className="text-[14px] font-medium text-cocoon-ink">เข้าถึงอิสระ (ไม่ต้องรออนุมัติ)</Label>
       </div>
 
       <Button
         onClick={handleSave}
         disabled={isPending}
-        size="sm"
+        className={cn(BTN_PRIMARY, 'h-10 text-[14px] lg:col-span-2 lg:w-fit')}
       >
         {isPending ? 'กำลังบันทึก...' : 'บันทึก'}
       </Button>

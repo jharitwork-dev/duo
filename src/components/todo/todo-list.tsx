@@ -34,9 +34,9 @@ export function TodoList({
   const router = useRouter();
 
   return (
-    <div className="space-y-1">
-      <h4 className="text-sm font-medium text-muted-foreground">
-        สิ่งที่ต้องทำ ({todos.length})
+    <div className="space-y-2">
+      <h4 className="text-[14px] leading-normal font-bold text-cocoon-blue">
+        งานใน Phase นี้ ({todos.length})
       </h4>
 
       <DragDropProvider

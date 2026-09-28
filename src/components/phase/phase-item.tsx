@@ -16,7 +16,8 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { cn } from 'cn';
+import { CARD } from '@/components/cocoon/ui';
 import { PhaseEditForm } from './phase-edit-form';
 import { TodoList } from '@/components/todo/todo-list';
 import { archivePhase } from '@/server/actions/phase';
@@ -58,10 +59,16 @@ const statusLabels: Record<string, string> = {
   completed: 'เสร็จสิ้น',
 };
 
+// StatusPill-like colours: active blue / locked grey / completed green.
 const statusColors: Record<string, string> = {
-  locked: 'bg-muted text-muted-foreground',
-  active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  locked: 'bg-[rgba(15,23,42,.05)] text-[#9da1a6]',
+  active: 'bg-[rgba(0,105,166,.15)] text-cocoon-blue',
+  completed: 'bg-[rgb(0_168_107/.15)] text-cocoon-green',
+};
+const statusDots: Record<string, string> = {
+  locked: 'bg-[rgba(29,37,49,.4)]',
+  active: 'bg-cocoon-blue',
+  completed: 'bg-cocoon-green',
 };
 
 export function PhaseItem({
@@ -90,36 +97,46 @@ export function PhaseItem({
   return (
     <div
       ref={ref}
-      className="rounded-lg border bg-card"
+      className={cn(CARD, 'p-0 lg:p-0')}
       style={{ opacity: isDragging ? 0.5 : 1 }}
     >
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="flex items-center gap-2 p-3">
+        <div className="flex items-center gap-2 p-4 lg:gap-3 lg:px-6 lg:py-5">
           {/* Drag handle */}
           <button
             ref={handleRef}
-            className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
+            className="cursor-grab touch-none rounded-md text-cocoon-disabled hover:text-cocoon-blue"
             aria-label="ลากเพื่อจัดเรียง"
           >
             <GripVertical className="size-5" />
           </button>
 
           {/* Phase name + trigger */}
-          <CollapsibleTrigger className="flex flex-1 items-center gap-2 text-left">
-            <span className="font-medium">{phase.name}</span>
-            <Badge
-              variant="secondary"
-              className={statusColors[phase.status]}
+          <CollapsibleTrigger className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-cocoon-blue/40">
+            <span className="flex min-w-0 flex-col">
+              <span className="font-latin text-[12px] leading-normal font-bold text-cocoon-blue">
+                Phase {index + 1}
+              </span>
+              <span className="text-[18px] leading-normal font-bold break-words text-cocoon-ink lg:text-[20px]">
+                {phase.name}
+              </span>
+            </span>
+            <span
+              className={cn(
+                'inline-flex h-[24px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-bold whitespace-nowrap',
+                statusColors[phase.status],
+              )}
             >
+              <span aria-hidden className={cn('size-2 rounded-full', statusDots[phase.status])} />
               {statusLabels[phase.status]}
-            </Badge>
+            </span>
             {phase.isFreeAccess && (
-              <Badge variant="outline" className="text-xs">
+              <span className="inline-flex h-[24px] items-center rounded-full border border-cocoon-line px-2.5 text-[12px] font-medium text-cocoon-subtle">
                 เข้าถึงอิสระ
-              </Badge>
+              </span>
             )}
             <ChevronDown
-              className={`ml-auto size-4 transition-transform ${
+              className={`ml-auto size-5 text-cocoon-blue transition-transform ${
                 isOpen ? 'rotate-180' : ''
               }`}
             />
@@ -127,7 +144,7 @@ export function PhaseItem({
 
           {/* Actions dropdown */}
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-9 rounded-full text-cocoon-muted hover:bg-cocoon-blue-soft hover:text-cocoon-blue" />}>
               <MoreHorizontal className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -144,7 +161,7 @@ export function PhaseItem({
         </div>
 
         <CollapsibleContent>
-          <div className="border-t px-3 pb-3 pt-3">
+          <div className="border-t border-[#f1ece5] px-4 pt-4 pb-4 lg:px-6 lg:pb-6">
             <PhaseEditForm phase={phase} />
             <div className="mt-4">
               <TodoList

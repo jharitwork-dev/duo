@@ -18,6 +18,8 @@ import {
 } from '@/components/ui/select';
 import { updateTodo } from '@/server/actions/todo';
 import { formatDateShort } from '@/lib/format';
+import { cn } from 'cn';
+import { BTN_PRIMARY, INPUT, LABEL, TEXTAREA } from '@/components/cocoon/ui';
 
 type Todo = {
   id: string;
@@ -54,11 +56,12 @@ export function TodoEditForm({ todo }: { todo: Todo }) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor={`todo-title-${todo.id}`}>ชื่อ</Label>
+    <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-x-6 lg:gap-y-4 lg:space-y-0">
+      <div className="space-y-2 lg:col-span-2">
+        <Label htmlFor={`todo-title-${todo.id}`} className={LABEL}>ชื่อ</Label>
         <Input
           id={`todo-title-${todo.id}`}
+          className={INPUT}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleSave}
@@ -66,12 +69,16 @@ export function TodoEditForm({ todo }: { todo: Todo }) {
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor={`todo-notes-${todo.id}`}>
+      <div className="space-y-2 lg:col-span-2">
+        <Label htmlFor={`todo-notes-${todo.id}`} className={LABEL}>
           บันทึก / คำแนะนำ
         </Label>
+        <p className="text-[12px] text-cocoon-muted">
+          ขึ้นบรรทัดด้วย “- ” เพื่อเพิ่มรายการใน “สิ่งที่ต้องส่ง” ของนักเรียน
+        </p>
         <Textarea
           id={`todo-notes-${todo.id}`}
+          className={TEXTAREA}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           onBlur={handleSave}
@@ -81,7 +88,7 @@ export function TodoEditForm({ todo }: { todo: Todo }) {
       </div>
 
       <div className="space-y-2">
-        <Label>รูปแบบการส่งงาน</Label>
+        <Label className={LABEL}>รูปแบบการส่งงาน</Label>
         <Select
           value={submissionMode}
           onValueChange={(value) => {
@@ -96,7 +103,7 @@ export function TodoEditForm({ todo }: { todo: Todo }) {
             });
           }}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="h-12 w-full rounded-[12px] border-[#f1ece5] bg-[#fffaf3] px-4 text-[16px] data-[size=default]:h-12">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -107,11 +114,11 @@ export function TodoEditForm({ todo }: { todo: Todo }) {
       </div>
 
       <div className="space-y-2">
-        <Label>กำหนดส่ง</Label>
+        <Label className={LABEL}>กำหนดส่ง</Label>
         <Popover>
           <PopoverTrigger
             render={
-              <Button variant="outline" className="w-full justify-start text-left font-normal">
+              <Button variant="outline" className={cn(INPUT, 'w-full justify-start text-left font-normal text-cocoon-ink')}>
                 <CalendarIcon className="mr-2 size-4" />
                 {deadline ? formatDateShort(deadline) : 'เลือกวันกำหนดส่ง'}
               </Button>
@@ -158,9 +165,9 @@ export function TodoEditForm({ todo }: { todo: Todo }) {
       </div>
 
       {/* Attachments section placeholder */}
-      <div className="space-y-2">
-        <Label>ไฟล์แนบ</Label>
-        <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+      <div className="space-y-2 lg:col-span-2">
+        <Label className={LABEL}>ไฟล์แนบ</Label>
+        <div className="rounded-[12px] border border-dashed border-cocoon-blue/40 bg-cocoon-blue-soft p-4 text-center text-[14px] text-cocoon-blue">
           อัปโหลดไฟล์แนบ (จะเปิดใช้งานเมื่อเชื่อมต่อ R2)
         </div>
       </div>
@@ -168,7 +175,7 @@ export function TodoEditForm({ todo }: { todo: Todo }) {
       <Button
         onClick={handleSave}
         disabled={isPending}
-        size="sm"
+        className={cn(BTN_PRIMARY, 'h-10 text-[14px] lg:col-span-2 lg:w-fit')}
       >
         {isPending ? 'กำลังบันทึก...' : 'บันทึก'}
       </Button>

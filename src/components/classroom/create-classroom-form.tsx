@@ -10,13 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { cn } from 'cn';
+import { BTN_PRIMARY, CARD, CARD_META, CARD_TITLE, INPUT, LABEL, TEXTAREA } from '@/components/cocoon/ui';
 
 const formSchema = z.object({
   name: z.string().min(1, 'กรุณาใส่ชื่อห้องเรียน').max(100),
@@ -61,19 +56,16 @@ export function CreateClassroomForm() {
   }
 
   return (
-    <Card className="mx-auto max-w-lg">
-      <CardHeader>
-        <CardTitle>สร้างห้องเรียนใหม่</CardTitle>
-        <CardDescription>
-          กรอกข้อมูลเพื่อสร้างห้องเรียน นักเรียนจะสามารถเข้าร่วมด้วยรหัสเชิญ
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <section className={CARD}>
+      <h2 className={CARD_TITLE}>ข้อมูลห้องเรียน</h2>
+      <p className={CARD_META}>กรอกข้อมูลเพื่อสร้างห้องเรียน นักเรียนจะสามารถเข้าร่วมด้วยรหัสเชิญ</p>
+      <div className="mt-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="name">ชื่อห้องเรียน *</Label>
+            <Label htmlFor="name" className={LABEL}>ชื่อห้องเรียน *</Label>
             <Input
               id="name"
+              className={INPUT}
               placeholder="เช่น Innovator's Academy 2024"
               {...register('name')}
             />
@@ -83,9 +75,10 @@ export function CreateClassroomForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">คำอธิบาย</Label>
+            <Label htmlFor="description" className={LABEL}>คำอธิบาย</Label>
             <Textarea
               id="description"
+              className={TEXTAREA}
               placeholder="รายละเอียดเกี่ยวกับห้องเรียนนี้ (ไม่บังคับ)"
               {...register('description')}
             />
@@ -97,11 +90,12 @@ export function CreateClassroomForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="maxGroupSize">
+            <Label htmlFor="maxGroupSize" className={LABEL}>
               จำนวนสมาชิกสูงสุดต่อกลุ่ม
             </Label>
             <Input
               id="maxGroupSize"
+              className={INPUT}
               type="number"
               min={1}
               max={50}
@@ -115,11 +109,11 @@ export function CreateClassroomForm() {
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" className={cn(BTN_PRIMARY, 'w-full')} disabled={isSubmitting}>
             {isSubmitting ? 'กำลังสร้าง...' : 'สร้างห้องเรียน'}
           </Button>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

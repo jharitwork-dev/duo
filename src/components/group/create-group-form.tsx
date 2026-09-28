@@ -11,12 +11,13 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Plus } from 'lucide-react';
+import { cn } from 'cn';
+import { BTN_PRIMARY, DIALOG_PANEL, DIALOG_TITLE, INPUT, LABEL } from '@/components/cocoon/ui';
 
 interface CreateGroupFormProps {
   classroomId: string;
@@ -50,23 +51,24 @@ export function CreateGroupForm({ classroomId }: CreateGroupFormProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" nativeButton={false} />}>
-          <Plus className="mr-2 size-4" />
+      <DialogTrigger render={<Button className={cn(BTN_PRIMARY, 'h-10 text-[14px]')} />}>
+          <Plus className="size-4" />
           สร้างกลุ่ม
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className={DIALOG_PANEL}>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>สร้างกลุ่มใหม่</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className={DIALOG_TITLE}>สร้างกลุ่มใหม่</DialogTitle>
+            <DialogDescription className="text-center text-[14px] text-cocoon-muted">
               ตั้งชื่อกลุ่มสำหรับนักเรียนในห้องเรียนนี้
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-2">
-              <Label htmlFor="group-name">ชื่อกลุ่ม *</Label>
+              <Label htmlFor="group-name" className={LABEL}>ชื่อกลุ่ม *</Label>
               <Input
                 id="group-name"
+                className={INPUT}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="เช่น กลุ่ม A"
@@ -74,18 +76,18 @@ export function CreateGroupForm({ classroomId }: CreateGroupFormProps) {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
-              ยกเลิก
-            </Button>
-            <Button type="submit" disabled={isSubmitting || !name.trim()}>
+          <div className="flex flex-col gap-2">
+            <Button type="submit" disabled={isSubmitting || !name.trim()} className={cn(BTN_PRIMARY, 'w-full')}>
               {isSubmitting ? 'กำลังสร้าง...' : 'สร้างกลุ่ม'}
             </Button>
-          </DialogFooter>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="h-10 text-[16px] font-bold text-cocoon-blue hover:underline"
+            >
+              ยกเลิก
+            </button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

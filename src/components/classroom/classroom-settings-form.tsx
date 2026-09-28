@@ -10,14 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { cn } from 'cn';
+import { BTN_PRIMARY, CARD, CARD_META, CARD_TITLE, INPUT, LABEL, TEXTAREA } from '@/components/cocoon/ui';
 import { Trash2 } from 'lucide-react';
 
 const settingsSchema = z.object({
@@ -95,17 +89,16 @@ export function ClassroomSettingsForm({
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">ตั้งค่าห้องเรียน</CardTitle>
-          <CardDescription>แก้ไขข้อมูลห้องเรียน</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    // `contents`: both cards join the parent grid (settings tab is 2 columns at lg).
+    <div className="contents">
+      <section className={CARD}>
+        <h2 className={CARD_TITLE}>ตั้งค่าห้องเรียน</h2>
+        <p className={CARD_META}>แก้ไขข้อมูลห้องเรียน</p>
+        <div className="mt-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="settings-name">ชื่อห้องเรียน *</Label>
-              <Input id="settings-name" {...register('name')} />
+              <Label htmlFor="settings-name" className={LABEL}>ชื่อห้องเรียน *</Label>
+              <Input id="settings-name" className={INPUT} {...register('name')} />
               {errors.name && (
                 <p className="text-sm text-destructive">
                   {errors.name.message}
@@ -114,9 +107,10 @@ export function ClassroomSettingsForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="settings-description">คำอธิบาย</Label>
+              <Label htmlFor="settings-description" className={LABEL}>คำอธิบาย</Label>
               <Textarea
                 id="settings-description"
+                className={TEXTAREA}
                 {...register('description')}
               />
               {errors.description && (
@@ -127,11 +121,12 @@ export function ClassroomSettingsForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="settings-maxGroupSize">
+              <Label htmlFor="settings-maxGroupSize" className={LABEL}>
                 จำนวนสมาชิกสูงสุดต่อกลุ่ม
               </Label>
               <Input
                 id="settings-maxGroupSize"
+                className={INPUT}
                 type="number"
                 min={1}
                 max={50}
@@ -145,25 +140,19 @@ export function ClassroomSettingsForm({
               )}
             </div>
 
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className={cn(BTN_PRIMARY, 'w-full lg:w-auto')}>
               {isSubmitting ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">
-            นักเรียน ({studentMembers.length})
-          </CardTitle>
-          <CardDescription>
-            รายชื่อนักเรียนในห้องเรียนนี้
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <section className={CARD}>
+        <h2 className={CARD_TITLE}>นักเรียน ({studentMembers.length})</h2>
+        <p className={CARD_META}>รายชื่อนักเรียนในห้องเรียนนี้</p>
+        <div className="mt-4">
           {studentMembers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[14px] text-cocoon-muted">
               ยังไม่มีนักเรียนในห้องเรียนนี้
             </p>
           ) : (
@@ -171,9 +160,9 @@ export function ClassroomSettingsForm({
               {studentMembers.map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
+                  className="flex items-center justify-between rounded-[12px] border border-[#e4e8ee] bg-[#fafbfc] px-4 py-3"
                 >
-                  <span className="text-sm">{member.userId}</span>
+                  <span className="truncate text-[14px] font-medium text-cocoon-ink">{member.userId}</span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -185,8 +174,8 @@ export function ClassroomSettingsForm({
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   );
 }

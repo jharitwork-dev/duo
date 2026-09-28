@@ -1,24 +1,22 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { getClassroomById } from '@/server/queries/classroom';
 import { getGroupsByClassroom } from '@/server/queries/group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { GroupCard } from '@/components/group/group-card';
 import { CreateGroupForm } from '@/components/group/create-group-form';
 import { InviteCodeDisplay } from '@/components/classroom/invite-code-display';
 import { ClassroomSettingsForm } from '@/components/classroom/classroom-settings-form';
-import { ChevronRight } from 'lucide-react';
+import { CocoonHeader } from '@/components/cocoon/cocoon-header';
+import { PageHeader } from '@/components/cocoon/page-header';
+import { EMPTY_CARD, PAGE_BODY, SEGMENT_LIST, SEGMENT_TRIGGER } from '@/components/cocoon/ui';
 
 interface ClassroomDashboardProps {
   params: Promise<{ classroomId: string }>;
 }
 
-export default async function ClassroomDashboard({
-  params,
-}: ClassroomDashboardProps) {
+export default async function ClassroomDashboard({ params }: ClassroomDashboardProps) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
   const userId = await getCurrentUserId();
   const { classroomId } = await params;
@@ -31,41 +29,45 @@ export default async function ClassroomDashboard({
   const groups = await getGroupsByClassroom(classroomId);
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-1 text-sm text-muted-foreground">
-        <Link href="/teacher" className="hover:text-foreground">
-          ห้องเรียน
-        </Link>
-        <ChevronRight className="size-4" />
-        <span className="text-foreground">{classroom.name}</span>
-      </nav>
+    <>
+      <CocoonHeader variant="back" backHref="/teacher" />
+      <Tabs defaultValue="groups" className="gap-0">
+        <PageHeader
+          backHref="/teacher"
+          backLabel="ทีมของฉัน"
+          title={classroom.name}
+          subtitle={classroom.description || undefined}
+          actions={
+            <TabsList className={SEGMENT_LIST}>
+              <TabsTrigger value="groups" className={SEGMENT_TRIGGER}>
+                กลุ่ม
+              </TabsTrigger>
+              <TabsTrigger value="settings" className={SEGMENT_TRIGGER}>
+                ตั้งค่า
+              </TabsTrigger>
+            </TabsList>
+          }
+          className="[&>div>div:last-child]:w-full lg:[&>div>div:last-child]:w-auto"
+        />
 
-      <h1 className="text-2xl font-bold">{classroom.name}</h1>
-
-      <Tabs defaultValue="groups">
-        <TabsList>
-          <TabsTrigger value="groups">กลุ่ม</TabsTrigger>
-          <TabsTrigger value="settings">ตั้งค่า</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="groups" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
+        <TabsContent value="groups" className={PAGE_BODY}>
+          <div className="mb-4 flex items-center justify-between gap-3 lg:mb-6">
+            <h2 className="text-[18px] leading-normal font-bold text-cocoon-blue lg:text-[20px]">
               กลุ่มทั้งหมด ({groups.length})
             </h2>
-            <CreateGroupForm classroomId={classroomId} />
+            {groups.length > 0 && <CreateGroupForm classroomId={classroomId} />}
           </div>
 
           {groups.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-              <p className="mb-4 text-muted-foreground">
-                ยังไม่มีกลุ่ม — สร้างกลุ่มแรกในห้องเรียนนี้
+            <div className={EMPTY_CARD}>
+              <p className="text-[18px] leading-normal font-bold text-cocoon-ink">ยังไม่มีกลุ่ม</p>
+              <p className="text-[14px] leading-normal font-medium text-cocoon-muted">
+                สร้างกลุ่มแรกในห้องเรียนนี้
               </p>
               <CreateGroupForm classroomId={classroomId} />
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:gap-8 xl:grid-cols-3">
               {groups.map((group) => (
                 <GroupCard
                   key={group.id}
@@ -81,22 +83,21 @@ export default async function ClassroomDashboard({
           )}
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-6">
-          {classroom.inviteCode && (
-            <InviteCodeDisplay
+        <TabsContent value="settings" className={PAGE_BODY}>
+          <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-8">
+            {classroom.inviteCode && (
+              <InviteCodeDisplay classroomId={classroomId} inviteCode={classroom.inviteCode} />
+            )}
+            <ClassroomSettingsForm
               classroomId={classroomId}
-              inviteCode={classroom.inviteCode}
+              name={classroom.name}
+              description={classroom.description ?? ''}
+              maxGroupSize={classroom.maxGroupSize}
+              members={classroom.members}
             />
-          )}
-          <ClassroomSettingsForm
-            classroomId={classroomId}
-            name={classroom.name}
-            description={classroom.description ?? ''}
-            maxGroupSize={classroom.maxGroupSize}
-            members={classroom.members}
-          />
+          </div>
         </TabsContent>
       </Tabs>
-    </div>
+    </>
   );
 }

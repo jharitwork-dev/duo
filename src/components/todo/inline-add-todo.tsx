@@ -12,6 +12,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { createTodo } from '@/server/actions/todo';
+import { cn } from 'cn';
+import { ADD_ROW, INPUT } from '@/components/cocoon/ui';
 
 export function InlineAddTodo({
   phaseId,
@@ -50,23 +52,22 @@ export function InlineAddTodo({
 
   if (!isAdding) {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-full justify-start text-xs text-muted-foreground"
+      <button
+        type="button"
+        className={cn(ADD_ROW, 'h-11 text-[14px]')}
         onClick={() => {
           setIsAdding(true);
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
       >
-        <Plus className="mr-1 size-3" />
-        +เพิ่มสิ่งที่ต้องทำ
-      </Button>
+        <Plus className="size-4" />
+        เพิ่มงาน
+      </button>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-md border p-2">
+    <div className="flex flex-wrap items-center gap-2 rounded-[12px] border border-[#e4e8ee] bg-white p-2">
       <Input
         ref={inputRef}
         value={title}
@@ -75,16 +76,16 @@ export function InlineAddTodo({
           if (e.key === 'Enter') handleSubmit();
           if (e.key === 'Escape') handleCancel();
         }}
-        placeholder="ชื่อสิ่งที่ต้องทำ"
+        placeholder="ชื่องาน"
         disabled={isPending}
-        className="text-sm"
+        className={cn(INPUT, 'h-10 min-w-0 flex-1 text-[14px] md:text-[14px]')}
         autoFocus
       />
       <Select
         value={submissionMode}
         onValueChange={(v) => setSubmissionMode(v as 'group' | 'individual')}
       >
-        <SelectTrigger className="w-28 text-xs">
+        <SelectTrigger className="h-10 w-28 rounded-[12px] border-[#f1ece5] bg-[#fffaf3] text-[14px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

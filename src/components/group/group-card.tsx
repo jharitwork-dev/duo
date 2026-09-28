@@ -1,12 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Users } from 'lucide-react';
+import { cn } from 'cn';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Users, UserPlus } from 'lucide-react';
 import { AssignStudentDialog } from '@/components/group/assign-student-dialog';
+import { BTN_INFO, CARD } from '@/components/cocoon/ui';
 
 interface ClassroomMember {
   id: string;
@@ -32,47 +31,46 @@ export function GroupCard({
   classroomId,
   classroomMembers,
 }: GroupCardProps) {
-  const capacityText = maxGroupSize
-    ? `${memberCount}/${maxGroupSize}`
-    : `${memberCount}`;
+  const capacityText = maxGroupSize ? `${memberCount}/${maxGroupSize}` : `${memberCount}`;
+  const href = `/teacher/classroom/${classroomId}/group/${id}`;
 
   return (
-    <Card className="transition-colors hover:border-primary/50 hover:shadow-sm">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <Link href={`/teacher/classroom/${classroomId}/group/${id}`}>
-            <CardTitle className="text-base hover:underline">{name}</CardTitle>
-          </Link>
-          <Badge variant="secondary" className="gap-1">
-            <Users className="size-3" />
-            {capacityText} คน
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between">
-          <div className="flex -space-x-2">
-            {Array.from({ length: Math.min(memberCount, 5) }).map((_, i) => (
-              <Avatar key={i} className="size-7 border-2 border-background">
-                <AvatarFallback className="text-xs">
-                  {i + 1}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-            {memberCount > 5 && (
-              <Avatar className="size-7 border-2 border-background">
-                <AvatarFallback className="text-xs">
-                  +{memberCount - 5}
-                </AvatarFallback>
-              </Avatar>
-            )}
-          </div>
-          <AssignStudentDialog
-            groupId={id}
-            classroomMembers={classroomMembers}
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <div className={cn(CARD, 'flex flex-col gap-4')}>
+      <div className="flex items-start justify-between gap-3">
+        <Link
+          href={href}
+          className="min-w-0 rounded-sm text-[20px] leading-normal font-bold break-words text-cocoon-ink outline-none hover:underline focus-visible:ring-2 focus-visible:ring-cocoon-blue/40"
+        >
+          {name}
+        </Link>
+        <span className="inline-flex h-[26px] shrink-0 items-center gap-1 rounded-full bg-cocoon-blue-soft px-3 text-[12px] font-bold text-cocoon-blue">
+          <Users className="size-3.5" aria-hidden />
+          {capacityText} คน
+        </span>
+      </div>
+
+      <div className="flex -space-x-2">
+        {Array.from({ length: Math.min(memberCount, 5) }).map((_, i) => (
+          <Avatar key={i} className="size-8 border-2 border-white">
+            <AvatarFallback className="bg-cocoon-cream text-xs font-bold text-cocoon-blue">{i + 1}</AvatarFallback>
+          </Avatar>
+        ))}
+        {memberCount > 5 && (
+          <Avatar className="size-8 border-2 border-white">
+            <AvatarFallback className="bg-cocoon-cream text-xs font-bold text-cocoon-blue">
+              +{memberCount - 5}
+            </AvatarFallback>
+          </Avatar>
+        )}
+        {memberCount === 0 && <span className="text-[14px] font-medium text-cocoon-muted">ยังไม่มีสมาชิก</span>}
+      </div>
+
+      <div className="mt-auto flex flex-wrap items-center justify-end gap-2">
+        <AssignStudentDialog groupId={id} classroomMembers={classroomMembers} />
+        <Link href={href} className={cn(BTN_INFO, 'inline-flex h-10 items-center text-[14px]')}>
+          จัดการ Phase
+        </Link>
+      </div>
+    </div>
   );
 }
