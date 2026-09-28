@@ -108,7 +108,7 @@ export function SubmissionStatusView({
   return (
     <div className="space-y-5 px-[33px]">
       <section className="rounded-[12px] border border-cocoon-line bg-white p-5">
-        <div className="flex items-center gap-4">
+        <div className="-ml-1 flex items-center gap-3">
           <div className="relative size-[86px] shrink-0" aria-hidden>
             <img src="/figma/ff79c.svg" alt="" className="absolute inset-0 size-[86px] max-w-none" />
             <img

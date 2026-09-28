@@ -104,7 +104,7 @@ export function NodePath({ rows, statuses, locked, currentId }: NodePathProps) {
 
           const body = (
             <>
-              <div className="absolute top-[4px] left-[5px] flex h-[141px] w-[142px] flex-col items-center justify-center rounded-full bg-white px-3 text-center">
+              <div className="absolute top-[4px] left-[5px] flex h-[141px] w-[142px] flex-col items-center justify-center rounded-full bg-white px-1.5 text-center">
                 {isLocked ? (
                   <img src="/figma/8f1f5.svg" alt="" width={32} height={41} className="h-[41px] w-[32px]" />
                 ) : (
@@ -112,7 +112,7 @@ export function NodePath({ rows, statuses, locked, currentId }: NodePathProps) {
                 )}
                 <p
                   className={cn(
-                    'mt-1 line-clamp-1 w-full text-[14px] leading-normal font-bold',
+                    'mt-1 line-clamp-1 w-full text-[14px] leading-normal font-bold tracking-tight',
                     isCurrent ? 'text-black' : 'text-cocoon-ink',
                   )}
                 >
