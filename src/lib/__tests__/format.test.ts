@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate, formatDateShort, formatDateTime } from '../format';
-import { validateFile, submissionKey } from '../r2';
+import {
+  formatDate,
+  formatDateShort,
+  formatDateTime,
+  formatSubmissionDate,
+  formatFileSize,
+  fileTypeTag,
+} from '../format';
+import { validateFile, submissionKey, validateSubmissionFile } from '../r2';
 
 describe('Thai date formatting', () => {
   it('formatDate outputs Buddhist Era year (2569 for 2026 CE)', () => {
@@ -43,5 +50,46 @@ describe('R2 validation and key helpers', () => {
     expect(submissionKey('user1', 'todo1', 'file.pdf')).toBe(
       'submissions/user1/todo1/file.pdf'
     );
+  });
+});
+
+describe('Submission display helpers', () => {
+  it('formatSubmissionDate renders Bangkok day + short Thai month + HH.mm', () => {
+    expect(formatSubmissionDate(new Date('2026-09-18T06:59:00Z'))).toBe('18 ก.ย. 13.59');
+  });
+
+  it('formatSubmissionDate zero-pads and rolls over into the next Bangkok day', () => {
+    expect(formatSubmissionDate(new Date('2026-01-05T17:05:00Z'))).toBe('6 ม.ค. 00.05');
+  });
+
+  it('formatFileSize uses B / KB / MB with one decimal', () => {
+    expect(formatFileSize(2.4 * 1024 * 1024)).toBe('2.4 MB');
+    expect(formatFileSize(1536)).toBe('1.5 KB');
+    expect(formatFileSize(500)).toBe('500 B');
+  });
+
+  it('fileTypeTag returns the uppercase extension or FILE', () => {
+    expect(fileTypeTag('market-v1.pdf')).toBe('PDF');
+    expect(fileTypeTag('a.DOCX')).toBe('DOCX');
+    expect(fileTypeTag('noext')).toBe('FILE');
+  });
+});
+
+describe('Submission file validation', () => {
+  it('accepts PDF and DOC under 10 MB', () => {
+    expect(validateSubmissionFile('application/pdf', 1000)).toBe(true);
+    expect(validateSubmissionFile('application/msword', 1000)).toBe(true);
+  });
+
+  it('rejects files over 10 MB', () => {
+    expect(validateSubmissionFile('application/pdf', 11 * 1024 * 1024)).toBe(false);
+  });
+
+  it('rejects disallowed content types', () => {
+    expect(validateSubmissionFile('text/html', 10)).toBe(false);
+  });
+
+  it('validateFile now allows application/msword', () => {
+    expect(validateFile('application/msword', 1000)).toBe(true);
   });
 });
