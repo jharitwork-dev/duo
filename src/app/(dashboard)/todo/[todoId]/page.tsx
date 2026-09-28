@@ -64,7 +64,7 @@ export default async function TodoDetailPage({ params }: Props) {
             size="sm"
             render={
               <Link
-                href={`/teacher/classrooms/${classroom.id}/group/${group.id}`}
+                href={`/teacher/classroom/${classroom.id}/group/${group.id}`}
               />
             }
           >
