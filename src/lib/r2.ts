@@ -23,6 +23,7 @@ function endpointFor(accountId: string): string {
 
 const ALLOWED_TYPES = new Set([
   'application/pdf',
+  'application/msword',
   'image/jpeg',
   'image/png',
   'image/webp',
@@ -37,6 +38,29 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 export function validateFile(contentType: string, size: number): boolean {
   return ALLOWED_TYPES.has(contentType) && size <= MAX_FILE_SIZE;
 }
+
+// Student submissions: same allow-list as teacher attachments, but capped at 10 MB per file.
+export const SUBMISSION_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+export function validateSubmissionFile(contentType: string, size: number): boolean {
+  return ALLOWED_TYPES.has(contentType) && size > 0 && size <= SUBMISSION_MAX_FILE_SIZE;
+}
+
+// Value for <input type="file" accept>: extensions + MIME types of the allow-list.
+export const SUBMISSION_ACCEPT = [
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.webp',
+  '.pptx',
+  '.xlsx',
+  '.zip',
+  '.mp4',
+  ...ALLOWED_TYPES,
+].join(',');
 
 // Duo object key pattern: submissions/{userId}/{todoId}/{filename}
 export function submissionKey(userId: string, todoId: string, filename: string): string {
