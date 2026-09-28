@@ -1,0 +1,72 @@
+import Link from 'next/link';
+import { cn } from 'cn';
+import { isPhaseViewable, pickCurrentPhaseIndex } from '@/lib/node-path';
+
+interface StepperPhase {
+  id: string;
+  status: 'locked' | 'active' | 'completed';
+  isFreeAccess: boolean;
+}
+
+export function PhaseStepper({
+  phases,
+  selectedId,
+}: {
+  phases: StepperPhase[];
+  selectedId: string | null;
+}) {
+  if (phases.length === 0) return null;
+
+  const currentIndex = pickCurrentPhaseIndex(phases);
+  const fill = phases.length > 1 ? (currentIndex / (phases.length - 1)) * 100 : 0;
+
+  return (
+    <nav aria-label="Phase" className="relative mx-[33px] mt-[-15px] h-[69px]">
+      {/* Track + progress fill, from first circle centre to last circle centre */}
+      {phases.length > 1 && (
+        <div className="absolute top-[18px] right-[23.5px] left-[23.5px] h-[11px] rounded-[12px] bg-black/5">
+          <div className="h-full rounded-[12px] bg-cocoon-blue" style={{ width: `${fill}%` }} />
+        </div>
+      )}
+
+      <ol className="relative flex justify-between">
+        {phases.map((phase, index) => {
+          const filled = phase.status === 'completed' || index <= currentIndex;
+          const selected = phase.id === selectedId;
+          const viewable = isPhaseViewable(phase);
+          const circle = cn(
+            'flex size-[47px] items-center justify-center rounded-full font-latin text-[24px] leading-none font-bold',
+            filled ? 'bg-cocoon-blue text-white' : 'border border-cocoon-blue bg-white text-cocoon-blue',
+            selected && 'ring-2 ring-cocoon-orange/40',
+          );
+          const n = index + 1;
+
+          return (
+            <li key={phase.id} className="relative flex flex-col items-center">
+              {viewable ? (
+                <Link
+                  href={`?phase=${phase.id}`}
+                  scroll={false}
+                  aria-label={`Phase ${n}`}
+                  aria-current={selected ? 'step' : undefined}
+                  className={cn(circle, 'outline-none focus-visible:ring-2 focus-visible:ring-cocoon-blue/50')}
+                >
+                  <span className="pt-[3px]">{n}</span>
+                </Link>
+              ) : (
+                <span aria-disabled="true" aria-label={`Phase ${n} (ยังไม่ปลดล็อค)`} className={circle}>
+                  <span className="pt-[3px]">{n}</span>
+                </span>
+              )}
+              {selected && (
+                <span className="absolute top-[51px] text-[12px] leading-normal font-bold whitespace-nowrap text-cocoon-blue">
+                  Phase {n}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}

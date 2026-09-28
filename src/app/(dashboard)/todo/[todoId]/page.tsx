@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
+import { ROLES } from '@/lib/constants';
+import { StudentTodoView } from '@/components/student/student-todo-view';
 
 interface Props {
   params: Promise<{ todoId: string }>;
@@ -18,6 +20,10 @@ export default async function TodoDetailPage({ params }: Props) {
   const userId = await getCurrentUserId();
   const role = await getCurrentRole();
   const { todoId } = await params;
+
+  if (role === ROLES.STUDENT) {
+    return <StudentTodoView todoId={todoId} userId={userId} />;
+  }
 
   const todo = await getTodoDetail(todoId, userId);
   if (!todo) {

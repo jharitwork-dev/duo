@@ -3,7 +3,7 @@ import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { getClassroomById } from '@/server/queries/classroom';
 import { getStudentGroup } from '@/server/queries/group';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 
 interface Props {
   params: Promise<{ classroomId: string }>;
@@ -30,22 +30,17 @@ export default async function StudentClassroomPage({ params }: Props) {
 
   // No group: show waiting state
   return (
-    <div className="mx-auto max-w-md pt-12">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center text-xl">
-            {classroom.name}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-center">
-          <p className="text-muted-foreground">
-            รอจัดกลุ่ม
-          </p>
-          <p className="text-muted-foreground text-sm">
+    <>
+      <CocoonHeader variant="home" />
+      <div className="px-[33px] pt-4">
+        <h1 className="text-[20px] leading-normal font-bold text-cocoon-blue">{classroom.name}</h1>
+        <div className="mt-4 space-y-1 rounded-[12px] border border-cocoon-line bg-white p-6 text-center">
+          <p className="text-[16px] leading-normal font-bold text-cocoon-ink">รอจัดกลุ่ม</p>
+          <p className="text-[14px] leading-normal font-medium text-cocoon-muted">
             ครูจะจัดกลุ่มให้คุณเร็ว ๆ นี้ กรุณารอสักครู่
           </p>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
+    </>
   );
 }
