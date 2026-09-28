@@ -1,18 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from '@clerk/nextjs';
 import { promoteRole } from '@/server/actions/auth';
 import type { UserRole } from '@/lib/constants';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'pending' | 'error'>('loading');
+  const { isLoaded, session } = useSession();
+  const started = useRef(false);
 
   useEffect(() => {
+    // Run once: session identity changes after reload() and must not re-trigger promotion.
+    if (!isLoaded || started.current) return;
+    started.current = true;
+
     async function promote() {
       try {
         const result = await promoteRole();
+        // Refresh the session token so the new role is in sessionClaims before we navigate;
+        // otherwise the dashboard layout sees no role and bounces back here in a loop.
+        await session?.reload();
+        await session?.getToken({ skipCache: true });
         handleRoleRedirect(result.role);
       } catch {
         setStatus('error');
@@ -39,7 +50,7 @@ export default function OnboardingPage() {
     }
 
     promote();
-  }, [router]);
+  }, [router, isLoaded, session]);
 
   if (status === 'pending') {
     return (

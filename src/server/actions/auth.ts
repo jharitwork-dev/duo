@@ -11,6 +11,11 @@ export async function promoteRole(): Promise<{ success: boolean; role: UserRole 
   const client = await clerkClient();
   const user = await client.users.getUser(userId);
 
+  // Never overwrite an existing role: a stale session token can send already-onboarded
+  // users (incl. approved teachers / superadmins) back here, which used to downgrade them.
+  const existingRole = (user.publicMetadata as { role?: UserRole })?.role;
+  if (existingRole) return { success: true, role: existingRole };
+
   // Read the self-selected role from unsafeMetadata (set during signup)
   const selectedRole = (user.unsafeMetadata as { role?: string })?.role;
 
