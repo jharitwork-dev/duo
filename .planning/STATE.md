@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 Phase: 3
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-09-28 - Completed quick task 260928-iwi: Cocoon UI redesign from Figma — student flow (shell, login, node-path home, submission)
+Last activity: 2026-09-28 - Completed quick task 260928-jkg: Desktop (Mac) Cocoon shell + student desktop alignment + teacher/admin CI
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -102,6 +102,8 @@ None yet.
 - Tiptap version confidence is MEDIUM -- validate API during Phase 2
 - Student uploads now go browser → R2 directly: bucket CORS must allow PUT + content-type from build.innovators.co.th and localhost
 - getAttachmentDownloadUrl lacks a classroom-membership check (pre-existing)
+- No Neon database provisioned: DATABASE_URL in .env.local is the placeholder and absent on Vercel; R2 credentials empty
+- Clerk session token must include {"metadata": "{{user.public_metadata}}"} (dev instance done 2026-09-28; production instance still needs it)
 - Node-level row locks are UI-only; server gates at phase level (TODO Phase 4)
 
 ### Quick Tasks Completed
@@ -109,6 +111,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260928-iwi | Cocoon UI redesign from Figma — student flow (shell, login, node-path home, submission) | 2026-09-28 | 98606bf | [260928-iwi-cocoon-ui-redesign-from-figma-student-fl](./quick/260928-iwi-cocoon-ui-redesign-from-figma-student-fl/) |
+| 260928-jkg | Desktop (Mac) Cocoon shell + student desktop alignment + teacher/admin CI | 2026-09-28 | 3d3ea6a | [260928-jkg-apply-cocoon-ui-ci-to-teacher-and-admin-](./quick/260928-jkg-apply-cocoon-ui-ci-to-teacher-and-admin-/) |
 
 ## Session Continuity
 
