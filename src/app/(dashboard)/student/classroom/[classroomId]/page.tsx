@@ -32,9 +32,9 @@ export default async function StudentClassroomPage({ params }: Props) {
   return (
     <>
       <CocoonHeader variant="home" />
-      <div className="px-[33px] pt-4">
-        <h1 className="text-[20px] leading-normal font-bold text-cocoon-blue">{classroom.name}</h1>
-        <div className="mt-4 space-y-1 rounded-[12px] border border-cocoon-line bg-white p-6 text-center">
+      <div className="px-[33px] pt-4 lg:px-0 lg:pt-[26px]">
+        <h1 className="text-[20px] leading-normal font-bold text-cocoon-blue lg:text-[30px]">{classroom.name}</h1>
+        <div className="mt-4 space-y-1 rounded-[12px] border border-cocoon-line bg-white p-6 lg:mx-auto lg:mt-8 lg:max-w-[560px] lg:rounded-[16px] lg:border-[#f1ece5] lg:p-10 text-center">
           <p className="text-[16px] leading-normal font-bold text-cocoon-ink">รอจัดกลุ่ม</p>
           <p className="text-[14px] leading-normal font-medium text-cocoon-muted">
             ครูจะจัดกลุ่มให้คุณเร็ว ๆ นี้ กรุณารอสักครู่

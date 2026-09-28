@@ -3,6 +3,7 @@ import { todos } from '@/db/schema/todos';
 import { groupMembers } from '@/db/schema/groups';
 import { classroomMembers } from '@/db/schema/classrooms';
 import { submissions } from '@/db/schema/submissions';
+import { comments } from '@/db/schema/comments';
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { statusFromSubmission, type SubmissionStatus } from '@/lib/node-path';
 
@@ -104,6 +105,8 @@ export interface SubmissionHistoryEntry {
   createdAt: Date;
   attempt: number;
   files: { id: string; fileName: string; contentType: string; fileSize: number }[];
+  /** Latest reviewer comment on this submission, if any (read-only). */
+  reviewerComment: string | null;
 }
 
 /**
@@ -118,7 +121,11 @@ export async function getSubmissionHistory(todoId: string, userId: string) {
   const rows = await db.query.submissions.findMany({
     where: eq(submissions.todoId, todoId),
     orderBy: [desc(submissions.createdAt)],
-    with: { files: true },
+    with: {
+      files: true,
+      // Read-only: latest reviewer comment per submission (written by Phase 4 review).
+      comments: { orderBy: [desc(comments.createdAt)], limit: 1, columns: { content: true } },
+    },
   });
 
   const scoped = rows.filter((row) =>
@@ -136,6 +143,7 @@ export async function getSubmissionHistory(todoId: string, userId: string) {
       contentType: f.contentType,
       fileSize: f.fileSize,
     })),
+    reviewerComment: row.comments[0]?.content ?? null,
   }));
 
   return { todo, phase, groupId, classroomId, submissions: history };

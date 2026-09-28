@@ -9,6 +9,7 @@ import { TemplatePicker } from '@/components/template/template-picker';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 import { PhaseStepper } from '@/components/student/phase-stepper';
 import { NodePath } from '@/components/student/node-path';
+import { NodePathDesktop } from '@/components/student/node-path-desktop';
 import {
   buildNodeRows,
   computeLockedTodoIds,
@@ -23,7 +24,7 @@ interface Props {
 
 function EmptyCard({ title, description }: { title: string; description: string }) {
   return (
-    <div className="mx-[33px] mt-4 rounded-[12px] border border-cocoon-line bg-white p-6 text-center">
+    <div className="mx-[33px] mt-4 rounded-[12px] border border-cocoon-line bg-white p-6 text-center lg:mx-0 lg:mt-8 lg:rounded-[16px] lg:border-[#f1ece5] lg:p-10">
       <p className="text-[16px] leading-normal font-bold text-cocoon-ink">{title}</p>
       <p className="mt-1 text-[14px] leading-normal font-medium text-cocoon-muted">{description}</p>
     </div>
@@ -102,7 +103,7 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
       <CocoonHeader variant="home" />
       <PhaseStepper phases={phases} selectedId={selectedId} />
 
-      <h1 className="mt-[27px] px-[33px] text-[20px] leading-normal font-bold text-cocoon-blue">
+      <h1 className="mt-[27px] px-[33px] text-[20px] leading-normal font-bold text-cocoon-blue lg:mt-[22px] lg:px-0 lg:text-[28px]">
         งานของฉัน
       </h1>
 
@@ -114,7 +115,10 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
           description="ยังไม่มีงานใน Phase นี้ ครูจะเพิ่มให้เร็ว ๆ นี้"
         />
       ) : (
-        <NodePath rows={rows} statuses={statuses} locked={locked} currentId={currentId} />
+        <>
+          <NodePath rows={rows} statuses={statuses} locked={locked} currentId={currentId} />
+          <NodePathDesktop rows={rows} statuses={statuses} locked={locked} currentId={currentId} />
+        </>
       )}
     </>
   );

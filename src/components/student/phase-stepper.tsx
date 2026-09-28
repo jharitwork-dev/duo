@@ -8,6 +8,7 @@ interface StepperPhase {
   isFreeAccess: boolean;
 }
 
+// Mobile: ref 02 (selected label only). lg: design/mac home.png (full width, a label under every circle).
 export function PhaseStepper({
   phases,
   selectedId,
@@ -21,10 +22,13 @@ export function PhaseStepper({
   const fill = phases.length > 1 ? (currentIndex / (phases.length - 1)) * 100 : 0;
 
   return (
-    <nav aria-label="Phase" className="relative mx-[33px] mt-[-15px] h-[69px]">
+    <nav
+      aria-label="Phase"
+      className="relative mx-[33px] mt-[-15px] h-[69px] lg:mt-[49px] lg:mr-[15px] lg:ml-[6px] lg:h-[80px]"
+    >
       {/* Track + progress fill, from first circle centre to last circle centre */}
       {phases.length > 1 && (
-        <div className="absolute top-[18px] right-[23.5px] left-[23.5px] h-[11px] rounded-[12px] bg-black/5">
+        <div className="absolute top-[18px] right-[23.5px] left-[23.5px] h-[11px] rounded-[12px] bg-black/5 lg:top-[21.5px] lg:right-[25.5px] lg:left-[25.5px] lg:h-[8px] lg:bg-[#ece8e2]">
           <div className="h-full rounded-[12px] bg-cocoon-blue" style={{ width: `${fill}%` }} />
         </div>
       )}
@@ -35,9 +39,9 @@ export function PhaseStepper({
           const selected = phase.id === selectedId;
           const viewable = isPhaseViewable(phase);
           const circle = cn(
-            'flex size-[47px] items-center justify-center rounded-full font-latin text-[24px] leading-none font-bold',
+            'flex size-[47px] items-center justify-center rounded-full font-latin text-[24px] leading-none font-bold lg:size-[51px]',
             filled ? 'bg-cocoon-blue text-white' : 'border border-cocoon-blue bg-white text-cocoon-blue',
-            selected && 'ring-2 ring-cocoon-orange/40',
+            selected && 'ring-2 ring-cocoon-orange/40 lg:ring-cocoon-orange/30',
           );
           const n = index + 1;
 
@@ -58,11 +62,15 @@ export function PhaseStepper({
                   <span className="pt-[3px]">{n}</span>
                 </span>
               )}
-              {selected && (
-                <span className="absolute top-[51px] text-[12px] leading-normal font-bold whitespace-nowrap text-cocoon-blue">
-                  Phase {n}
-                </span>
-              )}
+              <span
+                aria-hidden={!selected}
+                className={cn(
+                  'absolute top-[51px] text-[12px] leading-normal font-bold whitespace-nowrap lg:top-[62px] lg:text-[13px]',
+                  selected ? 'text-cocoon-blue' : 'hidden text-cocoon-muted lg:block',
+                )}
+              >
+                Phase {n}
+              </span>
             </li>
           );
         })}

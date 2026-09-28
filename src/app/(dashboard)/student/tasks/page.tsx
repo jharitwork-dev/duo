@@ -9,8 +9,8 @@ export default async function StudentTasksPage() {
   return (
     <>
       <CocoonHeader variant="home" />
-      <div className="px-[33px] pt-4">
-        <h1 className="text-[20px] leading-normal font-bold text-cocoon-blue">งานของฉัน</h1>
+      <div className="px-[33px] pt-4 lg:px-0 lg:pt-[26px]">
+        <h1 className="text-[20px] leading-normal font-bold text-cocoon-blue lg:text-[30px]">งานของฉัน</h1>
         <ComingSoonCard description="รวมงานทั้งหมดของคุณจากทุก Phase ไว้ในที่เดียว" />
       </div>
     </>

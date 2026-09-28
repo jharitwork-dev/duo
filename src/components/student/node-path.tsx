@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { cn } from 'cn';
 import { StatusPill } from '@/components/cocoon/status-pill';
 import type { SubmissionStatus } from '@/lib/node-path';
+import { NodeIcon, NodeRing, ringStatusFor } from './node-icons';
 
 // Geometry from Figma (402px frame, 336px content box).
 const BOX_W = 336;
@@ -30,7 +31,7 @@ function nodeLefts(count: number): number[] {
   return count === 1 ? [(BOX_W - NODE_W) / 2] : [0, BOX_W - NODE_W];
 }
 
-function firstLine(text: string | null): string {
+export function firstLine(text: string | null): string {
   return (text ?? '').split(/\r?\n/)[0]?.trim() ?? '';
 }
 
@@ -73,7 +74,7 @@ export function NodePath({ rows, statuses, locked, currentId }: NodePathProps) {
   const { lines, junctions } = buildConnectors(rows);
 
   return (
-    <div className="relative mx-auto mt-6" style={{ width: BOX_W, height }}>
+    <div className="relative mx-auto mt-6 lg:hidden" style={{ width: BOX_W, height }}>
       {/* Connectors behind nodes */}
       {lines.map((l, i) => (
         <div
@@ -101,15 +102,12 @@ export function NodePath({ rows, statuses, locked, currentId }: NodePathProps) {
           const isCurrent = todo.id === currentId;
           const status = statuses[todo.id] ?? 'none';
           const subtitle = firstLine(todo.description);
+          const ring = ringStatusFor(status, isLocked, isCurrent);
 
           const body = (
             <>
               <div className="absolute top-[4px] left-[5px] flex h-[141px] w-[142px] flex-col items-center justify-center rounded-full bg-white px-1.5 text-center">
-                {isLocked ? (
-                  <img src="/figma/8f1f5.svg" alt="" width={32} height={41} className="h-[41px] w-[32px]" />
-                ) : (
-                  <img src="/figma/c64bc.svg" alt="" width={50} height={45} className="h-[45px] w-[50px]" />
-                )}
+                <NodeIcon status={status} locked={isLocked} />
                 <p
                   className={cn(
                     'mt-1 line-clamp-1 w-full text-[14px] leading-normal font-bold tracking-tight',
@@ -125,7 +123,10 @@ export function NodePath({ rows, statuses, locked, currentId }: NodePathProps) {
                 )}
                 <StatusPill status={isLocked ? 'locked' : status} className="mt-1" />
               </div>
-              {isCurrent && (
+              {ring && ring !== 'none' && (
+                <NodeRing status={ring} diameter={148} stroke={4} className="top-[2px] left-[2px]" />
+              )}
+              {ring === 'none' && (
                 <img
                   src="/figma/c7ea2.svg"
                   alt=""

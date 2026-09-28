@@ -24,13 +24,13 @@ export function HandIllustration({ className, outlined = false }: { className?: 
           <circle cx={52} cy={70} r={20} />
         </g>
       )}
-      <g stroke="#faa819" strokeWidth={13} strokeLinecap="round" fill="none">
+      <g stroke="#faa819" strokeWidth={15} strokeLinecap="round" fill="none">
         {FINGERS}
       </g>
-      <circle cx={52} cy={70} r={17} fill="#faa819" />
+      <circle cx={52} cy={70} r={20} fill="#faa819" />
       {/* White seam between thumb and palm */}
-      <path d="M44 70 L12 62" stroke="#fff" strokeWidth={17} strokeLinecap="round" />
-      <path d="M44 70 L12 62" stroke="#faa819" strokeWidth={13} strokeLinecap="round" />
+      <path d="M44 70 L12 62" stroke="#fff" strokeWidth={19} strokeLinecap="round" />
+      <path d="M44 70 L12 62" stroke="#faa819" strokeWidth={15} strokeLinecap="round" />
     </svg>
   );
 }

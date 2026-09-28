@@ -18,11 +18,11 @@ export default async function StudentDashboard() {
     return (
       <>
         <CocoonHeader variant="home" />
-        <div className="px-[33px] pt-4">
-          <h1 className="text-[20px] leading-normal font-bold text-cocoon-blue">
+        <div className="px-[33px] pt-4 lg:px-0 lg:pt-[26px]">
+          <h1 className="text-[20px] leading-normal font-bold text-cocoon-blue lg:text-[30px]">
             ยังไม่ได้เข้าร่วมห้องเรียน
           </h1>
-          <div className="mt-4 space-y-4 rounded-[12px] border border-cocoon-line bg-white p-6">
+          <div className="mt-4 space-y-4 rounded-[12px] border border-cocoon-line bg-white p-6 lg:mx-auto lg:mt-8 lg:max-w-[560px] lg:rounded-[16px] lg:border-[#f1ece5] lg:p-10">
             <p className="text-center text-[14px] leading-normal font-medium text-cocoon-muted">
               ใส่รหัสเข้าร่วมที่ได้รับจากครูเพื่อเข้าห้องเรียน
             </p>
@@ -51,17 +51,17 @@ export default async function StudentDashboard() {
   return (
     <>
       <CocoonHeader variant="home" />
-      <div className="px-[33px] pt-4">
-        <h1 className="text-[20px] leading-normal font-bold text-cocoon-blue">ห้องเรียนของฉัน</h1>
+      <div className="px-[33px] pt-4 lg:px-0 lg:pt-[26px]">
+        <h1 className="text-[20px] leading-normal font-bold text-cocoon-blue lg:text-[30px]">ห้องเรียนของฉัน</h1>
         <p className="text-[14px] leading-normal font-medium text-cocoon-muted">
           เลือกห้องเรียนเพื่อดูโปรเจกต์ของคุณ
         </p>
-        <ul className="mt-4 grid gap-3 md:grid-cols-2">
+        <ul className="mt-4 grid gap-3 md:grid-cols-2 lg:mt-8 lg:gap-8">
           {classrooms.map((classroom) => (
             <li key={classroom.id}>
               <Link
                 href={`/student/classroom/${classroom.id}`}
-                className="block rounded-[12px] border border-cocoon-line bg-white p-5 transition-shadow outline-none hover:shadow-md focus-visible:ring-2 focus-visible:ring-cocoon-blue/40"
+                className="block rounded-[12px] border border-cocoon-line bg-white p-5 transition-shadow lg:rounded-[16px] lg:border-[#f1ece5] lg:p-7 outline-none hover:shadow-md focus-visible:ring-2 focus-visible:ring-cocoon-blue/40"
               >
                 <p className="text-[16px] leading-normal font-bold text-cocoon-ink">
                   {classroom.name}

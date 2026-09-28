@@ -14,15 +14,17 @@ import { StudentTodoView } from '@/components/student/student-todo-view';
 
 interface Props {
   params: Promise<{ todoId: string }>;
+  searchParams: Promise<{ step?: string | string[] }>;
 }
 
-export default async function TodoDetailPage({ params }: Props) {
+export default async function TodoDetailPage({ params, searchParams }: Props) {
   const userId = await getCurrentUserId();
   const role = await getCurrentRole();
   const { todoId } = await params;
 
   if (role === ROLES.STUDENT) {
-    return <StudentTodoView todoId={todoId} userId={userId} />;
+    const { step } = await searchParams;
+    return <StudentTodoView todoId={todoId} userId={userId} step={typeof step === 'string' ? step : undefined} />;
   }
 
   const todo = await getTodoDetail(todoId, userId);

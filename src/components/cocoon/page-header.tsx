@@ -27,7 +27,7 @@ export function PageHeader({ backHref, backLabel, title, subtitle, actions, clas
       <div
         className={cn(
           'flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-6',
-          backHref ? 'lg:mt-[18px]' : 'lg:mt-0',
+          backHref ? 'lg:mt-[23px]' : 'lg:mt-0',
         )}
       >
         <div className="min-w-0">
