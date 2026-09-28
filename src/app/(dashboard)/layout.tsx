@@ -5,6 +5,7 @@ import { ROLES, ROUTES } from '@/lib/constants';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
+import { StudentShell } from '@/components/cocoon/student-shell';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();
@@ -15,6 +16,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   // Redirect teacher_pending to onboarding (they see the waiting screen there)
   if (role === ROLES.TEACHER_PENDING) redirect(ROUTES.ONBOARDING);
+
+  // Students get the Cocoon shell (decor background + bottom tab bar).
+  if (role === ROLES.STUDENT) return <StudentShell>{children}</StudentShell>;
 
   return (
     <SidebarProvider>

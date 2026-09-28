@@ -1,5 +1,5 @@
-import { SignIn } from '@clerk/nextjs';
+import { CocoonSignIn } from '@/components/auth/cocoon-sign-in';
 
 export default function SignInPage() {
-  return <SignIn />;
+  return <CocoonSignIn />;
 }
