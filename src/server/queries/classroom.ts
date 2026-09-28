@@ -19,11 +19,11 @@ export async function getTeacherClassrooms(userId: string) {
       createdAt: classrooms.createdAt,
       memberCount: sql<number>`(
         SELECT COUNT(*) FROM classroom_members
-        WHERE classroom_members.classroom_id = ${classrooms.id}
+        WHERE classroom_members.classroom_id = "classrooms"."id"
       )`.mapWith(Number),
       groupCount: sql<number>`(
         SELECT COUNT(*) FROM groups
-        WHERE groups.classroom_id = ${classrooms.id}
+        WHERE groups.classroom_id = "classrooms"."id"
       )`.mapWith(Number),
     })
     .from(classrooms)
@@ -47,7 +47,7 @@ export async function getStudentClassrooms(userId: string) {
       joinedAt: classroomMembers.joinedAt,
       groupCount: sql<number>`(
         SELECT COUNT(*) FROM groups
-        WHERE groups.classroom_id = ${classrooms.id}
+        WHERE groups.classroom_id = "classrooms"."id"
       )`.mapWith(Number),
     })
     .from(classroomMembers)
@@ -91,7 +91,7 @@ export async function getClassroomById(classroomId: string, userId: string) {
       createdAt: groups.createdAt,
       memberCount: sql<number>`(
         SELECT COUNT(*) FROM group_members
-        WHERE group_members.group_id = ${groups.id}
+        WHERE group_members.group_id = "groups"."id"
       )`.mapWith(Number),
     })
     .from(groups)

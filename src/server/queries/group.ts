@@ -15,7 +15,7 @@ export async function getGroupsByClassroom(classroomId: string) {
       createdAt: groups.createdAt,
       memberCount: sql<number>`(
         SELECT COUNT(*) FROM group_members
-        WHERE group_members.group_id = ${groups.id}
+        WHERE group_members.group_id = "groups"."id"
       )`.mapWith(Number),
     })
     .from(groups)
