@@ -3,7 +3,16 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentRole } from '@/lib/auth';
 import { ROLES, ROUTES } from '@/lib/constants';
-import { Button } from '@/components/ui/button';
+import { DecorBackground } from '@/components/cocoon/decor-background';
+import {
+  AUTH_PRIMARY_BUTTON,
+  AuthCard,
+  AuthCardTitle,
+  AuthColumns,
+  AuthDesktopHeader,
+  AuthHero,
+  AuthMobileIntro,
+} from '@/components/auth/auth-parts';
 
 export default async function Home() {
   const { userId } = await auth();
@@ -17,28 +26,41 @@ export default async function Home() {
     if (role === ROLES.STUDENT) {
       redirect(ROUTES.STUDENT_DASHBOARD);
     }
-    if (role === ROLES.TEACHER_PENDING) {
-      redirect(ROUTES.ONBOARDING);
-    }
-    // Authenticated but no role — send to onboarding
+    // Authenticated but no role (or teacher_pending) — send to onboarding
     redirect(ROUTES.ONBOARDING);
   }
 
+  // Signed-out landing: same shell and hero as the Cocoon sign-in / sign-up pages.
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-background px-4">
-      <div className="text-center">
-        <h1 className="text-5xl font-bold tracking-tight">Duo</h1>
-        <p className="mt-3 text-lg text-muted-foreground">
-          แพลตฟอร์มการเรียนรู้แบบโปรเจกต์
-        </p>
-      </div>
-      <div className="flex gap-4">
-        <Button render={<Link href={ROUTES.SIGN_IN} />} nativeButton={false} size="lg">
-          เข้าสู่ระบบ
-        </Button>
-        <Button render={<Link href={ROUTES.SIGN_UP} />} nativeButton={false} size="lg" variant="outline">
-          สมัครสมาชิก
-        </Button>
+    <div className="relative flex min-h-svh w-full flex-col items-center">
+      <DecorBackground />
+      <AuthDesktopHeader />
+      <div className="flex w-full flex-1 flex-col items-center justify-center lg:max-w-[1280px] lg:px-16">
+        <AuthColumns>
+          <AuthMobileIntro title="ยินดีต้อนรับ" highlight="พร้อมไปต่อกับโปรเจกต์ของคุณ" />
+          <AuthHero title="ยินดีต้อนรับ" />
+
+          <AuthCard align="center">
+            <AuthCardTitle mobile>เริ่มต้นใช้งาน</AuthCardTitle>
+            <p className="mt-2 text-[14px] leading-normal font-medium text-cocoon-muted lg:text-[16px]">
+              ส่งงาน ติดตามความคืบหน้า และรับผลตรวจได้ในที่เดียว
+            </p>
+
+            <Link href={ROUTES.SIGN_IN} className={`${AUTH_PRIMARY_BUTTON} mt-8`}>
+              เข้าสู่ระบบ
+            </Link>
+            <Link
+              href={ROUTES.SIGN_UP}
+              className="mt-3 flex h-[55px] w-full items-center justify-center rounded-[12px] border border-cocoon-line bg-white text-[16px] font-bold text-cocoon-blue lg:h-[49px] lg:border-[#f1ece5]"
+            >
+              สมัครสมาชิก
+            </Link>
+
+            <p className="mt-6 text-center text-[12px] leading-normal font-medium text-black/30 lg:text-[14px]">
+              Innovator&apos;s Cocoon · build.innovators.co.th
+            </p>
+          </AuthCard>
+        </AuthColumns>
       </div>
     </div>
   );

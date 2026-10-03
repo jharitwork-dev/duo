@@ -48,10 +48,10 @@ export function AuthMobileIntro({ title, highlight }: { title: string; highlight
 }
 
 /** Desktop hero: big title, blue highlight block, rocket / book / lightbulb cluster. */
-export function AuthHero() {
+export function AuthHero({ title = 'เข้าสู่ระบบ' }: { title?: string }) {
   return (
     <div className="hidden pt-[62px] lg:block">
-      <p className="text-[64px] leading-[1.2] font-bold text-cocoon-orange">เข้าสู่ระบบ</p>
+      <p className="text-[64px] leading-[1.2] font-bold text-cocoon-orange">{title}</p>
       <p className="mt-[21px] flex h-[65px] w-[530px] items-center bg-cocoon-blue px-1 text-[36px] leading-none font-bold whitespace-nowrap text-white">
         พร้อมไปต่อกับโปรเจกต์ของคุณ
       </p>
