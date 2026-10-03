@@ -10,19 +10,7 @@
 import { db } from '@/db';
 import { phaseTemplates } from '@/db/schema/phaseTemplates';
 import { eq } from 'drizzle-orm';
-
-interface TemplatePhase {
-  name: string;
-  description?: string;
-  todos: {
-    title: string;
-    submissionMode?: 'group' | 'individual';
-  }[];
-}
-
-interface TemplateStructure {
-  phases: TemplatePhase[];
-}
+import type { TemplateStructure } from '@/lib/template-structure';
 
 interface BuiltInTemplate {
   name: string;

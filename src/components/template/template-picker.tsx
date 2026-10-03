@@ -16,11 +16,12 @@ interface Template {
 }
 
 interface TemplatePickerProps {
-  groupId: string;
+  classroomId: string;
+  groupId?: string;
   templates: Template[];
 }
 
-export function TemplatePicker({ groupId, templates }: TemplatePickerProps) {
+export function TemplatePicker({ classroomId, groupId, templates }: TemplatePickerProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -30,7 +31,7 @@ export function TemplatePicker({ groupId, templates }: TemplatePickerProps) {
   function handleApply(templateId: string) {
     startTransition(async () => {
       try {
-        await applyTemplate({ groupId, templateId });
+        await applyTemplate({ classroomId, templateId, groupIds: groupId ? [groupId] : [] });
         toast.success('ใช้ Template สำเร็จ');
         router.refresh();
       } catch (error) {

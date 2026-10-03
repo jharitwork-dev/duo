@@ -17,9 +17,11 @@ import { ADD_ROW, INPUT } from '@/components/cocoon/ui';
 
 export function InlineAddTodo({
   phaseId,
+  groupId,
   onCreated,
 }: {
   phaseId: string;
+  groupId: string;
   onCreated: () => void;
 }) {
   const [isAdding, setIsAdding] = useState(false);
@@ -34,6 +36,7 @@ export function InlineAddTodo({
     startTransition(async () => {
       await createTodo({
         phaseId,
+        groupIds: [groupId],
         title: title.trim(),
         submissionMode,
       });

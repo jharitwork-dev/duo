@@ -47,7 +47,7 @@ export default async function GroupPage({
           </div>
         )}
 
-        <PhaseList initialPhases={phases} groupId={groupId} />
+        <PhaseList initialPhases={phases} classroomId={classroomId} groupId={groupId} />
       </div>
     </>
   );

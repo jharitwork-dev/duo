@@ -2,7 +2,7 @@
  * Data migration 2026-10-03 (quick task 261003-wuo): classroom-level phases.
  *
  *   phases.group_id  -> phases.classroom_id (per-group phases merged by trimmed, lower-case name)
- *   phases.status    -> group_phase_progress (one row per group x phase)
+ *   phase status col -> group_phase_progress (one row per group x phase)
  *   todos            += group_id (NOT NULL, the old phase's group) + assignment_id (nullable)
  *
  * Run (from the repo root):

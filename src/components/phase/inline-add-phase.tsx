@@ -8,10 +8,10 @@ import { createPhase } from '@/server/actions/phase';
 import { ADD_ROW, INPUT } from '@/components/cocoon/ui';
 
 export function InlineAddPhase({
-  groupId,
+  classroomId,
   onCreated,
 }: {
-  groupId: string;
+  classroomId: string;
   onCreated: () => void;
 }) {
   const [isAdding, setIsAdding] = useState(false);
@@ -23,7 +23,7 @@ export function InlineAddPhase({
     if (!name.trim()) return;
 
     startTransition(async () => {
-      await createPhase({ groupId, name: name.trim() });
+      await createPhase({ classroomId, name: name.trim() });
       setName('');
       setIsAdding(false);
       onCreated();

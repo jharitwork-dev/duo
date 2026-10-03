@@ -6,43 +6,17 @@ import { DragDropProvider } from '@dnd-kit/react';
 import { PhaseItem } from './phase-item';
 import { InlineAddPhase } from './inline-add-phase';
 import { reorderPhases } from '@/server/actions/phase';
+import type { getActivePhases } from '@/server/queries/phase';
 
-type Todo = {
-  id: string;
-  phaseId: string;
-  title: string;
-  description: string | null;
-  notes: string | null;
-  orderIndex: number;
-  submissionMode: 'group' | 'individual';
-  isArchived: boolean;
-  deadline: Date | null;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-type Phase = {
-  id: string;
-  groupId: string;
-  name: string;
-  description: string | null;
-  orderIndex: number;
-  status: 'locked' | 'active' | 'completed';
-  isFreeAccess: boolean;
-  isArchived: boolean;
-  deadline: Date | null;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-  todos: Todo[];
-};
+type Phase = Awaited<ReturnType<typeof getActivePhases>>[number];
 
 export function PhaseList({
   initialPhases,
+  classroomId,
   groupId,
 }: {
   initialPhases: Phase[];
+  classroomId: string;
   groupId: string;
 }) {
   const [phases, setPhases] = useState(initialPhases);
@@ -70,7 +44,7 @@ export function PhaseList({
           // Persist to server
           startTransition(async () => {
             await reorderPhases({
-              groupId,
+              classroomId,
               orderedIds: updated.map((p) => p.id),
             });
             router.refresh();
@@ -78,12 +52,12 @@ export function PhaseList({
         }}
       >
         {phases.map((phase, index) => (
-          <PhaseItem key={phase.id} phase={phase} index={index} />
+          <PhaseItem key={phase.id} phase={phase} index={index} groupId={groupId} />
         ))}
       </DragDropProvider>
 
       <InlineAddPhase
-        groupId={groupId}
+        classroomId={classroomId}
         onCreated={() => router.refresh()}
       />
     </div>

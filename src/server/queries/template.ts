@@ -1,6 +1,7 @@
 import { db } from '@/db';
 import { phaseTemplates } from '@/db/schema/phaseTemplates';
 import { eq, or, desc, asc } from 'drizzle-orm';
+import { parseTemplateStructure } from '@/lib/template-structure';
 
 /**
  * Returns all built-in templates PLUS templates created by this user.
@@ -30,15 +31,6 @@ export async function getTemplateById(templateId: string) {
 
   return {
     ...template,
-    parsedStructure: JSON.parse(template.structure) as {
-      phases: {
-        name: string;
-        description?: string;
-        todos: {
-          title: string;
-          submissionMode?: 'group' | 'individual';
-        }[];
-      }[];
-    },
+    parsedStructure: parseTemplateStructure(template.structure),
   };
 }

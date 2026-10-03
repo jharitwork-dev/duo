@@ -20,21 +20,9 @@ import { Button } from '@/components/ui/button';
 import { TodoEditForm } from './todo-edit-form';
 import { archiveTodo } from '@/server/actions/todo';
 import { formatDateShort } from '@/lib/format';
+import type { getActivePhases } from '@/server/queries/phase';
 
-type Todo = {
-  id: string;
-  phaseId: string;
-  title: string;
-  description: string | null;
-  notes: string | null;
-  orderIndex: number;
-  submissionMode: 'group' | 'individual';
-  isArchived: boolean;
-  deadline: Date | null;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
+type Todo = Awaited<ReturnType<typeof getActivePhases>>[number]['todos'][number];
 
 const modeLabels: Record<string, string> = {
   group: 'กลุ่ม',
@@ -51,7 +39,7 @@ export function TodoItem({
   const { ref, handleRef, isDragging } = useSortable({
     id: todo.id,
     index,
-    group: `todos-${todo.phaseId}`,
+    group: `todos-${todo.phaseId}-${todo.groupId}`,
   });
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();

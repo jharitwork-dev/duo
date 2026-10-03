@@ -21,37 +21,9 @@ import { CARD } from '@/components/cocoon/ui';
 import { PhaseEditForm } from './phase-edit-form';
 import { TodoList } from '@/components/todo/todo-list';
 import { archivePhase } from '@/server/actions/phase';
+import type { getActivePhases } from '@/server/queries/phase';
 
-type Todo = {
-  id: string;
-  phaseId: string;
-  title: string;
-  description: string | null;
-  notes: string | null;
-  orderIndex: number;
-  submissionMode: 'group' | 'individual';
-  isArchived: boolean;
-  deadline: Date | null;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-type Phase = {
-  id: string;
-  groupId: string;
-  name: string;
-  description: string | null;
-  orderIndex: number;
-  status: 'locked' | 'active' | 'completed';
-  isFreeAccess: boolean;
-  isArchived: boolean;
-  deadline: Date | null;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-  todos: Todo[];
-};
+type Phase = Awaited<ReturnType<typeof getActivePhases>>[number];
 
 const statusLabels: Record<string, string> = {
   locked: 'ล็อก',
@@ -74,9 +46,11 @@ const statusDots: Record<string, string> = {
 export function PhaseItem({
   phase,
   index,
+  groupId,
 }: {
   phase: Phase;
   index: number;
+  groupId: string;
 }) {
   const { ref, handleRef, isDragging } = useSortable({
     id: phase.id,
@@ -167,6 +141,7 @@ export function PhaseItem({
               <TodoList
                 initialTodos={phase.todos}
                 phaseId={phase.id}
+                groupId={groupId}
               />
             </div>
           </div>

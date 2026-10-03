@@ -6,28 +6,18 @@ import { DragDropProvider } from '@dnd-kit/react';
 import { TodoItem } from './todo-item';
 import { InlineAddTodo } from './inline-add-todo';
 import { reorderTodos } from '@/server/actions/todo';
+import type { getActivePhases } from '@/server/queries/phase';
 
-type Todo = {
-  id: string;
-  phaseId: string;
-  title: string;
-  description: string | null;
-  notes: string | null;
-  orderIndex: number;
-  submissionMode: 'group' | 'individual';
-  isArchived: boolean;
-  deadline: Date | null;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
+type Todo = Awaited<ReturnType<typeof getActivePhases>>[number]['todos'][number];
 
 export function TodoList({
   initialTodos,
   phaseId,
+  groupId,
 }: {
   initialTodos: Todo[];
   phaseId: string;
+  groupId: string;
 }) {
   const [todos, setTodos] = useState(initialTodos);
   const [isPending, startTransition] = useTransition();
@@ -58,6 +48,7 @@ export function TodoList({
           startTransition(async () => {
             await reorderTodos({
               phaseId,
+              groupId,
               orderedIds: updated.map((t) => t.id),
             });
             router.refresh();
@@ -71,6 +62,7 @@ export function TodoList({
 
       <InlineAddTodo
         phaseId={phaseId}
+        groupId={groupId}
         onCreated={() => router.refresh()}
       />
     </div>

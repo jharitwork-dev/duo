@@ -37,7 +37,7 @@ export default async function TodoDetailPage({ params, searchParams }: Props) {
 
   const isTeacher = role === 'teacher' || role === 'superadmin';
   const phase = todo.phase;
-  const group = phase.group;
+  const group = todo.group;
   const classroom = group.classroom;
   const editorHref = `/teacher/classroom/${classroom.id}/group/${group.id}`;
   const { items } = parseDeliverables(todo.notes);

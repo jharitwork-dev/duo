@@ -3,12 +3,19 @@
 import { z } from 'zod';
 import { db } from '@/db';
 import { phases } from '@/db/schema/phases';
-import { eq, and, max, sql, inArray } from 'drizzle-orm';
+import { groups } from '@/db/schema/groups';
+import { groupPhaseProgress, PHASE_STATUSES } from '@/db/schema/groupPhaseProgress';
+import { eq, and, max, inArray } from 'drizzle-orm';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
+import {
+  assertClassroomEditor,
+  getPhaseClassroomId,
+  syncClassroomProgress,
+} from '@/server/phase-helpers';
 
 const createPhaseSchema = z.object({
-  groupId: z.string().min(1),
+  classroomId: z.string().min(1),
   name: z.string().min(1).max(200),
   description: z.string().max(2000).optional(),
 });
@@ -17,31 +24,31 @@ export async function createPhase(input: z.infer<typeof createPhaseSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
   const userId = await getCurrentUserId();
   const data = createPhaseSchema.parse(input);
+  await assertClassroomEditor(data.classroomId, userId);
 
-  // Get max orderIndex for this group (non-archived only)
-  const result = await db
-    .select({ maxOrder: max(phases.orderIndex) })
-    .from(phases)
-    .where(and(eq(phases.groupId, data.groupId), eq(phases.isArchived, false)));
+  const phaseId = await db.transaction(async (tx) => {
+    const result = await tx
+      .select({ maxOrder: max(phases.orderIndex) })
+      .from(phases)
+      .where(and(eq(phases.classroomId, data.classroomId), eq(phases.isArchived, false)));
+    const nextOrder = (result[0]?.maxOrder ?? -1) + 1;
 
-  const nextOrder = (result[0]?.maxOrder ?? -1) + 1;
+    const [inserted] = await tx
+      .insert(phases)
+      .values({
+        classroomId: data.classroomId,
+        name: data.name,
+        description: data.description,
+        orderIndex: nextOrder,
+        createdBy: userId,
+      })
+      .returning({ id: phases.id });
 
-  // First phase in group is active, rest are locked
-  const status = nextOrder === 0 ? 'active' : 'locked';
+    await syncClassroomProgress(tx, data.classroomId);
+    return inserted.id;
+  });
 
-  const [inserted] = await db
-    .insert(phases)
-    .values({
-      groupId: data.groupId,
-      name: data.name,
-      description: data.description,
-      orderIndex: nextOrder,
-      status,
-      createdBy: userId,
-    })
-    .returning({ id: phases.id });
-
-  return { success: true, phaseId: inserted.id };
+  return { success: true, phaseId };
 }
 
 const updatePhaseSchema = z.object({
@@ -54,10 +61,11 @@ const updatePhaseSchema = z.object({
 
 export async function updatePhase(input: z.infer<typeof updatePhaseSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
   const data = updatePhaseSchema.parse(input);
   const { phaseId, ...updates } = data;
+  await assertClassroomEditor(await getPhaseClassroomId(phaseId), userId);
 
-  // Build update object with only provided fields
   const updateFields: Record<string, unknown> = { updatedAt: new Date() };
   if (updates.name !== undefined) updateFields.name = updates.name;
   if (updates.description !== undefined) updateFields.description = updates.description;
@@ -70,31 +78,36 @@ export async function updatePhase(input: z.infer<typeof updatePhaseSchema>) {
 }
 
 const reorderPhasesSchema = z.object({
-  groupId: z.string().min(1),
+  classroomId: z.string().min(1),
   orderedIds: z.array(z.string().min(1)).min(1),
 });
 
 export async function reorderPhases(input: z.infer<typeof reorderPhasesSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
   const data = reorderPhasesSchema.parse(input);
+  await assertClassroomEditor(data.classroomId, userId);
 
-  // Verify all IDs belong to this group and are not archived
+  if (new Set(data.orderedIds).size !== data.orderedIds.length) {
+    throw new Error('Duplicate phase IDs');
+  }
+
+  // Verify all IDs belong to this classroom and are not archived
   const existingPhases = await db
     .select({ id: phases.id })
     .from(phases)
     .where(
       and(
-        eq(phases.groupId, data.groupId),
+        eq(phases.classroomId, data.classroomId),
         eq(phases.isArchived, false),
         inArray(phases.id, data.orderedIds),
       ),
     );
 
   if (existingPhases.length !== data.orderedIds.length) {
-    throw new Error('Some phase IDs are invalid, archived, or do not belong to this group');
+    throw new Error('Some phase IDs are invalid, archived, or do not belong to this classroom');
   }
 
-  // Update all orderIndex values atomically in a transaction
   await db.transaction(async (tx) => {
     for (let i = 0; i < data.orderedIds.length; i++) {
       await tx
@@ -102,6 +115,7 @@ export async function reorderPhases(input: z.infer<typeof reorderPhasesSchema>) 
         .set({ orderIndex: i, updatedAt: new Date() })
         .where(eq(phases.id, data.orderedIds[i]));
     }
+    await syncClassroomProgress(tx, data.classroomId);
   });
 
   return { success: true };
@@ -113,12 +127,18 @@ const archivePhaseSchema = z.object({
 
 export async function archivePhase(input: z.infer<typeof archivePhaseSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
   const data = archivePhaseSchema.parse(input);
+  const classroomId = await getPhaseClassroomId(data.phaseId);
+  await assertClassroomEditor(classroomId, userId);
 
-  await db
-    .update(phases)
-    .set({ isArchived: true, updatedAt: new Date() })
-    .where(eq(phases.id, data.phaseId));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(phases)
+      .set({ isArchived: true, updatedAt: new Date() })
+      .where(eq(phases.id, data.phaseId));
+    await syncClassroomProgress(tx, classroomId);
+  });
 
   return { success: true };
 }
@@ -129,12 +149,60 @@ const restorePhaseSchema = z.object({
 
 export async function restorePhase(input: z.infer<typeof restorePhaseSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
   const data = restorePhaseSchema.parse(input);
+  const classroomId = await getPhaseClassroomId(data.phaseId);
+  await assertClassroomEditor(classroomId, userId);
+
+  await db.transaction(async (tx) => {
+    // Restored phases are appended at the end of the active list.
+    const result = await tx
+      .select({ maxOrder: max(phases.orderIndex) })
+      .from(phases)
+      .where(and(eq(phases.classroomId, classroomId), eq(phases.isArchived, false)));
+    const nextOrder = (result[0]?.maxOrder ?? -1) + 1;
+
+    await tx
+      .update(phases)
+      .set({ isArchived: false, orderIndex: nextOrder, updatedAt: new Date() })
+      .where(eq(phases.id, data.phaseId));
+    await syncClassroomProgress(tx, classroomId);
+  });
+
+  return { success: true };
+}
+
+const setGroupPhaseStatusSchema = z.object({
+  groupId: z.string().min(1),
+  phaseId: z.string().min(1),
+  status: z.enum(PHASE_STATUSES),
+});
+
+/**
+ * D-3: a teacher manually sets one group's status for one classroom phase
+ * (unlock / mark completed / lock). No automatic follow-up logic.
+ */
+export async function setGroupPhaseStatus(input: z.infer<typeof setGroupPhaseStatusSchema>) {
+  await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
+  const data = setGroupPhaseStatusSchema.parse(input);
+
+  const [group, phase] = await Promise.all([
+    db.query.groups.findFirst({ where: eq(groups.id, data.groupId), columns: { classroomId: true } }),
+    db.query.phases.findFirst({ where: eq(phases.id, data.phaseId), columns: { classroomId: true } }),
+  ]);
+  if (!group || !phase || group.classroomId !== phase.classroomId) {
+    throw new Error('Group and phase must belong to the same classroom');
+  }
+  await assertClassroomEditor(phase.classroomId, userId);
 
   await db
-    .update(phases)
-    .set({ isArchived: false, updatedAt: new Date() })
-    .where(eq(phases.id, data.phaseId));
+    .insert(groupPhaseProgress)
+    .values({ groupId: data.groupId, phaseId: data.phaseId, status: data.status })
+    .onConflictDoUpdate({
+      target: [groupPhaseProgress.groupId, groupPhaseProgress.phaseId],
+      set: { status: data.status, updatedAt: new Date() },
+    });
 
   return { success: true };
 }

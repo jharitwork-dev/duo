@@ -74,7 +74,7 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
             subtitle="กลุ่มนี้ยังไม่มีเนื้อหา เลือก Template เพื่อเริ่มต้น"
           />
           <div className={PAGE_BODY}>
-            <TemplatePicker groupId={groupId} templates={templates} />
+            <TemplatePicker classroomId={classroomId} groupId={groupId} templates={templates} />
           </div>
         </>
       );
