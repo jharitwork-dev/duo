@@ -38,7 +38,7 @@ Today, phases belong to a group (`phases.group_id`) and to-dos belong to a phase
    "บันทึกเป็นเทมเพลต" saves the classroom's phases, plus the to-dos of one chosen group, as a custom template. Keep the 4 built-ins.
 
 ### Data migration (must preserve existing data — the DB is shared by dev AND the live site)
-Current data: 1 classroom ("Cocoon 2026"), 2 groups (A, AFFY), 2 phases (one per group), 3 to-dos, 0 submissions.
+Current data: 1 classroom ("Cocoon 2026"), 3 groups (A, AFFY, m — m has 0 phases), 2 phases (one each for A and AFFY, both named "Market Research"), 3 to-dos (2 on A's phase, 1 on AFFY's), 0 submissions.
 Write an idempotent, reviewed migration as a script under `src/db/migrations/` (or `scripts/`), runnable with
 `npx tsx`, wrapped in a transaction:
 - Create `group_phase_progress` and add `phases.classroom_id`, `todos.group_id` and `todos.assignment_id` (nullable first).
