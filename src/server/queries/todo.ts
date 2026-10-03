@@ -1,18 +1,15 @@
 import { db } from '@/db';
 import { todos } from '@/db/schema/todos';
-import { phases } from '@/db/schema/phases';
-import { groups } from '@/db/schema/groups';
-import { groupMembers } from '@/db/schema/groups';
 import { classroomMembers } from '@/db/schema/classrooms';
 import { eq, and, asc } from 'drizzle-orm';
 
 /**
- * Returns all active (non-archived) todos for a phase,
+ * Returns one group's active (non-archived) todos for a classroom phase,
  * ordered by orderIndex.
  */
-export async function getActiveTodos(phaseId: string) {
+export async function getActiveTodos(phaseId: string, groupId: string) {
   const result = await db.query.todos.findMany({
-    where: and(eq(todos.phaseId, phaseId), eq(todos.isArchived, false)),
+    where: and(eq(todos.phaseId, phaseId), eq(todos.groupId, groupId), eq(todos.isArchived, false)),
     orderBy: [asc(todos.orderIndex)],
   });
 
@@ -35,8 +32,8 @@ export async function getTodoById(todoId: string) {
 
 /**
  * Returns todo detail with attachments.
- * Verifies the user has access through group membership chain:
- * todo -> phase -> group -> classroom -> classroomMember
+ * Verifies the user has access through the membership chain:
+ * todo -> group -> classroom -> classroomMember
  */
 export async function getTodoDetail(todoId: string, userId: string) {
   // Fetch the todo with attachments
@@ -44,13 +41,10 @@ export async function getTodoDetail(todoId: string, userId: string) {
     where: eq(todos.id, todoId),
     with: {
       attachments: true,
-      phase: {
+      phase: true,
+      group: {
         with: {
-          group: {
-            with: {
-              classroom: true,
-            },
-          },
+          classroom: true,
         },
       },
     },
@@ -59,7 +53,7 @@ export async function getTodoDetail(todoId: string, userId: string) {
   if (!todo) return null;
 
   // Verify user has access via classroom membership
-  const classroomId = todo.phase.group.classroom.id;
+  const classroomId = todo.group.classroomId;
   const membership = await db.query.classroomMembers.findFirst({
     where: and(
       eq(classroomMembers.classroomId, classroomId),

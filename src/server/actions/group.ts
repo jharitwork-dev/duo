@@ -8,6 +8,7 @@ import { ROLES } from '@/lib/constants';
 import { eq, and, count } from 'drizzle-orm';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
+import { syncClassroomProgress } from '@/server/phase-helpers';
 
 const createGroupSchema = z.object({
   classroomId: z.string().min(1),
@@ -36,6 +37,9 @@ export async function createGroup(input: z.infer<typeof createGroupSchema>) {
     name: data.name,
     createdBy: userId,
   }).returning({ id: groups.id });
+
+  // Give the new group its default phase progress rows (first phase active, rest locked).
+  await syncClassroomProgress(db, data.classroomId);
 
   revalidatePath(`/teacher/classrooms/${data.classroomId}`);
   return { success: true, groupId: group.id };

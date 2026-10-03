@@ -2,7 +2,8 @@
 
 export type SubmissionStatus = 'none' | 'pending' | 'rejected' | 'approved';
 
-type PhaseStatus = 'locked' | 'active' | 'completed';
+// Declared locally (not imported from the schema) so this module stays pure.
+export type PhaseStatus = 'locked' | 'active' | 'completed';
 
 interface PhaseLike {
   status: PhaseStatus;
@@ -109,4 +110,21 @@ export function pickCurrentPhaseIndex(phases: PhaseLike[]): number {
     if (phases[i].status === 'completed') return i;
   }
   return 0;
+}
+
+/**
+ * A group's status for each classroom phase. `phases` = non-archived, in order.
+ * Explicit group_phase_progress rows win; a missing row falls back to the default
+ * rule: the first phase is active, every other phase is locked.
+ */
+export function resolveGroupPhaseStatuses(
+  phases: { id: string }[],
+  rows: { phaseId: string; status: PhaseStatus }[],
+): Record<string, PhaseStatus> {
+  const explicit = new Map(rows.map((r) => [r.phaseId, r.status]));
+  const result: Record<string, PhaseStatus> = {};
+  phases.forEach((phase, i) => {
+    result[phase.id] = explicit.get(phase.id) ?? (i === 0 ? 'active' : 'locked');
+  });
+  return result;
 }

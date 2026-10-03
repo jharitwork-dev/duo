@@ -1,19 +1,24 @@
 'use client';
 
 import { useState, useTransition, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Plus, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createPhase } from '@/server/actions/phase';
 import { ADD_ROW, INPUT } from '@/components/cocoon/ui';
 
+/** Adds a classroom-level phase (shared by every group). */
 export function InlineAddPhase({
-  groupId,
+  classroomId,
   onCreated,
 }: {
-  groupId: string;
-  onCreated: () => void;
+  classroomId: string;
+  /** Defaults to router.refresh() (lets server components render this directly). */
+  onCreated?: () => void;
 }) {
+  const router = useRouter();
   const [isAdding, setIsAdding] = useState(false);
   const [name, setName] = useState('');
   const [isPending, startTransition] = useTransition();
@@ -23,10 +28,15 @@ export function InlineAddPhase({
     if (!name.trim()) return;
 
     startTransition(async () => {
-      await createPhase({ groupId, name: name.trim() });
-      setName('');
-      setIsAdding(false);
-      onCreated();
+      try {
+        await createPhase({ classroomId, name: name.trim() });
+        setName('');
+        setIsAdding(false);
+        if (onCreated) onCreated();
+        else router.refresh();
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'เพิ่ม Phase ไม่สำเร็จ');
+      }
     });
   };
 

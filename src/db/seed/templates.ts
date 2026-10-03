@@ -10,19 +10,7 @@
 import { db } from '@/db';
 import { phaseTemplates } from '@/db/schema/phaseTemplates';
 import { eq } from 'drizzle-orm';
-
-interface TemplatePhase {
-  name: string;
-  description?: string;
-  todos: {
-    title: string;
-    submissionMode?: 'group' | 'individual';
-  }[];
-}
-
-interface TemplateStructure {
-  phases: TemplatePhase[];
-}
+import type { TemplateStructure } from '@/lib/template-structure';
 
 interface BuiltInTemplate {
   name: string;
@@ -170,10 +158,38 @@ const BUILT_IN_TEMPLATES: BuiltInTemplate[] = [
       ],
     },
   },
+  {
+    // Already inserted into the live DB by the orchestrator (2026-10-03); kept here so code and DB match.
+    name: 'Cocoon Incubation',
+    description: 'โปรแกรม Cocoon: Market Research → Go to Market → Scaleup',
+    structure: {
+      phases: [
+        {
+          name: 'Market Research',
+          todos: [
+            { title: 'ทำ Survey', submissionMode: 'group' },
+            { title: 'สรุปผล', submissionMode: 'group' },
+          ],
+        },
+        {
+          name: 'Go to Market',
+          todos: [
+            { title: 'เขียนแบบการผลิตให้พร้อม', submissionMode: 'group' },
+            { title: 'สั่งผลิตสินค้า', submissionMode: 'group' },
+            { title: 'ขายเกิน 70%', submissionMode: 'group' },
+          ],
+        },
+        {
+          name: 'Scaleup',
+          todos: [{ title: 'จดทะเบียนบริษัท', submissionMode: 'group' }],
+        },
+      ],
+    },
+  },
 ];
 
 /**
- * Upsert 4 built-in templates. Safe to run multiple times --
+ * Upsert the built-in templates. Safe to run multiple times --
  * skips templates that already exist by name.
  */
 export async function seedTemplates() {

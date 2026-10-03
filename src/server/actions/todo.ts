@@ -4,42 +4,77 @@ import { z } from 'zod';
 import { db } from '@/db';
 import { todos } from '@/db/schema/todos';
 import { todoAttachments } from '@/db/schema/todos';
+import { groups } from '@/db/schema/groups';
 import { eq, and, max, inArray } from 'drizzle-orm';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { presignGet } from '@/lib/r2';
+import { createId } from '@/lib/ids';
+import { assertClassroomEditor, getPhaseClassroomId } from '@/server/phase-helpers';
 
 const createTodoSchema = z.object({
   phaseId: z.string().min(1),
+  groupIds: z.array(z.string().min(1)).min(1),
   title: z.string().min(1).max(200),
   submissionMode: z.enum(['group', 'individual']).optional(),
+  description: z.string().max(5000).optional(),
+  notes: z.string().max(10000).optional(),
 });
 
+/**
+ * D-2: creates one independent copy of the to-do per selected group. Copies created
+ * together share an assignmentId (only when there is more than one group); no sync.
+ */
 export async function createTodo(input: z.infer<typeof createTodoSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
   const userId = await getCurrentUserId();
   const data = createTodoSchema.parse(input);
+  const groupIds = [...new Set(data.groupIds)];
 
-  // Get max orderIndex for this phase (non-archived only)
-  const result = await db
-    .select({ maxOrder: max(todos.orderIndex) })
-    .from(todos)
-    .where(and(eq(todos.phaseId, data.phaseId), eq(todos.isArchived, false)));
+  const classroomId = await getPhaseClassroomId(data.phaseId);
+  await assertClassroomEditor(classroomId, userId);
 
-  const nextOrder = (result[0]?.maxOrder ?? -1) + 1;
+  const validGroups = await db
+    .select({ id: groups.id })
+    .from(groups)
+    .where(and(eq(groups.classroomId, classroomId), inArray(groups.id, groupIds)));
+  if (validGroups.length !== groupIds.length) {
+    throw new Error('Some groups do not belong to this classroom');
+  }
 
-  const [inserted] = await db
-    .insert(todos)
-    .values({
-      phaseId: data.phaseId,
-      title: data.title,
-      submissionMode: data.submissionMode ?? 'group',
-      orderIndex: nextOrder,
-      createdBy: userId,
-    })
-    .returning({ id: todos.id });
+  const assignmentId = groupIds.length > 1 ? createId() : null;
 
-  return { success: true, todoId: inserted.id };
+  const todoIds = await db.transaction(async (tx) => {
+    const ids: string[] = [];
+    for (const groupId of groupIds) {
+      const result = await tx
+        .select({ maxOrder: max(todos.orderIndex) })
+        .from(todos)
+        .where(
+          and(eq(todos.phaseId, data.phaseId), eq(todos.groupId, groupId), eq(todos.isArchived, false)),
+        );
+      const nextOrder = (result[0]?.maxOrder ?? -1) + 1;
+
+      const [inserted] = await tx
+        .insert(todos)
+        .values({
+          phaseId: data.phaseId,
+          groupId,
+          assignmentId,
+          title: data.title,
+          description: data.description,
+          notes: data.notes,
+          submissionMode: data.submissionMode ?? 'group',
+          orderIndex: nextOrder,
+          createdBy: userId,
+        })
+        .returning({ id: todos.id });
+      ids.push(inserted.id);
+    }
+    return ids;
+  });
+
+  return { success: true, todoIds };
 }
 
 const updateTodoSchema = z.object({
@@ -70,6 +105,7 @@ export async function updateTodo(input: z.infer<typeof updateTodoSchema>) {
 
 const reorderTodosSchema = z.object({
   phaseId: z.string().min(1),
+  groupId: z.string().min(1),
   orderedIds: z.array(z.string().min(1)).min(1),
 });
 
@@ -77,20 +113,21 @@ export async function reorderTodos(input: z.infer<typeof reorderTodosSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
   const data = reorderTodosSchema.parse(input);
 
-  // Verify all IDs belong to this phase and are not archived
+  // Verify all IDs belong to this (phase, group) and are not archived
   const existingTodos = await db
     .select({ id: todos.id })
     .from(todos)
     .where(
       and(
         eq(todos.phaseId, data.phaseId),
+        eq(todos.groupId, data.groupId),
         eq(todos.isArchived, false),
         inArray(todos.id, data.orderedIds),
       ),
     );
 
   if (existingTodos.length !== data.orderedIds.length) {
-    throw new Error('Some todo IDs are invalid, archived, or do not belong to this phase');
+    throw new Error('Some todo IDs are invalid, archived, or do not belong to this phase and group');
   }
 
   // Update all orderIndex values atomically in a transaction

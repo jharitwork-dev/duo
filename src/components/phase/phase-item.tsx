@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { useSortable } from '@dnd-kit/react/sortable';
-import { GripVertical, ChevronDown, MoreHorizontal, Archive } from 'lucide-react';
+import { GripVertical, ChevronDown, MoreHorizontal, Archive, Pencil, ListPlus } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleTrigger,
@@ -14,69 +15,29 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { cn } from 'cn';
 import { CARD } from '@/components/cocoon/ui';
 import { PhaseEditForm } from './phase-edit-form';
-import { TodoList } from '@/components/todo/todo-list';
+import { AssignTodoDialog, type GroupOption } from '@/components/todo/assign-todo-dialog';
 import { archivePhase } from '@/server/actions/phase';
+import { formatDateShort } from '@/lib/format';
+import type { ClassroomPhase } from './phase-list';
 
-type Todo = {
-  id: string;
-  phaseId: string;
-  title: string;
-  description: string | null;
-  notes: string | null;
-  orderIndex: number;
-  submissionMode: 'group' | 'individual';
-  isArchived: boolean;
-  deadline: Date | null;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
+const PILL =
+  'inline-flex h-[24px] items-center rounded-full border border-cocoon-line px-2.5 text-[12px] font-medium whitespace-nowrap text-cocoon-subtle';
 
-type Phase = {
-  id: string;
-  groupId: string;
-  name: string;
-  description: string | null;
-  orderIndex: number;
-  status: 'locked' | 'active' | 'completed';
-  isFreeAccess: boolean;
-  isArchived: boolean;
-  deadline: Date | null;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-  todos: Todo[];
-};
-
-const statusLabels: Record<string, string> = {
-  locked: 'ล็อก',
-  active: 'กำลังดำเนินการ',
-  completed: 'เสร็จสิ้น',
-};
-
-// StatusPill-like colours: active blue / locked grey / completed green.
-const statusColors: Record<string, string> = {
-  locked: 'bg-[rgba(15,23,42,.05)] text-[#9da1a6]',
-  active: 'bg-[rgba(0,105,166,.15)] text-cocoon-blue',
-  completed: 'bg-[rgb(0_168_107/.15)] text-cocoon-green',
-};
-const statusDots: Record<string, string> = {
-  locked: 'bg-[rgba(29,37,49,.4)]',
-  active: 'bg-cocoon-blue',
-  completed: 'bg-cocoon-green',
-};
-
+/** Classroom-level phase card (no per-group status or to-dos — those live on the group page). */
 export function PhaseItem({
   phase,
   index,
+  groups,
 }: {
-  phase: Phase;
+  phase: ClassroomPhase;
   index: number;
+  groups: GroupOption[];
 }) {
   const { ref, handleRef, isDragging } = useSortable({
     id: phase.id,
@@ -84,12 +45,18 @@ export function PhaseItem({
     group: 'phases',
   });
   const [isOpen, setIsOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   const handleArchive = () => {
     startTransition(async () => {
-      await archivePhase({ phaseId: phase.id });
+      try {
+        await archivePhase({ phaseId: phase.id });
+        toast.success('เก็บ Phase แล้ว');
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'เก็บ Phase ไม่สำเร็จ');
+      }
       router.refresh();
     });
   };
@@ -120,21 +87,14 @@ export function PhaseItem({
               <span className="text-[18px] leading-normal font-bold break-words text-cocoon-ink lg:text-[20px]">
                 {phase.name}
               </span>
-            </span>
-            <span
-              className={cn(
-                'inline-flex h-[24px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-bold whitespace-nowrap',
-                statusColors[phase.status],
+              {phase.description && (
+                <span className="line-clamp-2 text-[14px] leading-normal font-medium text-cocoon-muted">
+                  {phase.description}
+                </span>
               )}
-            >
-              <span aria-hidden className={cn('size-2 rounded-full', statusDots[phase.status])} />
-              {statusLabels[phase.status]}
             </span>
-            {phase.isFreeAccess && (
-              <span className="inline-flex h-[24px] items-center rounded-full border border-cocoon-line px-2.5 text-[12px] font-medium text-cocoon-subtle">
-                เข้าถึงอิสระ
-              </span>
-            )}
+            {phase.deadline && <span className={PILL}>กำหนดส่ง {formatDateShort(phase.deadline)}</span>}
+            {phase.isFreeAccess && <span className={PILL}>เข้าถึงอิสระ</span>}
             <ChevronDown
               className={`ml-auto size-5 text-cocoon-blue transition-transform ${
                 isOpen ? 'rotate-180' : ''
@@ -148,6 +108,15 @@ export function PhaseItem({
               <MoreHorizontal className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIsOpen(true)}>
+                <Pencil className="mr-2 size-4" />
+                แก้ไข Phase
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setAssignOpen(true)} disabled={groups.length === 0}>
+                <ListPlus className="mr-2 size-4" />
+                เพิ่มงานให้หลายกลุ่ม
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleArchive}
                 disabled={isPending}
@@ -163,15 +132,19 @@ export function PhaseItem({
         <CollapsibleContent>
           <div className="border-t border-[#f1ece5] px-4 pt-4 pb-4 lg:px-6 lg:pb-6">
             <PhaseEditForm phase={phase} />
-            <div className="mt-4">
-              <TodoList
-                initialTodos={phase.todos}
-                phaseId={phase.id}
-              />
-            </div>
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      <AssignTodoDialog
+        phaseId={phase.id}
+        phaseName={phase.name}
+        groups={groups}
+        defaultGroupIds={[]}
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        onCreated={() => router.refresh()}
+      />
     </div>
   );
 }

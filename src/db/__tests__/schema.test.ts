@@ -11,6 +11,7 @@ describe('Database Schema', () => {
     expect(schema.groupMembers).toBeDefined();
     expect(schema.phases).toBeDefined();
     expect(schema.todos).toBeDefined();
+    expect(schema.groupPhaseProgress).toBeDefined();
     expect(schema.todoAttachments).toBeDefined();
     expect(schema.submissions).toBeDefined();
     expect(schema.submissionFiles).toBeDefined();
@@ -24,6 +25,7 @@ describe('Database Schema', () => {
     expect(schema.groupMembersRelations).toBeDefined();
     expect(schema.phasesRelations).toBeDefined();
     expect(schema.todosRelations).toBeDefined();
+    expect(schema.groupPhaseProgressRelations).toBeDefined();
     expect(schema.todoAttachmentsRelations).toBeDefined();
     expect(schema.submissionsRelations).toBeDefined();
     expect(schema.submissionFilesRelations).toBeDefined();

@@ -6,6 +6,7 @@ import { submissions } from '@/db/schema/submissions';
 import { comments } from '@/db/schema/comments';
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { statusFromSubmission, type SubmissionStatus } from '@/lib/node-path';
+import { getGroupPhaseStatus } from '@/server/queries/phase';
 
 type SubmissionMode = 'group' | 'individual';
 
@@ -36,21 +37,24 @@ async function isGroupMember(groupId: string, userId: string): Promise<boolean> 
 }
 
 /**
- * Verifies a student can act on a to-do: the to-do is not archived, the student is a
- * member of the classroom AND of the group that owns the to-do's phase.
+ * Verifies a student can act on a to-do: the to-do and its phase are not archived, the
+ * student is a member of the classroom AND of the group that owns the to-do (todo.groupId).
+ * `phase.status` is this group's status (group_phase_progress / default rule), so
+ * isPhaseViewable(access.phase) keeps working unchanged.
  */
 export async function resolveStudentTodoAccess(todoId: string, userId: string) {
   const todo = await db.query.todos.findFirst({
     where: and(eq(todos.id, todoId), eq(todos.isArchived, false)),
     with: {
       attachments: true,
-      phase: { with: { group: true } },
+      phase: true,
+      group: true,
     },
   });
   if (!todo || todo.phase.isArchived) return null;
 
-  const groupId = todo.phase.groupId;
-  const classroomId = todo.phase.group.classroomId;
+  const groupId = todo.groupId;
+  const classroomId = todo.group.classroomId;
 
   const classroomMembership = await db.query.classroomMembers.findFirst({
     where: and(
@@ -62,7 +66,8 @@ export async function resolveStudentTodoAccess(todoId: string, userId: string) {
   if (!classroomMembership) return null;
   if (!(await isGroupMember(groupId, userId))) return null;
 
-  return { todo, phase: todo.phase, groupId, classroomId };
+  const status = await getGroupPhaseStatus(groupId, todo.phaseId);
+  return { todo, phase: { ...todo.phase, status }, groupId, classroomId };
 }
 
 /**

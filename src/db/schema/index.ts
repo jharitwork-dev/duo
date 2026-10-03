@@ -2,6 +2,7 @@ export * from './classrooms';
 export * from './groups';
 export * from './phases';
 export * from './todos';
+export * from './groupPhaseProgress';
 export * from './submissions';
 export * from './comments';
 export * from './phaseTemplates';
