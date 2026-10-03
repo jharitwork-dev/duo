@@ -2,14 +2,12 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { cn } from 'cn';
 import { PageHeader } from '@/components/cocoon/page-header';
-import { BTN_INFO, PAGE_BODY } from '@/components/cocoon/ui';
+import { BTN_INFO, EMPTY_CARD, PAGE_BODY } from '@/components/cocoon/ui';
 import { getCurrentUserId, getCurrentRole } from '@/lib/auth';
 import { getGroupById } from '@/server/queries/group';
 import { getActivePhases } from '@/server/queries/phase';
-import { getTemplates } from '@/server/queries/template';
 import { getTodoSubmissionStatuses } from '@/server/queries/submission';
 import { GroupPhaseView } from '@/components/student/group-phase-view';
-import { TemplatePicker } from '@/components/template/template-picker';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 import { PhaseStepper } from '@/components/student/phase-stepper';
 import { NodePath } from '@/components/student/node-path';
@@ -57,13 +55,12 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
   const isTeacher = role === 'teacher' || role === 'superadmin';
 
   if (isTeacher) {
-    // Empty state: show template picker for teachers
+    // Empty state: phases are managed once per classroom (Phase tab)
     const { classroomId } = await params;
     const editorHref = `/teacher/classroom/${classroomId}/group/${groupId}`;
     const classroomHref = `/teacher/classroom/${classroomId}`;
 
     if (phases.length === 0) {
-      const templates = await getTemplates(userId);
       return (
         <>
           <CocoonHeader variant="back" backHref={classroomHref} />
@@ -71,10 +68,18 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
             backHref={classroomHref}
             backLabel="ห้องเรียน"
             title={group.name}
-            subtitle="กลุ่มนี้ยังไม่มีเนื้อหา เลือก Template เพื่อเริ่มต้น"
+            subtitle="ภาพรวม Phase และงานของกลุ่ม"
           />
           <div className={PAGE_BODY}>
-            <TemplatePicker classroomId={classroomId} groupId={groupId} templates={templates} />
+            <div className={EMPTY_CARD}>
+              <p className="text-[18px] leading-normal font-bold text-cocoon-ink">ห้องเรียนนี้ยังไม่มี Phase</p>
+              <p className="text-[14px] leading-normal font-medium text-cocoon-muted">
+                สร้าง Phase หรือเลือกเทมเพลตได้ที่แท็บ Phase ของห้องเรียน
+              </p>
+              <Link href={`${classroomHref}?tab=phases`} className={cn(BTN_INFO, 'inline-flex items-center')}>
+                จัดการ Phase
+              </Link>
+            </div>
           </div>
         </>
       );

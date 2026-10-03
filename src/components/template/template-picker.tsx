@@ -1,12 +1,13 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { cn } from 'cn';
 import { applyTemplate } from '@/server/actions/template';
 import { Button } from '@/components/ui/button';
-import { BTN_PRIMARY, CARD, CARD_TITLE } from '@/components/cocoon/ui';
+import { BTN_PRIMARY, CARD, CARD_TITLE, LABEL } from '@/components/cocoon/ui';
+import { GroupChecklist, type GroupOption } from '@/components/todo/assign-todo-dialog';
 
 interface Template {
   id: string;
@@ -17,13 +18,18 @@ interface Template {
 
 interface TemplatePickerProps {
   classroomId: string;
-  groupId?: string;
   templates: Template[];
+  groups: GroupOption[];
 }
 
-export function TemplatePicker({ classroomId, groupId, templates }: TemplatePickerProps) {
+/**
+ * Applies a template to an EMPTY classroom: creates the classroom phases and, for the
+ * checked groups, one copy of each template to-do. Uncheck every group for phases only.
+ */
+export function TemplatePicker({ classroomId, templates, groups }: TemplatePickerProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [groupIds, setGroupIds] = useState<string[]>(() => groups.map((g) => g.id));
 
   const builtInTemplates = templates.filter((t) => t.isBuiltIn);
   const customTemplates = templates.filter((t) => !t.isBuiltIn);
@@ -31,8 +37,12 @@ export function TemplatePicker({ classroomId, groupId, templates }: TemplatePick
   function handleApply(templateId: string) {
     startTransition(async () => {
       try {
-        await applyTemplate({ classroomId, templateId, groupIds: groupId ? [groupId] : [] });
-        toast.success('ใช้ Template สำเร็จ');
+        const result = await applyTemplate({ classroomId, templateId, groupIds });
+        toast.success(
+          result.todoCount > 0
+            ? `ใช้ Template สำเร็จ · ${result.phaseCount} Phase · ${result.todoCount} งาน`
+            : `ใช้ Template สำเร็จ · ${result.phaseCount} Phase`,
+        );
         router.refresh();
       } catch (error) {
         const message =
@@ -45,6 +55,22 @@ export function TemplatePicker({ classroomId, groupId, templates }: TemplatePick
   return (
     <div className="space-y-6 lg:space-y-8">
       <h2 className={CARD_TITLE}>เลือก Template เริ่มต้น</h2>
+
+      {groups.length > 0 && (
+        <div className="space-y-2">
+          <span className={LABEL}>เพิ่มงานจากเทมเพลตให้กลุ่ม</span>
+          <GroupChecklist
+            groups={groups}
+            selected={groupIds}
+            onChange={setGroupIds}
+            idPrefix="template-groups"
+            disabled={isPending}
+          />
+          {groupIds.length === 0 && (
+            <p className="text-[13px] font-medium text-cocoon-muted">ไม่ได้เลือกกลุ่ม — จะสร้างเฉพาะ Phase</p>
+          )}
+        </div>
+      )}
 
       {builtInTemplates.length > 0 && (
         <TemplateGroup title="Template พื้นฐาน" templates={builtInTemplates} onApply={handleApply} isPending={isPending} />

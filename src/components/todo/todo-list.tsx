@@ -2,31 +2,41 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { DragDropProvider } from '@dnd-kit/react';
 import { TodoItem } from './todo-item';
 import { InlineAddTodo } from './inline-add-todo';
+import type { GroupOption } from './assign-todo-dialog';
 import { reorderTodos } from '@/server/actions/todo';
 import type { getActivePhases } from '@/server/queries/phase';
 
 type Todo = Awaited<ReturnType<typeof getActivePhases>>[number]['todos'][number];
 
+/**
+ * One group's to-dos inside one classroom phase (sortable). The parent should key this
+ * component on the joined to-do ids so local order resets after a refresh.
+ */
 export function TodoList({
   initialTodos,
   phaseId,
+  phaseName,
   groupId,
+  groups,
 }: {
   initialTodos: Todo[];
   phaseId: string;
+  phaseName: string;
   groupId: string;
+  groups: GroupOption[];
 }) {
   const [todos, setTodos] = useState(initialTodos);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const router = useRouter();
 
   return (
     <div className="space-y-2">
       <h4 className="text-[14px] leading-normal font-bold text-cocoon-blue">
-        งานใน Phase นี้ ({todos.length})
+        งานของกลุ่มนี้ ({todos.length})
       </h4>
 
       <DragDropProvider
@@ -46,11 +56,15 @@ export function TodoList({
 
           // Persist to server
           startTransition(async () => {
-            await reorderTodos({
-              phaseId,
-              groupId,
-              orderedIds: updated.map((t) => t.id),
-            });
+            try {
+              await reorderTodos({
+                phaseId,
+                groupId,
+                orderedIds: updated.map((t) => t.id),
+              });
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : 'จัดเรียงไม่สำเร็จ');
+            }
             router.refresh();
           });
         }}
@@ -62,7 +76,9 @@ export function TodoList({
 
       <InlineAddTodo
         phaseId={phaseId}
+        phaseName={phaseName}
         groupId={groupId}
+        groups={groups}
         onCreated={() => router.refresh()}
       />
     </div>
