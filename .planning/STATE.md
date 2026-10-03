@@ -112,6 +112,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260928-iwi | Cocoon UI redesign from Figma — student flow (shell, login, node-path home, submission) | 2026-09-28 | 98606bf | [260928-iwi-cocoon-ui-redesign-from-figma-student-fl](./quick/260928-iwi-cocoon-ui-redesign-from-figma-student-fl/) |
 | 260928-jkg | Desktop (Mac) Cocoon shell + student desktop alignment + teacher/admin CI | 2026-09-28 | 3d3ea6a | [260928-jkg-apply-cocoon-ui-ci-to-teacher-and-admin-](./quick/260928-jkg-apply-cocoon-ui-ci-to-teacher-and-admin-/) |
+| fast | Cocoon-branded landing page matching sign-in/sign-up | 2026-10-03 | 4b9da06 | — |
 
 ## Session Continuity
 
