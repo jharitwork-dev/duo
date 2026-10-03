@@ -114,6 +114,7 @@ None yet.
 | 260928-jkg | Desktop (Mac) Cocoon shell + student desktop alignment + teacher/admin CI | 2026-09-28 | 3d3ea6a | [260928-jkg-apply-cocoon-ui-ci-to-teacher-and-admin-](./quick/260928-jkg-apply-cocoon-ui-ci-to-teacher-and-admin-/) |
 | fast | Cocoon-branded landing page matching sign-in/sign-up | 2026-10-03 | 4b9da06 | — |
 | fast | Rename product Duo → build.Innovator (title, logs, package name) | 2026-10-03 | 2817e47 | — |
+| fast | Member names instead of Clerk ids + superadmin teacher/student role management | 2026-10-03 | bc420a7 | — |
 
 ## Session Continuity
 
