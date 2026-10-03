@@ -104,6 +104,7 @@ None yet.
 - getAttachmentDownloadUrl lacks a classroom-membership check (pre-existing)
 - No Neon database provisioned: DATABASE_URL in .env.local is the placeholder and absent on Vercel; R2 credentials empty
 - Clerk session token must include {"metadata": "{{user.public_metadata}}"} (dev instance done 2026-09-28; production instance still needs it)
+- PENDING (after 261003-wuo migration): classroom "Cocoon 2026" — delete the old test "Market Research" phase/todos (0 submissions) and apply the built-in "Cocoon Incubation" template (user decision 2026-10-04)
 - Node-level row locks are UI-only; server gates at phase level (TODO Phase 4)
 
 ### Quick Tasks Completed
