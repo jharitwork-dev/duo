@@ -26,7 +26,7 @@ export async function withSheetsRetry<T>(
       if (!retryable || attempt >= retries) throw err;
       const backoff = baseMs * 2 ** attempt + Math.floor(Math.random() * 250);
       console.warn(
-        `[duo] Sheets ${status} — retry ${attempt + 1}/${retries} in ${backoff}ms`,
+        `[build.innovator] Sheets ${status} — retry ${attempt + 1}/${retries} in ${backoff}ms`,
       );
       await sleep(backoff);
       attempt++;

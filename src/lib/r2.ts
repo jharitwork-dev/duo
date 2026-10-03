@@ -62,7 +62,7 @@ export const SUBMISSION_ACCEPT = [
   ...ALLOWED_TYPES,
 ].join(',');
 
-// Duo object key pattern: submissions/{userId}/{todoId}/{filename}
+// build.Innovator object key pattern: submissions/{userId}/{todoId}/{filename}
 export function submissionKey(userId: string, todoId: string, filename: string): string {
   return `submissions/${userId}/${todoId}/${filename}`;
 }

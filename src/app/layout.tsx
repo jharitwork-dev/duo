@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Duo — Project-Based Learning',
+  title: 'build.Innovator',
   description: 'แพลตฟอร์มการเรียนรู้แบบโปรเจกต์',
 };
 

@@ -39,7 +39,7 @@ export async function submitRegistration(
   try {
     const parsed = registrationSchema.safeParse(payload);
     if (!parsed.success) {
-      console.error('[duo] registration failed zod validation', parsed.error);
+      console.error('[build.innovator] registration failed zod validation', parsed.error);
       return { ok: false };
     }
 
@@ -49,7 +49,7 @@ export async function submitRegistration(
 
     const cfg = getSheetsConfig();
     if (!cfg) {
-      console.warn('[duo] Sheets env not set — skipping append (no-op).');
+      console.warn('[build.innovator] Sheets env not set — skipping append (no-op).');
       return { ok: true, registrationId };
     }
 
@@ -89,7 +89,7 @@ export async function submitRegistration(
 
     return { ok: true, registrationId };
   } catch (err) {
-    console.error('[duo] registration submit failed:', err);
+    console.error('[build.innovator] registration submit failed:', err);
     return { ok: false };
   }
 }
