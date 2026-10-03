@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from 'cn';
 import { BTN_PRIMARY, CARD, CARD_META, CARD_TITLE, INPUT, LABEL, TEXTAREA } from '@/components/cocoon/ui';
 import { Trash2 } from 'lucide-react';
+import { MemberIdentity, type MemberDisplay } from '@/components/cocoon/member-identity';
 
 const settingsSchema = z.object({
   name: z.string().min(1, 'กรุณาใส่ชื่อห้องเรียน').max(100),
@@ -22,7 +23,7 @@ const settingsSchema = z.object({
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
 
-interface ClassroomMember {
+interface ClassroomMember extends MemberDisplay {
   id: string;
   userId: string;
   role: string;
@@ -162,7 +163,7 @@ export function ClassroomSettingsForm({
                   key={member.id}
                   className="flex items-center justify-between rounded-[12px] border border-[#e4e8ee] bg-[#fafbfc] px-4 py-3"
                 >
-                  <span className="truncate text-[14px] font-medium text-cocoon-ink">{member.userId}</span>
+                  <MemberIdentity name={member.name} email={member.email} imageUrl={member.imageUrl} />
                   <Button
                     variant="ghost"
                     size="sm"

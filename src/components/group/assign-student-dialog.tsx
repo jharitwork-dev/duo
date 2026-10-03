@@ -16,8 +16,9 @@ import {
 import { UserPlus } from 'lucide-react';
 import { cn } from 'cn';
 import { BTN_TERTIARY, DIALOG_PANEL, DIALOG_TITLE } from '@/components/cocoon/ui';
+import { MemberIdentity, type MemberDisplay } from '@/components/cocoon/member-identity';
 
-interface ClassroomMember {
+interface ClassroomMember extends MemberDisplay {
   id: string;
   userId: string;
   role: string;
@@ -83,7 +84,7 @@ export function AssignStudentDialog({
                 key={member.id}
                 className="flex items-center justify-between rounded-[12px] border border-[#e4e8ee] bg-[#fafbfc] px-4 py-3"
               >
-                <span className="truncate text-[14px] font-medium text-cocoon-ink">{member.userId}</span>
+                <MemberIdentity name={member.name} email={member.email} imageUrl={member.imageUrl} />
                 <Button
                   variant="outline"
                   className={cn(BTN_TERTIARY, 'h-9 px-4 text-[14px]')}

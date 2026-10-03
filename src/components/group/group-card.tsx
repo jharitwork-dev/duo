@@ -3,15 +3,19 @@
 import Link from 'next/link';
 import { Users } from 'lucide-react';
 import { cn } from 'cn';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { MemberIdentity, type MemberDisplay } from '@/components/cocoon/member-identity';
 import { AssignStudentDialog } from '@/components/group/assign-student-dialog';
 import { BTN_INFO, CARD } from '@/components/cocoon/ui';
 
-interface ClassroomMember {
+interface ClassroomMember extends MemberDisplay {
   id: string;
   userId: string;
   role: string;
   joinedAt: Date | null;
+}
+
+interface GroupMember extends MemberDisplay {
+  userId: string;
 }
 
 interface GroupCardProps {
@@ -21,6 +25,7 @@ interface GroupCardProps {
   maxGroupSize: number | null;
   classroomId: string;
   classroomMembers: ClassroomMember[];
+  members: GroupMember[];
 }
 
 export function GroupCard({
@@ -30,6 +35,7 @@ export function GroupCard({
   maxGroupSize,
   classroomId,
   classroomMembers,
+  members,
 }: GroupCardProps) {
   const capacityText = maxGroupSize ? `${memberCount}/${maxGroupSize}` : `${memberCount}`;
   const href = `/teacher/classroom/${classroomId}/group/${id}`;
@@ -49,21 +55,17 @@ export function GroupCard({
         </span>
       </div>
 
-      <div className="flex -space-x-2">
-        {Array.from({ length: Math.min(memberCount, 5) }).map((_, i) => (
-          <Avatar key={i} className="size-8 border-2 border-white">
-            <AvatarFallback className="bg-cocoon-cream text-xs font-bold text-cocoon-blue">{i + 1}</AvatarFallback>
-          </Avatar>
-        ))}
-        {memberCount > 5 && (
-          <Avatar className="size-8 border-2 border-white">
-            <AvatarFallback className="bg-cocoon-cream text-xs font-bold text-cocoon-blue">
-              +{memberCount - 5}
-            </AvatarFallback>
-          </Avatar>
-        )}
-        {memberCount === 0 && <span className="text-[14px] font-medium text-cocoon-muted">ยังไม่มีสมาชิก</span>}
-      </div>
+      {members.length === 0 ? (
+        <span className="text-[14px] font-medium text-cocoon-muted">ยังไม่มีสมาชิก</span>
+      ) : (
+        <ul className="space-y-2">
+          {members.map((member) => (
+            <li key={member.userId}>
+              <MemberIdentity name={member.name} email={member.email} imageUrl={member.imageUrl} />
+            </li>
+          ))}
+        </ul>
+      )}
 
       <div className="mt-auto flex flex-wrap items-center justify-end gap-2">
         <AssignStudentDialog groupId={id} classroomMembers={classroomMembers} />

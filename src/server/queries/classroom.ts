@@ -2,7 +2,8 @@ import { db } from '@/db';
 import { classrooms, classroomMembers } from '@/db/schema/classrooms';
 import { groups } from '@/db/schema/groups';
 import { groupMembers } from '@/db/schema/groups';
-import { eq, and, count, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
+import { getUserDirectory } from '@/lib/user-directory';
 
 /**
  * Returns all classrooms created by a teacher, with member and group counts.
@@ -108,10 +109,31 @@ export async function getClassroomById(classroomId: string, userId: string) {
     .from(classroomMembers)
     .where(eq(classroomMembers.classroomId, classroomId));
 
+  // Group membership (for showing member names on group cards)
+  const groupIds = classroomGroups.map((g) => g.id);
+  const memberships = groupIds.length
+    ? await db
+        .select({ groupId: groupMembers.groupId, userId: groupMembers.userId })
+        .from(groupMembers)
+        .where(inArray(groupMembers.groupId, groupIds))
+    : [];
+
+  // Resolve Clerk names so teachers never see raw user ids
+  const directory = await getUserDirectory([
+    ...members.map((m) => m.userId),
+    ...memberships.map((m) => m.userId),
+  ]);
+  const display = (userId: string) => directory.get(userId)!;
+
   return {
     ...classroom,
-    groups: classroomGroups,
-    members,
+    groups: classroomGroups.map((group) => ({
+      ...group,
+      members: memberships
+        .filter((m) => m.groupId === group.id)
+        .map((m) => ({ userId: m.userId, ...display(m.userId) })),
+    })),
+    members: members.map((member) => ({ ...member, ...display(member.userId) })),
   };
 }
 

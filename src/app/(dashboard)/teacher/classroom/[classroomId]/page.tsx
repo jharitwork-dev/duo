@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { getClassroomById } from '@/server/queries/classroom';
-import { getGroupsByClassroom } from '@/server/queries/group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GroupCard } from '@/components/group/group-card';
 import { CreateGroupForm } from '@/components/group/create-group-form';
@@ -26,7 +25,7 @@ export default async function ClassroomDashboard({ params }: ClassroomDashboardP
     notFound();
   }
 
-  const groups = await getGroupsByClassroom(classroomId);
+  const groups = classroom.groups;
 
   return (
     <>
@@ -77,6 +76,7 @@ export default async function ClassroomDashboard({ params }: ClassroomDashboardP
                   maxGroupSize={classroom.maxGroupSize}
                   classroomId={classroomId}
                   classroomMembers={classroom.members}
+                  members={group.members}
                 />
               ))}
             </div>
