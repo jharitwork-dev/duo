@@ -1,14 +1,15 @@
 import { pgTable, text, timestamp, integer, boolean } from 'drizzle-orm/pg-core';
 import { createId } from '@/lib/ids';
-import { groups } from './groups';
+import { classrooms } from './classrooms';
 
+// Phases belong to the classroom (D-1). Every group sees the same ordered list;
+// each group's status for a phase lives in group_phase_progress (D-3).
 export const phases = pgTable('phases', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
-  groupId: text('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  classroomId: text('classroom_id').notNull().references(() => classrooms.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   description: text('description'),
   orderIndex: integer('order_index').notNull().default(0),
-  status: text('status', { enum: ['locked', 'active', 'completed'] }).notNull().default('locked'),
   isFreeAccess: boolean('is_free_access').notNull().default(false),
   isArchived: boolean('is_archived').notNull().default(false),
   deadline: timestamp('deadline'),

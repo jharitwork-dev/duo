@@ -1,10 +1,15 @@
 import { pgTable, text, timestamp, integer, boolean } from 'drizzle-orm/pg-core';
 import { createId } from '@/lib/ids';
 import { phases } from './phases';
+import { groups } from './groups';
 
 export const todos = pgTable('todos', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   phaseId: text('phase_id').notNull().references(() => phases.id, { onDelete: 'cascade' }),
+  // To-dos are per (phase, group) (D-1).
+  groupId: text('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  // Shared by the independent copies created together by one multi-group assignment (D-2).
+  assignmentId: text('assignment_id'),
   title: text('title').notNull(),
   description: text('description'),
   notes: text('notes'),

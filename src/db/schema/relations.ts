@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm';
 import { classrooms, classroomMembers } from './classrooms';
 import { groups, groupMembers } from './groups';
 import { phases } from './phases';
+import { groupPhaseProgress } from './groupPhaseProgress';
 import { todos, todoAttachments } from './todos';
 import { submissions, submissionFiles } from './submissions';
 import { comments } from './comments';
@@ -11,6 +12,7 @@ import { phaseTemplates } from './phaseTemplates';
 export const classroomsRelations = relations(classrooms, ({ many }) => ({
   members: many(classroomMembers),
   groups: many(groups),
+  phases: many(phases),
 }));
 
 export const classroomMembersRelations = relations(classroomMembers, ({ one }) => ({
@@ -27,7 +29,8 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
     references: [classrooms.id],
   }),
   members: many(groupMembers),
-  phases: many(phases),
+  todos: many(todos),
+  phaseProgress: many(groupPhaseProgress),
   submissions: many(submissions),
 }));
 
@@ -40,11 +43,24 @@ export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
 
 // Phases relations
 export const phasesRelations = relations(phases, ({ one, many }) => ({
-  group: one(groups, {
-    fields: [phases.groupId],
-    references: [groups.id],
+  classroom: one(classrooms, {
+    fields: [phases.classroomId],
+    references: [classrooms.id],
   }),
   todos: many(todos),
+  progress: many(groupPhaseProgress),
+}));
+
+// Per-group phase progress relations
+export const groupPhaseProgressRelations = relations(groupPhaseProgress, ({ one }) => ({
+  group: one(groups, {
+    fields: [groupPhaseProgress.groupId],
+    references: [groups.id],
+  }),
+  phase: one(phases, {
+    fields: [groupPhaseProgress.phaseId],
+    references: [phases.id],
+  }),
 }));
 
 // Todos relations
@@ -52,6 +68,10 @@ export const todosRelations = relations(todos, ({ one, many }) => ({
   phase: one(phases, {
     fields: [todos.phaseId],
     references: [phases.id],
+  }),
+  group: one(groups, {
+    fields: [todos.groupId],
+    references: [groups.id],
   }),
   attachments: many(todoAttachments),
   submissions: many(submissions),
