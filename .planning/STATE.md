@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 Phase: 3
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-09-28 - Completed quick task 260928-jkg: Desktop (Mac) Cocoon shell + student desktop alignment + teacher/admin CI
+Last activity: 2026-10-04 - Completed quick task 261003-wuo (classroom-level phases) + Cocoon 2026 template swap
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -104,7 +104,8 @@ None yet.
 - getAttachmentDownloadUrl lacks a classroom-membership check (pre-existing)
 - No Neon database provisioned: DATABASE_URL in .env.local is the placeholder and absent on Vercel; R2 credentials empty
 - Clerk session token must include {"metadata": "{{user.public_metadata}}"} (dev instance done 2026-09-28; production instance still needs it)
-- PENDING (after 261003-wuo migration): classroom "Cocoon 2026" — delete the old test "Market Research" phase/todos (0 submissions) and apply the built-in "Cocoon Incubation" template (user decision 2026-10-04)
+- DONE 2026-10-04: classroom-phase migration applied to the shared DB; "Cocoon 2026" now uses the "Cocoon Incubation" template (3 phases, 6 to-dos per group)
+- drizzle-kit push misreads this Postgres version's named NOT NULL constraints (false 'add unique constraint' prompt) — do NOT use push; apply schema changes via reviewed scripts in src/db/migrations (--dry-run/--apply)
 - Node-level row locks are UI-only; server gates at phase level (TODO Phase 4)
 
 ### Quick Tasks Completed
@@ -116,6 +117,7 @@ None yet.
 | fast | Cocoon-branded landing page matching sign-in/sign-up | 2026-10-03 | 4b9da06 | — |
 | fast | Rename product Duo → build.Innovator (title, logs, package name) | 2026-10-03 | 2817e47 | — |
 | fast | Member names instead of Clerk ids + superadmin teacher/student role management | 2026-10-03 | bc420a7 | — |
+| 261003-wuo | Classroom-level fixed phases, per-group tasks, multi-group assignment (full: plan-checked ×2, verified 10/10, migration applied) | 2026-10-04 | 6b814eb | [261003-wuo-classroom-level-fixed-phases-with-per-gr](./quick/261003-wuo-classroom-level-fixed-phases-with-per-gr/) |
 
 ## Session Continuity
 
