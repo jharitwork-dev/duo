@@ -5,6 +5,7 @@ import {
   computeLockedTodoIds,
   pickCurrentTodoId,
   pickDefaultPhaseId,
+  resolveGroupPhaseStatuses,
   type SubmissionStatus,
 } from '../node-path';
 
@@ -144,5 +145,35 @@ describe('pickDefaultPhaseId', () => {
     const phases = [p('1', 'active'), p('2', 'locked')];
     expect(pickDefaultPhaseId(phases, '2')).toBe('1');
     expect(pickDefaultPhaseId(phases, 'nope')).toBe('1');
+  });
+});
+
+describe('resolveGroupPhaseStatuses', () => {
+  const phases = [{ id: 'p1' }, { id: 'p2' }, { id: 'p3' }];
+
+  it('defaults to first phase active, the rest locked when there are no rows', () => {
+    expect(resolveGroupPhaseStatuses(phases, [])).toEqual({ p1: 'active', p2: 'locked', p3: 'locked' });
+  });
+
+  it('uses explicit rows when present', () => {
+    expect(
+      resolveGroupPhaseStatuses(phases, [
+        { phaseId: 'p1', status: 'completed' },
+        { phaseId: 'p2', status: 'active' },
+        { phaseId: 'p3', status: 'locked' },
+      ]),
+    ).toEqual({ p1: 'completed', p2: 'active', p3: 'locked' });
+  });
+
+  it('mixes defaults and explicit rows', () => {
+    expect(resolveGroupPhaseStatuses(phases, [{ phaseId: 'p2', status: 'completed' }])).toEqual({
+      p1: 'active',
+      p2: 'completed',
+      p3: 'locked',
+    });
+  });
+
+  it('ignores rows for phases outside the list and returns {} for no phases', () => {
+    expect(resolveGroupPhaseStatuses([], [{ phaseId: 'x', status: 'active' }])).toEqual({});
   });
 });
