@@ -5,6 +5,8 @@ import {
   computeLockedTodoIds,
   pickCurrentTodoId,
   pickDefaultPhaseId,
+  isPhasePreview,
+  isPhaseViewable,
   resolveGroupPhaseStatuses,
   type SubmissionStatus,
 } from '../node-path';
@@ -141,10 +143,32 @@ describe('pickDefaultPhaseId', () => {
     expect(pickDefaultPhaseId(phases, '3')).toBe('3');
   });
 
-  it('ignores a locked or unknown requested phase', () => {
-    const phases = [p('1', 'active'), p('2', 'locked')];
-    expect(pickDefaultPhaseId(phases, '2')).toBe('1');
-    expect(pickDefaultPhaseId(phases, 'nope')).toBe('1');
+  it('honours an explicitly requested locked phase (read-only preview)', () => {
+    const phases = [p('1', 'active'), p('2', 'locked'), p('3', 'locked')];
+    expect(pickDefaultPhaseId(phases, '3')).toBe('3');
+  });
+
+  it('still defaults to the active phase without a request, and ignores unknown ids', () => {
+    const phases = [p('1', 'completed'), p('2', 'active'), p('3', 'locked')];
+    expect(pickDefaultPhaseId(phases)).toBe('2');
+    expect(pickDefaultPhaseId(phases, 'nope')).toBe('2');
+  });
+});
+
+describe('isPhasePreview / isPhaseViewable', () => {
+  const p = (status: 'locked' | 'active' | 'completed', isFreeAccess = false) => ({ status, isFreeAccess });
+
+  it('only a locked, non-free-access phase is a preview', () => {
+    expect(isPhasePreview(p('locked'))).toBe(true);
+    expect(isPhasePreview(p('locked', true))).toBe(false);
+    expect(isPhasePreview(p('active'))).toBe(false);
+    expect(isPhasePreview(p('completed'))).toBe(false);
+  });
+
+  it('locked phases stay non-viewable (work/submit access unchanged)', () => {
+    expect(isPhaseViewable(p('locked'))).toBe(false);
+    expect(isPhaseViewable(p('locked', true))).toBe(true);
+    expect(isPhaseViewable(p('active'))).toBe(true);
   });
 });
 

@@ -35,6 +35,15 @@ export function isPhaseViewable(phase: PhaseLike): boolean {
 }
 
 /**
+ * Read-only preview (261004-iyj): a locked, non-free-access phase the student may look at
+ * on the home page (greyed nodes, no links). Never relaxes work/submit/comment access —
+ * server-side gates keep using isPhaseViewable.
+ */
+export function isPhasePreview(phase: PhaseLike): boolean {
+  return !isPhaseViewable(phase);
+}
+
+/**
  * Derived to-do lock state (no schema column):
  * - locked phase without free access → everything locked
  * - completed or free-access phase → nothing locked
@@ -82,8 +91,8 @@ export function pickCurrentTodoId(
 }
 
 /**
- * Phase shown on the student home: the requested one if viewable,
- * otherwise first active, else last completed, else first.
+ * Phase shown on the student home: the requested one if it exists (locked phases open as a
+ * read-only preview — see isPhasePreview), otherwise first active, else last completed, else first.
  */
 export function pickDefaultPhaseId(
   phases: ({ id: string } & PhaseLike)[],
@@ -92,7 +101,7 @@ export function pickDefaultPhaseId(
   if (phases.length === 0) return null;
   if (requested) {
     const match = phases.find((p) => p.id === requested);
-    if (match && isPhaseViewable(match)) return match.id;
+    if (match) return match.id;
   }
   const active = phases.find((p) => p.status === 'active');
   if (active) return active.id;
