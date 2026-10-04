@@ -73,15 +73,22 @@ export async function resolveStudentTodoAccess(todoId: string, userId: string) {
   return { todo, phase: { ...todo.phase, status }, groupId, classroomId };
 }
 
+export interface TodoSubmissionSummary {
+  /** Latest in-scope submission status. */
+  status: SubmissionStatus;
+  /** OLDEST in-scope submission time (drives on_time / late, 261004-03i). */
+  firstSubmittedAt: Date | null;
+}
+
 /**
- * Latest-submission status for each to-do on the student home path.
+ * Latest status + first submission time for each to-do on the student home path (one query).
  * Returns {} when the user is not in the group.
  */
-export async function getTodoSubmissionStatuses(
+export async function getTodoSubmissionSummaries(
   groupId: string,
   userId: string,
   todoList: { id: string; submissionMode: SubmissionMode }[],
-): Promise<Record<string, SubmissionStatus>> {
+): Promise<Record<string, TodoSubmissionSummary>> {
   if (todoList.length === 0) return {};
   if (!(await isGroupMember(groupId, userId))) return {};
 
@@ -91,20 +98,34 @@ export async function getTodoSubmissionStatuses(
       groupId: submissions.groupId,
       submittedBy: submissions.submittedBy,
       status: submissions.status,
+      createdAt: submissions.createdAt,
     })
     .from(submissions)
     .where(inArray(submissions.todoId, todoList.map((t) => t.id)))
     .orderBy(desc(submissions.createdAt));
 
-  const result: Record<string, SubmissionStatus> = {};
+  const result: Record<string, TodoSubmissionSummary> = {};
   for (const todo of todoList) {
-    const latest = rows.find(
+    const scoped = rows.filter(
       (row) =>
         row.todoId === todo.id && isInSubmissionScope(row, todo.submissionMode, groupId, userId),
     );
-    result[todo.id] = statusFromSubmission(latest?.status);
+    result[todo.id] = {
+      status: statusFromSubmission(scoped[0]?.status),
+      firstSubmittedAt: scoped.length > 0 ? scoped[scoped.length - 1].createdAt : null,
+    };
   }
   return result;
+}
+
+/** Latest-submission status for each to-do (wrapper over getTodoSubmissionSummaries). */
+export async function getTodoSubmissionStatuses(
+  groupId: string,
+  userId: string,
+  todoList: { id: string; submissionMode: SubmissionMode }[],
+): Promise<Record<string, SubmissionStatus>> {
+  const summaries = await getTodoSubmissionSummaries(groupId, userId, todoList);
+  return Object.fromEntries(Object.entries(summaries).map(([id, s]) => [id, s.status]));
 }
 
 /**
@@ -146,6 +167,8 @@ export interface SubmissionHistoryEntry {
   id: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: Date;
+  /** Bumped by "อัปเดตงานที่ส่ง" while pending (261004-03i). */
+  updatedAt: Date;
   attempt: number;
   files: { id: string; fileName: string; contentType: string; fileSize: number }[];
   /** Latest reviewer comment on this submission, if any (read-only). */
@@ -188,6 +211,7 @@ export async function getSubmissionHistory(todoId: string, userId: string) {
     id: row.id,
     status: row.status,
     createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
     attempt: scoped.length - index,
     files: row.files.map((f) => ({
       id: f.id,

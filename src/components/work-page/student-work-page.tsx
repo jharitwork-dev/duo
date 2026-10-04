@@ -44,6 +44,10 @@ export interface StudentWorkPageProps {
   latestStatus: SubmissionStatus;
   /** Latest submission was rejected: the submit button becomes the yellow "ส่งอีกครั้ง". */
   resubmit: boolean;
+  /** Effective deadline ISO (261004-03i; Task 2 adds the full update / live-lock UX). */
+  deadline?: string | null;
+  /** Server time ISO used for client-side eligibility (deterministic SSR / hydration). */
+  serverNow?: string;
 }
 
 const READ_ONLY_BANNER: Partial<Record<SubmissionStatus | 'locked', { text: string; className: string }>> = {
@@ -71,6 +75,8 @@ export function StudentWorkPage({
   phaseViewable,
   latestStatus,
   resubmit,
+  deadline = null,
+  serverNow,
 }: StudentWorkPageProps) {
   const router = useRouter();
   const editorRef = useRef<Editor | null>(null);
@@ -218,6 +224,8 @@ export function StudentWorkPage({
     hasContent: hasPageContent(doc),
     latestStatus,
     phaseViewable,
+    deadline: deadline ? new Date(deadline) : null,
+    now: serverNow ? new Date(serverNow) : new Date(),
   });
 
   async function openConfirm() {
@@ -263,11 +271,14 @@ export function StudentWorkPage({
     }
   }
 
-  const banner = !canEdit
-    ? READ_ONLY_BANNER[!phaseViewable ? 'locked' : latestStatus === 'approved' ? 'approved' : 'pending']
-    : undefined;
+  // A pending page can now be editable until the deadline (261004-03i); it still shows "ส่งแล้ว รอตรวจ".
+  const banner =
+    !canEdit || latestStatus === 'pending'
+      ? READ_ONLY_BANNER[!phaseViewable ? 'locked' : latestStatus === 'approved' ? 'approved' : 'pending']
+      : undefined;
   const title = submissionMode === 'group' ? 'หน้างานของกลุ่ม · แก้ไขได้ทุกคน' : 'หน้างานของฉัน';
-  const showSubmitBar = canEdit;
+  // Interim (Task 1): no submit bar while pending; Task 2 adds the "อัปเดตงานที่ส่ง" bar.
+  const showSubmitBar = canEdit && latestStatus !== 'pending';
   const submitLabel = resubmit ? 'ส่งอีกครั้ง' : 'ส่งงาน';
 
   return (

@@ -5,6 +5,7 @@ import {
   buildDeadlineTimeline,
   buildStudentDeadlineItems,
   buildStudentDeadlineSections,
+  cellsForGroup,
   filterMatrixRows,
   summarizeDashboards,
   type ClassroomSnapshot,
@@ -152,6 +153,15 @@ describe('buildClassroomDashboard: matrix', () => {
     snap.submissions = [sub('ti', 'g2', 'b1', 'rejected', at(-HOUR)), sub('ti', 'g2', 'b1', 'pending', at(3 * DAY))];
     const cell = buildClassroomDashboard(snap, at(4 * DAY)).rows[0].cells.g2!;
     expect(cell).toMatchObject({ deadlineStatus: 'on_time', reviewStatus: 'pending', submittedCount: 1, ownerCount: 1 });
+  });
+});
+
+describe('cellsForGroup', () => {
+  it('returns a cell for every to-do of the group, duplicates included', () => {
+    const cells = cellsForGroup(matrixSnapshot(), 'g1', at(2 * DAY));
+    expect(Object.keys(cells).sort()).toEqual(['t1a', 't2a', 't4a', 't4dup']);
+    expect(cells.t1a.deadlineStatus).toBe('on_time');
+    expect(cellsForGroup(matrixSnapshot(), 'nope', at(0))).toEqual({});
   });
 });
 

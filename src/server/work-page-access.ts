@@ -8,8 +8,9 @@ import { submissions } from '@/db/schema/submissions';
 import { workPages } from '@/db/schema/workPages';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { isPhaseViewable, statusFromSubmission, type SubmissionStatus } from '@/lib/node-path';
-import { EMPTY_DOC, canEditWorkPage, workPageOwnerKey, type SubmissionMode } from '@/lib/work-page';
-import { isInSubmissionScope, resolveStudentTodoAccess } from '@/server/queries/submission';
+import { EMPTY_DOC, getWorkPageLock, workPageOwnerKey, type SubmissionMode } from '@/lib/work-page';
+import { getEffectiveDeadline } from '@/lib/deadline';
+import { resolveStudentTodoAccess } from '@/server/queries/submission';
 import { loadClassroomAccess, type DbLike } from '@/server/phase-helpers';
 
 const NOT_AUTHORIZED = 'To-do not found or not authorized';
@@ -103,6 +104,49 @@ export async function getOrCreatePage(
   return created;
 }
 
+export interface ScopedSubmissionRow {
+  id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewedAt: Date | null;
+  reviewedBy: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Latest in-scope submission for (to-do, group/user), filtered in SQL: group mode = the group's
+ * rows, individual = the student's rows. `lock` takes a row lock (FOR UPDATE) inside a transaction.
+ */
+export async function latestScopedSubmission(
+  tx: DbLike,
+  todoId: string,
+  mode: SubmissionMode,
+  groupId: string,
+  userId: string,
+  opts?: { lock?: boolean },
+): Promise<ScopedSubmissionRow | null> {
+  const query = tx
+    .select({
+      id: submissions.id,
+      status: submissions.status,
+      reviewedAt: submissions.reviewedAt,
+      reviewedBy: submissions.reviewedBy,
+      createdAt: submissions.createdAt,
+      updatedAt: submissions.updatedAt,
+    })
+    .from(submissions)
+    .where(
+      and(
+        eq(submissions.todoId, todoId),
+        mode === 'group' ? eq(submissions.groupId, groupId) : eq(submissions.submittedBy, userId),
+      ),
+    )
+    .orderBy(desc(submissions.createdAt))
+    .limit(1);
+  const [row] = opts?.lock ? await query.for('update') : await query;
+  return row ?? null;
+}
+
 /** Latest in-scope submission status for (to-do, group/user). */
 export async function latestScopedStatus(
   tx: DbLike,
@@ -111,13 +155,8 @@ export async function latestScopedStatus(
   groupId: string,
   userId: string,
 ): Promise<SubmissionStatus> {
-  const rows = await tx
-    .select({ status: submissions.status, groupId: submissions.groupId, submittedBy: submissions.submittedBy })
-    .from(submissions)
-    .where(eq(submissions.todoId, todoId))
-    .orderBy(desc(submissions.createdAt));
-  const latest = rows.find((row) => isInSubmissionScope(row, mode, groupId, userId));
-  return statusFromSubmission(latest?.status);
+  const row = await latestScopedSubmission(tx, todoId, mode, groupId, userId);
+  return statusFromSubmission(row?.status);
 }
 
 /** Non-throwing variant of resolveWorkPageAccess (null = no student access). */
@@ -126,13 +165,31 @@ export async function loadWorkPageAccess(todoId: string, userId: string) {
   if (!access) return null;
   const { todo, phase, groupId, classroomId } = access;
   const owner = workPageOwnerKey(todo.submissionMode, groupId, userId);
-  const [page, latestStatus] = await Promise.all([
+  const [page, latestSubmission] = await Promise.all([
     findPage(db, todoId, owner),
-    latestScopedStatus(db, todoId, todo.submissionMode, groupId, userId),
+    latestScopedSubmission(db, todoId, todo.submissionMode, groupId, userId),
   ]);
+  const latestStatus = statusFromSubmission(latestSubmission?.status);
   const phaseViewable = isPhaseViewable(phase);
-  const canEdit = canEditWorkPage(latestStatus, phaseViewable);
-  return { todo, phase, groupId, classroomId, owner, page, latestStatus, phaseViewable, canEdit };
+  // Effective deadline: to-do deadline, else the phase deadline (261004-03i).
+  const deadline = getEffectiveDeadline(todo, todo.phase);
+  const lock = getWorkPageLock({ latestStatus, phaseViewable, deadline, now: new Date() });
+  const canEdit = lock === null;
+  return {
+    todo,
+    phase,
+    groupId,
+    classroomId,
+    owner,
+    page,
+    latestStatus,
+    latestSubmission,
+    latestSubmissionId: latestSubmission?.id ?? null,
+    phaseViewable,
+    deadline,
+    lock,
+    canEdit,
+  };
 }
 
 /**

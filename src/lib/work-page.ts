@@ -195,47 +195,122 @@ export function workPageOwnerKey(
   return mode === 'group' ? { groupId, userId: null } : { groupId, userId };
 }
 
-/** Editable while nothing is pending/approved and the phase is viewable. */
-export function canEditWorkPage(latestStatus: SubmissionStatus, phaseViewable: boolean): boolean {
-  if (!phaseViewable) return false;
-  return latestStatus === 'none' || latestStatus === 'rejected';
+export interface WorkPageRuleInput {
+  latestStatus: SubmissionStatus;
+  phaseViewable: boolean;
+  /** Effective deadline (todo ?? phase), UTC instant; null = no deadline. */
+  deadline: Date | null;
+  now: Date;
 }
 
-export type SubmitBlockReason = 'locked' | 'already_submitted' | 'file_required' | 'empty';
+export type WorkPageLock = 'locked' | 'approved' | 'deadline_passed';
+
+export const WORK_PAGE_LOCK_MESSAGE: Record<WorkPageLock, string> = {
+  locked: 'Phase นี้ยังไม่ปลดล็อค',
+  approved: 'ผ่านแล้ว แก้ไขไม่ได้',
+  deadline_passed: 'เลยกำหนดแก้ไขแล้ว',
+};
+
+function deadlinePassed(deadline: Date | null, now: Date): boolean {
+  return deadline !== null && now.getTime() >= deadline.getTime();
+}
+
+/**
+ * Why the page is read-only (null = editable):
+ * - locked: phase not viewable
+ * - approved: always locked
+ * - deadline_passed: latest submission pending and now ≥ deadline (a pending page is editable
+ *   until the deadline, or until the teacher reviews it when there is no deadline)
+ * none / rejected stay editable at any time (late submissions are allowed but flagged).
+ */
+export function getWorkPageLock(input: WorkPageRuleInput): WorkPageLock | null {
+  if (!input.phaseViewable) return 'locked';
+  if (input.latestStatus === 'approved') return 'approved';
+  if (input.latestStatus === 'pending' && deadlinePassed(input.deadline, input.now)) return 'deadline_passed';
+  return null;
+}
+
+export function canEditWorkPage(input: WorkPageRuleInput): boolean {
+  return getWorkPageLock(input) === null;
+}
+
+export type SubmitBlockReason =
+  | 'locked'
+  | 'already_submitted'
+  | 'deadline_passed'
+  | 'not_submitted'
+  | 'file_required'
+  | 'empty';
 
 export const SUBMIT_BLOCK_MESSAGE: Record<SubmitBlockReason, string> = {
   locked: 'Phase นี้ยังไม่ปลดล็อค',
   already_submitted: 'ส่งงานแล้ว รอตรวจหรือผ่านแล้ว',
+  deadline_passed: 'เลยกำหนดแก้ไขแล้ว',
+  not_submitted: 'ยังไม่มีงานที่ส่งไว้ให้อัปเดต',
   file_required: 'งานนี้ต้องแนบไฟล์อย่างน้อย 1 ไฟล์',
   empty: 'เขียนรายละเอียดงานหรือแนบไฟล์ก่อนส่ง',
 };
 
+/** Shown when "ส่งงาน" is used while a submission is still pending (it must be updated instead). */
+export const USE_UPDATE_MESSAGE = 'งานนี้ส่งแล้ว ใช้ "อัปเดตงานที่ส่ง"';
+
 const EMPTY_TEXT_ONLY_MESSAGE = 'เขียนรายละเอียดงานก่อนส่ง';
 
-export type SubmitEligibility = { ok: true } | { ok: false; reason: SubmitBlockReason; message: string };
+/** submit = first round, resubmit = new round after ต้องแก้ไข, update = rewrite the pending round. */
+export type SubmitMode = 'submit' | 'resubmit' | 'update';
 
-export function canSubmitWorkPage(input: {
-  fileRequirement: FileRequirement;
-  fileCount: number;
-  hasContent: boolean;
-  latestStatus: SubmissionStatus;
-  phaseViewable: boolean;
-}): SubmitEligibility {
+export type SubmitEligibility =
+  | { ok: true; mode: SubmitMode; late: boolean }
+  | { ok: false; reason: SubmitBlockReason; message: string };
+
+/**
+ * Submit / update eligibility. Without `action` the mode is derived from the latest status
+ * (none → submit, rejected → resubmit, pending → update). Server actions pass `action` so
+ * submitWorkPage never creates a round while one is pending and updateSubmittedWorkPage only
+ * rewrites a pending one. `late` = a new round after the deadline (never for an update).
+ */
+export function canSubmitWorkPage(
+  input: WorkPageRuleInput & {
+    fileRequirement: FileRequirement;
+    fileCount: number;
+    hasContent: boolean;
+    action?: 'submit' | 'update';
+  },
+): SubmitEligibility {
   const block = (reason: SubmitBlockReason, message = SUBMIT_BLOCK_MESSAGE[reason]): SubmitEligibility => ({
     ok: false,
     reason,
     message,
   });
   if (!input.phaseViewable) return block('locked');
-  if (input.latestStatus === 'pending' || input.latestStatus === 'approved') return block('already_submitted');
+  if (input.latestStatus === 'approved') return block('already_submitted');
+  if (input.latestStatus === 'pending' && deadlinePassed(input.deadline, input.now)) return block('deadline_passed');
+
+  const mode: SubmitMode =
+    input.latestStatus === 'pending' ? 'update' : input.latestStatus === 'rejected' ? 'resubmit' : 'submit';
+  if (input.action === 'submit' && mode === 'update') return block('already_submitted', USE_UPDATE_MESSAGE);
+  if (input.action === 'update' && mode !== 'update') return block('not_submitted');
+
+  const late = mode !== 'update' && input.deadline !== null && input.now.getTime() > input.deadline.getTime();
+  const ok: SubmitEligibility = { ok: true, mode, late };
   switch (input.fileRequirement) {
     case 'required':
-      return input.fileCount >= 1 ? { ok: true } : block('file_required');
+      return input.fileCount >= 1 ? ok : block('file_required');
     case 'optional':
-      return input.hasContent || input.fileCount >= 1 ? { ok: true } : block('empty');
+      return input.hasContent || input.fileCount >= 1 ? ok : block('empty');
     case 'none':
-      return input.hasContent ? { ok: true } : block('empty', EMPTY_TEXT_ONLY_MESSAGE);
+      return input.hasContent ? ok : block('empty', EMPTY_TEXT_ONLY_MESSAGE);
   }
+}
+
+/**
+ * R2 keys that may be deleted: unique non-empty `oldKeys` that appear in none of the
+ * `stillReferenced` sets (new snapshot, other submission_files rows, live work_page_files).
+ */
+export function computeOrphanFileKeys(oldKeys: readonly string[], ...stillReferenced: Iterable<string>[]): string[] {
+  const keep = new Set<string>();
+  for (const set of stillReferenced) for (const key of set) keep.add(key);
+  return [...new Set(oldKeys.filter((k) => typeof k === 'string' && k.length > 0 && !keep.has(k)))];
 }
 
 /**

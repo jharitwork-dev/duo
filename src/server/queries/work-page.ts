@@ -7,7 +7,7 @@ import { workPages, workPageFiles } from '@/db/schema/workPages';
 import { asc, desc, eq } from 'drizzle-orm';
 import { getR2Config } from '@/lib/r2';
 import { getUserDirectory } from '@/lib/user-directory';
-import { hasPageContent, type FileRequirement, type WorkPageDoc } from '@/lib/work-page';
+import { hasPageContent, type FileRequirement, type WorkPageDoc, type WorkPageLock } from '@/lib/work-page';
 import type { SubmissionStatus } from '@/lib/node-path';
 import { authorizeTodoViewer, loadWorkPageAccess } from '@/server/work-page-access';
 
@@ -26,6 +26,14 @@ export interface StudentWorkPageData {
   latestStatus: SubmissionStatus;
   phaseViewable: boolean;
   storageReady: boolean;
+  /** Effective deadline (todo ?? phase), ISO; null = no deadline (261004-03i). */
+  deadline: string | null;
+  /** Why the page is read-only right now (null = editable). */
+  lock: WorkPageLock | null;
+  /** Latest in-scope submission (the one "อัปเดตงานที่ส่ง" rewrites while pending). ISO strings. */
+  latestSubmission: { id: string; createdAt: string; updatedAt: string } | null;
+  /** Server time when this was computed (seed for the client clock). */
+  serverNow: string;
 }
 
 function fileView(f: { id: string; fileName: string; contentType: string; fileSize: number }): WorkPageFileView {
@@ -58,6 +66,16 @@ export async function getStudentWorkPage(todoId: string, userId: string): Promis
     latestStatus: access.latestStatus,
     phaseViewable: access.phaseViewable,
     storageReady: getR2Config() !== null,
+    deadline: access.deadline ? access.deadline.toISOString() : null,
+    lock: access.lock,
+    latestSubmission: access.latestSubmission
+      ? {
+          id: access.latestSubmission.id,
+          createdAt: access.latestSubmission.createdAt.toISOString(),
+          updatedAt: access.latestSubmission.updatedAt.toISOString(),
+        }
+      : null,
+    serverNow: new Date().toISOString(),
   };
 }
 
@@ -69,6 +87,8 @@ export interface TeacherWorkPageEntry {
     status: 'pending' | 'approved' | 'rejected';
     attempt: number;
     createdAt: string;
+    /** Bumped by "อัปเดตงานที่ส่ง" while pending (261004-03i). */
+    updatedAt: string;
     content: WorkPageDoc | null;
     files: WorkPageFileView[];
     submittedByName: string;
@@ -129,6 +149,7 @@ export async function getTeacherWorkPageView(todoId: string, userId: string) {
             status: latest.status,
             attempt: scoped.length,
             createdAt: latest.createdAt.toISOString(),
+            updatedAt: latest.updatedAt.toISOString(),
             content: (latest.content as WorkPageDoc | null) ?? null,
             files: latest.files.map(fileView),
             submittedByName: nameOf(latest.submittedBy) ?? 'ไม่ระบุชื่อ',
@@ -142,7 +163,8 @@ export async function getTeacherWorkPageView(todoId: string, userId: string) {
             files: page.files.map(fileView),
           }
         : null,
-      liveIsNewer: pageHasWork && (!latest || page!.updatedAt.getTime() > latest.createdAt.getTime()),
+      // Compare with updatedAt: a student update re-snapshots the page into the same submission.
+      liveIsNewer: pageHasWork && (!latest || page!.updatedAt.getTime() > latest.updatedAt.getTime()),
     };
   }
 

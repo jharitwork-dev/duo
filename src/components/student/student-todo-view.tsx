@@ -123,6 +123,8 @@ export function StudentTodoScreen({ todo, workPage, submissions, groupHome }: St
             phaseViewable={workPage.phaseViewable}
             latestStatus={workPage.latestStatus}
             resubmit={resubmit}
+            deadline={workPage.deadline}
+            serverNow={workPage.serverNow}
           />
         </div>
 

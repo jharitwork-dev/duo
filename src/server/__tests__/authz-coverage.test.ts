@@ -86,8 +86,32 @@ describe('authorization coverage of work page actions (261004-01i)', () => {
         'removeWorkPageFile',
         'saveWorkPage',
         'submitWorkPage',
+        'updateSubmittedWorkPage',
       ].sort(),
     );
+  });
+
+  it('updateSubmittedWorkPage locks page + submission rows, guards on pending, never touches createdAt (261004-03i)', () => {
+    const update = fns.find((f) => f.name === 'updateSubmittedWorkPage')!;
+    const body = update.body.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(body).toMatch(/requireRole\(ROLES\.STUDENT\)/);
+    expect(body).toMatch(/db\.transaction\(/);
+    expect(body).toMatch(/findPage\([^)]*lock: true/);
+    expect(body).toMatch(/latestScopedSubmission\([^)]*lock: true/);
+    expect(body).toMatch(/eq\(submissions\.status, 'pending'\)/);
+    expect(body).toMatch(/updatedAt: now/);
+    expect(body).not.toMatch(/createdAt:/);
+    expect(body).toMatch(/deadline: access\.deadline/);
+    // R2 cleanup only after the transaction and only for unreferenced keys.
+    expect(body.indexOf('cleanupR2Objects(')).toBeGreaterThan(body.lastIndexOf('computeOrphanFileKeys('));
+  });
+
+  it('edit gates pass the effective deadline (261004-03i)', () => {
+    const source = fs.readFileSync(path.join(ACTIONS_DIR, 'work-page.ts'), 'utf8');
+    expect(source).toMatch(/deadline: access\.deadline/);
+    for (const name of ['saveWorkPage', 'attachWorkPageFile', 'removeWorkPageFile']) {
+      expect(fns.find((f) => f.name === name)!.body, name).toMatch(/editBlockMessage\(access/);
+    }
   });
 
   it.each(fns.map((f) => [f.name, f]))('%s authorizes the work page / to-do viewer', (_name, fn) => {

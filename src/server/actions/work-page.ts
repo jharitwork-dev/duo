@@ -8,7 +8,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import { submissions, submissionFiles } from '@/db/schema/submissions';
 import { workPages, workPageFiles } from '@/db/schema/workPages';
-import { count, eq } from 'drizzle-orm';
+import { and, count, eq, inArray } from 'drizzle-orm';
 import { getCurrentUserId, requireRole } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { createId } from '@/lib/ids';
@@ -16,9 +16,12 @@ import { getR2Config, presignGet, presignPut, validateSubmissionFile } from '@/l
 import { cleanupR2Objects } from '@/lib/r2-cleanup';
 import { getUserDirectory } from '@/lib/user-directory';
 import { actionError, type ActionResult } from '@/lib/action-result';
+import type { SubmissionStatus } from '@/lib/node-path';
 import {
-  canEditWorkPage,
+  WORK_PAGE_LOCK_MESSAGE,
   canSubmitWorkPage,
+  computeOrphanFileKeys,
+  getWorkPageLock,
   hasPageContent,
   isSaveConflict,
   plainTextFromDoc,
@@ -32,6 +35,7 @@ import {
   getOrCreatePage,
   isPageOwnedBy,
   latestScopedStatus,
+  latestScopedSubmission,
   resolveWorkPageAccess,
   type WorkPageAccess,
   type WorkPageRow,
@@ -39,8 +43,7 @@ import {
 
 const ERR_INPUT = 'ข้อมูลไม่ถูกต้อง';
 const ERR_CONTENT = 'เนื้อหายาวเกินไปหรือไม่ถูกต้อง';
-const ERR_SUBMITTED = 'งานนี้ส่งแล้ว แก้ไขไม่ได้';
-const ERR_LOCKED = 'Phase นี้ยังไม่ปลดล็อค';
+const ERR_REVIEWED = 'ครูตรวจงานนี้แล้ว';
 const ERR_STALE = 'มีการแก้ไขใหม่ กรุณาตรวจสอบก่อนส่ง';
 const ERR_NO_STORAGE = 'ยังไม่ได้ตั้งค่าที่เก็บไฟล์';
 const ERR_NO_FILES = 'งานนี้ไม่ต้องแนบไฟล์';
@@ -62,10 +65,25 @@ export interface WorkPageFileDTO {
   fileSize: number;
 }
 
-type ConflictFail = { success: false; error: string; conflict?: WorkPageConflict };
+type ConflictFail = { success: false; error: string; conflict?: WorkPageConflict; reviewed?: true };
 
-function blockedEditMessage(access: Pick<WorkPageAccess, 'phaseViewable'>): string {
-  return access.phaseViewable ? ERR_SUBMITTED : ERR_LOCKED;
+/**
+ * Deadline-aware edit gate evaluated inside a transaction against the freshest latest status.
+ * Returns the Thai block message, or null when the page is editable (261004-03i):
+ * none / rejected always; pending until the effective deadline (or until reviewed when there is
+ * none); approved never; locked phase never.
+ */
+function editBlockMessage(
+  access: Pick<WorkPageAccess, 'phaseViewable' | 'deadline'>,
+  latestStatus: SubmissionStatus,
+): string | null {
+  const lock = getWorkPageLock({
+    latestStatus,
+    phaseViewable: access.phaseViewable,
+    deadline: access.deadline,
+    now: new Date(),
+  });
+  return lock ? WORK_PAGE_LOCK_MESSAGE[lock] : null;
 }
 
 async function toConflict(page: WorkPageRow): Promise<WorkPageConflict> {
@@ -107,7 +125,8 @@ export async function saveWorkPage(
   const result = await db.transaction(async (tx) => {
     const page = await findPage(tx, todoId, access.owner, { lock: true });
     const latest = await latestScopedStatus(tx, todoId, access.todo.submissionMode, access.groupId, userId);
-    if (!canEditWorkPage(latest, access.phaseViewable)) return { kind: 'blocked' as const };
+    const blocked = editBlockMessage(access, latest);
+    if (blocked) return { kind: 'blocked' as const, message: blocked };
     if (isSaveConflict(baseUpdatedAt, page)) return { kind: 'conflict' as const, page: page! };
 
     const now = new Date();
@@ -128,7 +147,7 @@ export async function saveWorkPage(
         // Another member created the page concurrently: treat as a conflict.
         const fresh = await findPage(tx, todoId, access.owner);
         if (fresh) return { kind: 'conflict' as const, page: fresh };
-        return { kind: 'blocked' as const };
+        return { kind: 'blocked' as const, message: ERR_INPUT };
       }
     } else {
       await tx
@@ -139,7 +158,7 @@ export async function saveWorkPage(
     return { kind: 'ok' as const, updatedAt: now };
   });
 
-  if (result.kind === 'blocked') return actionError(blockedEditMessage(access));
+  if (result.kind === 'blocked') return actionError(result.message);
   if (result.kind === 'conflict') {
     return { success: false, error: 'มีการแก้ไขจากสมาชิกคนอื่น', conflict: await toConflict(result.page) };
   }
@@ -178,12 +197,17 @@ export async function submitWorkPage(
     const usableFiles = fileRequirement === 'none' ? [] : files;
     const content = (page?.content as WorkPageDoc | undefined) ?? null;
 
+    // action 'submit': never creates a round while one is pending (that is an update instead).
+    // Late submissions are allowed; lateness is derived from the first submission's createdAt.
     const eligibility = canSubmitWorkPage({
       fileRequirement,
       fileCount: usableFiles.length,
       hasContent: hasPageContent(content),
       latestStatus: latest,
       phaseViewable: access.phaseViewable,
+      deadline: access.deadline,
+      now: new Date(),
+      action: 'submit',
     });
     if (!eligibility.ok) {
       const storageHint =
@@ -226,6 +250,140 @@ export async function submitWorkPage(
 }
 
 // ---------------------------------------------------------------------------------------------
+// Update a pending submission in place (261004-03i: "อัปเดตงานที่ส่ง")
+
+const updateSchema = z.object({
+  todoId: z.string().min(1),
+  submissionId: z.string().min(1),
+  baseUpdatedAt: z.string().max(64).nullable(),
+});
+
+/**
+ * Re-snapshots the live page + files INTO the same pending submission (same round, no new row).
+ * Allowed while the latest scoped submission is pending, unreviewed, and now < effective deadline
+ * (no deadline: until the teacher reviews it). createdAt is never touched — the first submission
+ * time drives lateness — only content / textContent / updatedAt and the submission_files snapshot.
+ *
+ * Serialisation with reviews: the page row and the submission row are both locked FOR UPDATE.
+ * NOTE for 261004-gic: review actions (approve / reject) MUST also `SELECT ... FOR UPDATE` the
+ * submission row and check `status = 'pending'` before writing, so a student update and a teacher
+ * review can never interleave. The UPDATE below is additionally guarded by `status = 'pending'`.
+ */
+export async function updateSubmittedWorkPage(
+  input: z.infer<typeof updateSchema>,
+): Promise<{ success: true; updatedAt: string } | ConflictFail> {
+  await requireRole(ROLES.STUDENT);
+  const userId = await getCurrentUserId();
+  const parsed = updateSchema.safeParse(input);
+  if (!parsed.success) return actionError(ERR_INPUT);
+  const { todoId, submissionId, baseUpdatedAt } = parsed.data;
+
+  const access = await resolveWorkPageAccess(todoId, userId);
+  const { todo, groupId, classroomId } = access;
+  const fileRequirement = todo.fileRequirement;
+
+  const result = await db.transaction(async (tx) => {
+    // (1) Page row lock + optimistic concurrency, exactly like submit.
+    const page = await findPage(tx, todoId, access.owner, { lock: true });
+    if (page && isSaveConflict(baseUpdatedAt, page)) return { kind: 'conflict' as const, page };
+
+    // (2) Latest scoped submission, row-locked: must be the same one, still pending and unreviewed.
+    const latest = await latestScopedSubmission(tx, todoId, todo.submissionMode, groupId, userId, { lock: true });
+    if (!latest || latest.id !== submissionId || latest.status !== 'pending' || latest.reviewedAt || latest.reviewedBy) {
+      return { kind: 'reviewed' as const };
+    }
+
+    // (3) Deadline-aware eligibility (file / content rules apply to updates too).
+    const files = page ? await tx.select().from(workPageFiles).where(eq(workPageFiles.workPageId, page.id)) : [];
+    const usableFiles = fileRequirement === 'none' ? [] : files;
+    const content = (page?.content as WorkPageDoc | undefined) ?? null;
+    const now = new Date();
+    const eligibility = canSubmitWorkPage({
+      fileRequirement,
+      fileCount: usableFiles.length,
+      hasContent: hasPageContent(content),
+      latestStatus: latest.status,
+      phaseViewable: access.phaseViewable,
+      deadline: access.deadline,
+      now,
+      action: 'update',
+    });
+    if (!eligibility.ok) {
+      const storageHint =
+        eligibility.reason === 'file_required' && !getR2Config() ? ` (${ERR_NO_STORAGE})` : '';
+      return { kind: 'blocked' as const, message: eligibility.message + storageHint };
+    }
+    if (eligibility.mode !== 'update') return { kind: 'blocked' as const, message: ERR_INPUT };
+
+    // (4) Rewrite the same pending round. createdAt untouched (lateness = first submission).
+    const updated = await tx
+      .update(submissions)
+      .set({
+        content,
+        textContent: plainTextFromDoc(content).slice(0, 20000) || null,
+        updatedAt: now,
+      })
+      .where(and(eq(submissions.id, submissionId), eq(submissions.status, 'pending')))
+      .returning({ id: submissions.id });
+    if (updated.length === 0) return { kind: 'reviewed' as const };
+
+    // (5) Replace the submission_files snapshot with the current usable page files.
+    const oldFiles = await tx
+      .select({ fileKey: submissionFiles.fileKey })
+      .from(submissionFiles)
+      .where(eq(submissionFiles.submissionId, submissionId));
+    await tx.delete(submissionFiles).where(eq(submissionFiles.submissionId, submissionId));
+    if (usableFiles.length > 0) {
+      await tx.insert(submissionFiles).values(
+        usableFiles.map((f) => ({
+          submissionId,
+          fileName: f.fileName,
+          fileKey: f.fileKey,
+          contentType: f.contentType,
+          fileSize: f.fileSize,
+        })),
+      );
+    }
+
+    // (6) Candidates: keys in the old snapshot that the new snapshot no longer uses.
+    const candidates = computeOrphanFileKeys(
+      oldFiles.map((f) => f.fileKey),
+      usableFiles.map((f) => f.fileKey),
+    );
+    return { kind: 'ok' as const, updatedAt: now, candidates };
+  });
+
+  if (result.kind === 'conflict') return { success: false, error: ERR_STALE, conflict: await toConflict(result.page) };
+  if (result.kind === 'reviewed') return { success: false, error: ERR_REVIEWED, reviewed: true };
+  if (result.kind === 'blocked') return actionError(result.message);
+
+  // After commit: delete only keys no longer referenced by ANY submission_files row (other rounds)
+  // or work_page_files row (the live page). Best-effort; cleanupR2Objects never throws.
+  if (result.candidates.length > 0) {
+    const [stillSubmitted, stillOnPages] = await Promise.all([
+      db
+        .select({ fileKey: submissionFiles.fileKey })
+        .from(submissionFiles)
+        .where(inArray(submissionFiles.fileKey, result.candidates)),
+      db
+        .select({ fileKey: workPageFiles.fileKey })
+        .from(workPageFiles)
+        .where(inArray(workPageFiles.fileKey, result.candidates)),
+    ]);
+    const orphans = computeOrphanFileKeys(
+      result.candidates,
+      stillSubmitted.map((r) => r.fileKey),
+      stillOnPages.map((r) => r.fileKey),
+    );
+    await cleanupR2Objects(orphans);
+  }
+
+  revalidatePath(`/todo/${todoId}`);
+  revalidatePath(`/student/classroom/${classroomId}/group/${groupId}`);
+  return { success: true, updatedAt: result.updatedAt.toISOString() };
+}
+
+// ---------------------------------------------------------------------------------------------
 // Files
 
 const uploadUrlSchema = z.object({
@@ -236,7 +394,7 @@ const uploadUrlSchema = z.object({
 });
 
 function fileGate(access: WorkPageAccess): string | null {
-  if (!access.canEdit) return blockedEditMessage(access);
+  if (!access.canEdit) return access.lock ? WORK_PAGE_LOCK_MESSAGE[access.lock] : ERR_INPUT;
   if (access.todo.fileRequirement === 'none') return ERR_NO_FILES;
   return null;
 }
@@ -300,7 +458,8 @@ export async function attachWorkPageFile(
       return { error: ERR_INPUT };
     }
     const latest = await latestScopedStatus(tx, data.todoId, access.todo.submissionMode, access.groupId, userId);
-    if (!canEditWorkPage(latest, access.phaseViewable)) return { error: blockedEditMessage(access) };
+    const blocked = editBlockMessage(access, latest);
+    if (blocked) return { error: blocked };
     const [{ n }] = await tx.select({ n: count() }).from(workPageFiles).where(eq(workPageFiles.workPageId, page.id));
     if (n >= MAX_FILES) return { error: ERR_TOO_MANY };
     const [row] = await tx
@@ -348,7 +507,8 @@ export async function removeWorkPageFile(input: z.infer<typeof fileIdSchema>): P
       access.groupId,
       userId,
     );
-    if (!canEditWorkPage(latest, access.phaseViewable)) return { error: blockedEditMessage(access) };
+    const blocked = editBlockMessage(access, latest);
+    if (blocked) return { error: blocked };
     await tx.delete(workPageFiles).where(eq(workPageFiles.id, file.id));
     const [{ n }] = await tx
       .select({ n: count() })
