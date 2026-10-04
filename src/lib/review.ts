@@ -46,6 +46,22 @@ export const REVIEW_PENDING_HINT = 'รอทีมส่งไฟล์ฉบ�
 export const REVIEW_SUCCESS_BANNER = '✓ บันทึกผลแล้ว · แจ้งเตือนทีมเรียบร้อย';
 export const REVIEW_SENT_BACK_BANNER = '✓ ส่งกลับให้แก้ไขแล้ว · แจ้งเตือนทีมเรียบร้อย';
 
+/** /teacher/review URL with only the set params (URL state: classroom, phase, tab, done). */
+export function reviewListHref(params: {
+  classroom?: string | null;
+  phase?: string | null;
+  tab?: ReviewTab | null;
+  done?: 'approved' | 'rejected' | null;
+}): string {
+  const search = new URLSearchParams();
+  if (params.classroom) search.set('classroom', params.classroom);
+  if (params.phase) search.set('phase', params.phase);
+  if (params.tab && params.tab !== 'pending') search.set('tab', params.tab);
+  if (params.done) search.set('done', params.done);
+  const query = search.toString();
+  return query ? `/teacher/review?${query}` : '/teacher/review';
+}
+
 export function parseReviewTab(value: string | undefined | null): ReviewTab {
   return value === 'rejected' || value === 'approved' ? value : 'pending';
 }

@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from 'cn';
 import { CocoonLogo } from './cocoon-logo';
-import { navItemsFor, type NavRole } from './nav-items';
+import { badgeText, navItemsFor, type NavBadges, type NavRole } from './nav-items';
 
 // Desktop (lg+) header from design/mac: logo left, nav links + bell right, 2px divider at y≈115.
-export function DesktopHeader({ role }: { role: NavRole }) {
+export function DesktopHeader({ role, badges }: { role: NavRole; badges?: NavBadges }) {
   const pathname = usePathname() ?? '';
   const items = navItemsFor(role);
 
@@ -27,17 +27,26 @@ export function DesktopHeader({ role }: { role: NavRole }) {
           <nav aria-label="เมนูหลัก" className="flex items-center gap-8">
             {items.map((item) => {
               const active = item.match(pathname);
+              const badge = item.badge ? badgeText(badges?.[item.badge]) : null;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'rounded-md text-[14px] leading-normal outline-none focus-visible:ring-2 focus-visible:ring-cocoon-blue/40',
+                    'inline-flex items-center gap-1.5 rounded-md text-[14px] leading-normal outline-none focus-visible:ring-2 focus-visible:ring-cocoon-blue/40',
                     active ? 'font-bold text-cocoon-orange' : 'font-medium text-cocoon-muted hover:text-cocoon-blue',
                   )}
                 >
                   {item.desktopLabel ?? item.label}
+                  {badge && (
+                    <span
+                      aria-label={`รอตรวจ ${badges?.[item.badge!]} งาน`}
+                      className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-cocoon-orange px-1 text-[11px] leading-none font-bold text-white"
+                    >
+                      {badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
