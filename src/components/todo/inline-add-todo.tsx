@@ -9,12 +9,14 @@ import { AssignTodoDialog, type GroupOption } from './assign-todo-dialog';
 export function InlineAddTodo({
   phaseId,
   phaseName,
+  phaseDeadline = null,
   groupId,
   groups,
   onCreated,
 }: {
   phaseId: string;
   phaseName: string;
+  phaseDeadline?: Date | null;
   groupId: string;
   groups: GroupOption[];
   onCreated: () => void;
@@ -23,6 +25,7 @@ export function InlineAddTodo({
     <AssignTodoDialog
       phaseId={phaseId}
       phaseName={phaseName}
+      phaseDeadline={phaseDeadline}
       groups={groups}
       defaultGroupIds={[groupId]}
       onCreated={onCreated}

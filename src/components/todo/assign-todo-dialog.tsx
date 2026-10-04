@@ -24,6 +24,7 @@ import {
 import { createTodo } from '@/server/actions/todo';
 import type { FileRequirement } from '@/lib/work-page';
 import { FileRequirementSelect } from './file-requirement-select';
+import { DeadlineInput } from '@/components/deadline/deadline-input';
 import { BTN_PRIMARY, DIALOG_PANEL, DIALOG_TITLE, INPUT, LABEL } from '@/components/cocoon/ui';
 
 export type GroupOption = { id: string; name: string };
@@ -104,6 +105,7 @@ export function GroupChecklist({
 export function AssignTodoDialog({
   phaseId,
   phaseName,
+  phaseDeadline = null,
   groups,
   defaultGroupIds,
   trigger,
@@ -114,6 +116,8 @@ export function AssignTodoDialog({
 }: {
   phaseId: string;
   phaseName: string;
+  /** Inherited phase deadline, hinted when no to-do deadline is set. */
+  phaseDeadline?: Date | string | null;
   groups: GroupOption[];
   defaultGroupIds: string[];
   /** Content of the trigger button (omit when controlled via open/onOpenChange). */
@@ -129,6 +133,7 @@ export function AssignTodoDialog({
   const [submissionMode, setSubmissionMode] = useState<SubmissionMode>('group');
   const [fileRequirement, setFileRequirement] = useState<FileRequirement>('optional');
   const [groupIds, setGroupIds] = useState<string[]>(defaultGroupIds);
+  const [deadline, setDeadline] = useState<Date | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const reset = () => {
@@ -136,6 +141,7 @@ export function AssignTodoDialog({
     setSubmissionMode('group');
     setFileRequirement('optional');
     setGroupIds(defaultGroupIds);
+    setDeadline(null);
   };
 
   const setOpen = (next: boolean) => {
@@ -157,6 +163,7 @@ export function AssignTodoDialog({
           title: title.trim(),
           submissionMode,
           fileRequirement,
+          deadline,
         });
         toast.success(`เพิ่มงานให้ ${result.todoIds.length} กลุ่มแล้ว`);
         setOpen(false);
@@ -221,6 +228,15 @@ export function AssignTodoDialog({
               id={`assign-file-requirement-${phaseId}`}
               value={fileRequirement}
               onChange={setFileRequirement}
+              disabled={isPending}
+            />
+
+            <DeadlineInput
+              idPrefix={`assign-deadline-${phaseId}`}
+              label="กำหนดส่ง (ไม่บังคับ)"
+              value={deadline}
+              inheritedDeadline={phaseDeadline}
+              onChange={setDeadline}
               disabled={isPending}
             />
 

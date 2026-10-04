@@ -2,13 +2,10 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -17,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { updateTodo } from '@/server/actions/todo';
-import { formatDateShort } from '@/lib/format';
+import { DeadlineInput } from '@/components/deadline/deadline-input';
 import { cn } from 'cn';
 import { BTN_PRIMARY, INPUT, LABEL, TEXTAREA } from '@/components/cocoon/ui';
 import type { FileRequirement } from '@/lib/work-page';
@@ -33,7 +30,14 @@ type Todo = {
   deadline: Date | null;
 };
 
-export function TodoEditForm({ todo }: { todo: Todo }) {
+export function TodoEditForm({
+  todo,
+  phaseDeadline = null,
+}: {
+  todo: Todo;
+  /** Inherited phase deadline, hinted when the to-do has none. */
+  phaseDeadline?: Date | string | null;
+}) {
   const [title, setTitle] = useState(todo.title);
   const [notes, setNotes] = useState(todo.notes ?? '');
   const [submissionMode, setSubmissionMode] = useState<'group' | 'individual'>(
@@ -132,56 +136,19 @@ export function TodoEditForm({ todo }: { todo: Todo }) {
         }}
       />
 
-      <div className="space-y-2">
-        <Label className={LABEL}>กำหนดส่ง</Label>
-        <Popover>
-          <PopoverTrigger
-            render={
-              <Button variant="outline" className={cn(INPUT, 'w-full justify-start text-left font-normal text-cocoon-ink')}>
-                <CalendarIcon className="mr-2 size-4" />
-                {deadline ? formatDateShort(deadline) : 'เลือกวันกำหนดส่ง'}
-              </Button>
-            }
-          />
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={deadline ?? undefined}
-              onSelect={(date) => {
-                setDeadline(date ?? null);
-                startTransition(async () => {
-                  await updateTodo({
-                    todoId: todo.id,
-                    deadline: date ?? null,
-                  });
-                  router.refresh();
-                });
-              }}
-            />
-            {deadline && (
-              <div className="border-t p-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    setDeadline(null);
-                    startTransition(async () => {
-                      await updateTodo({
-                        todoId: todo.id,
-                        deadline: null,
-                      });
-                      router.refresh();
-                    });
-                  }}
-                >
-                  ล้างกำหนดส่ง
-                </Button>
-              </div>
-            )}
-          </PopoverContent>
-        </Popover>
-      </div>
+      <DeadlineInput
+        idPrefix={`todo-deadline-${todo.id}`}
+        value={deadline}
+        inheritedDeadline={phaseDeadline}
+        disabled={isPending}
+        onChange={(next) => {
+          setDeadline(next);
+          startTransition(async () => {
+            await updateTodo({ todoId: todo.id, deadline: next });
+            router.refresh();
+          });
+        }}
+      />
 
       {/* Attachments section placeholder */}
       <div className="space-y-2 lg:col-span-2">

@@ -35,7 +35,10 @@ import { TodoEditForm } from './todo-edit-form';
 import { archiveTodo, deleteTodo } from '@/server/actions/todo';
 import { ConfirmDialog } from '@/components/cocoon/confirm-dialog';
 import { useDeletionImpact } from '@/components/cocoon/use-deletion-impact';
-import { formatDateShort } from '@/lib/format';
+import { formatDeadline, getEffectiveDeadline } from '@/lib/deadline';
+import { formatSubmissionDate } from '@/lib/format';
+import type { DashboardCell } from '@/lib/deadline-dashboard';
+import { DeadlineChip } from '@/components/deadline/deadline-chip';
 import type { getActivePhases } from '@/server/queries/phase';
 
 type Todo = Awaited<ReturnType<typeof getActivePhases>>[number]['todos'][number];
@@ -56,6 +59,8 @@ export function TodoItem({
   index,
   commentCount = 0,
   review,
+  phaseDeadline = null,
+  deadlineCell,
 }: {
   todo: Todo;
   index: number;
@@ -63,11 +68,17 @@ export function TodoItem({
   commentCount?: number;
   /** Latest-submission review summary (undefined = nothing submitted yet). */
   review?: TodoReviewSummary;
+  /** Inherited phase deadline (effective deadline = todo ?? phase). */
+  phaseDeadline?: Date | null;
+  /** Deadline + submission state for this group (261004-03i). */
+  deadlineCell?: DashboardCell;
 }) {
   const todoHref = `/todo/${todo.id}`;
   const reviewStatus = review?.status ?? 'none';
   const reviewLabel =
     reviewStatus === 'pending' && (review?.pendingCount ?? 0) > 1 ? `รอตรวจ ${review!.pendingCount}` : undefined;
+  const effectiveDeadline = getEffectiveDeadline(todo, { deadline: phaseDeadline });
+  const inheritsPhaseDeadline = !todo.deadline && effectiveDeadline !== null;
   const { ref, handleRef, isDragging } = useSortable({
     id: todo.id,
     index,
@@ -119,8 +130,25 @@ export function TodoItem({
             <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-normal font-medium text-cocoon-muted">
               <span>
                 {modeLabels[todo.submissionMode]}
-                {todo.deadline && ` · กำหนดส่ง ${formatDateShort(todo.deadline)}`}
+                {effectiveDeadline &&
+                  (inheritsPhaseDeadline
+                    ? ` · กำหนดส่ง (Phase) ${formatSubmissionDate(effectiveDeadline)}`
+                    : ` · ${formatDeadline(effectiveDeadline)}`)}
               </span>
+              {deadlineCell && (
+                <DeadlineChip
+                  status={deadlineCell.deadlineStatus}
+                  lateMs={deadlineCell.lateMs}
+                  overdueMs={deadlineCell.overdueMs}
+                  remainingMs={deadlineCell.remainingMs}
+                  className="h-[20px]"
+                />
+              )}
+              {deadlineCell && deadlineCell.submissionMode === 'individual' && deadlineCell.ownerCount > 0 && (
+                <span className="text-[12px] font-bold text-cocoon-blue">
+                  ส่งแล้ว {deadlineCell.submittedCount}/{deadlineCell.ownerCount}
+                </span>
+              )}
               {fileRequirementBadge[todo.fileRequirement] && (
                 <span
                   className={`inline-flex h-[20px] items-center rounded-full px-2 text-[11px] font-bold ${fileRequirementBadge[todo.fileRequirement]!.className}`}
@@ -205,7 +233,7 @@ export function TodoItem({
 
         <CollapsibleContent>
           <div className="border-t border-[#e4e8ee] px-3 pt-3 pb-3 lg:px-4 lg:pb-4">
-            <TodoEditForm todo={todo} />
+            <TodoEditForm todo={todo} phaseDeadline={phaseDeadline} />
           </div>
         </CollapsibleContent>
       </Collapsible>
