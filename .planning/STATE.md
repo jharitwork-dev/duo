@@ -102,7 +102,7 @@ None yet.
 - Student uploads now go browser → R2 directly: bucket CORS must allow PUT + content-type from build.innovators.co.th and localhost
 - getAttachmentDownloadUrl lacks a classroom-membership check (pre-existing)
 - R2 configured 2026-10-04: bucket build-innovator-uploads (APAC), Object R&W token scoped to it, CORS for localhost:3000 + build.innovators.co.th; env set locally and on Vercel (all envs). Secret was pasted in chat — rotate the token when convenient.
-- Clerk session token must include {"metadata": "{{user.public_metadata}}"} (dev instance done 2026-09-28; production instance still needs it)
+- Clerk session token claim {"metadata": "{{user.public_metadata}}"}: dev done 2026-09-28, prod done 2026-10-04
 - DONE 2026-10-04: classroom-phase migration applied to the shared DB; "Cocoon 2026" now uses the "Cocoon Incubation" template (3 phases, 6 to-dos per group)
 - drizzle-kit push misreads this Postgres version's named NOT NULL constraints (false 'add unique constraint' prompt) — do NOT use push; apply schema changes via reviewed scripts in src/db/migrations (--dry-run/--apply)
 - Node-level row locks are UI-only; server gates at phase level (TODO Phase 4)
@@ -141,3 +141,9 @@ In flight / next, in order (user authorized end-to-end execution incl. apply+dep
 4. **261004-j6h** DONE + deployed 2026-10-04.
 5. Phase 6 LINE notifications: DEFERRED by user 2026-10-04 ("ไม่ใช้ตอนนี้") — do not propose until the user asks.
 User-side in progress: Clerk production instance — DONE: prod instance (secondary app, build.innovators.co.th), 5 DNS CNAMEs added via Cloudflare API (DNS only); user doing Google OAuth client (redirect https://clerk.build.innovators.co.th/v1/oauth_callback). REMAINING after that: (original plan: create prod instance cloned from dev, domain build.innovators.co.th, 5 DNS CNAMEs in Cloudflare as DNS-only; then Google OAuth client, swap pk_live/sk_live in Vercel Production, migrate dev Clerk user ids → prod ids by email in DB). Also rotate the R2 token (secret was pasted in chat).
+
+## Clerk production cut-over (2026-10-04) — DONE
+- Vercel Production now uses pk_live/sk_live (prod instance clerk.build.innovators.co.th); redeployed, site 200, serves pk_live.
+- Prod users pre-created by email with roles; DB user ids remapped dev→prod via src/db/migrations/2026-10-04-clerk-prod-user-ids.ts (applied).
+- Local keys for prod: .env.clerk-prod.local (gitignored). CAVEAT: localhost still uses the dev instance (pk_test) whose user ids no longer match the DB — local login sees no memberships.
+- User to rotate (pasted in chat): Clerk sk_live, Google OAuth client secret, Cloudflare DNS token, R2 token.
