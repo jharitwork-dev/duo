@@ -48,7 +48,7 @@ export function normalizeCommentBody(raw: string): { ok: true; body: string } | 
 
 export type LinkSegment = { type: 'text'; text: string } | { type: 'link'; href: string; label: string };
 
-// http(s):// or www. not glued to a preceding word / path / email character.
+// http(s):// or www. not glued to a preceding word, path or "@" character.
 const URL_RE = /(?<![\w.@/:-])(?:https?:\/\/|www\.)[^\s<>"]+/gi;
 const TRAILING_PUNCT = /[.,!?)\]'"]+$/;
 
@@ -172,7 +172,7 @@ export function formatCommentTime(createdAt: Date | string, now: Date | string):
   return formatSubmissionDate(created);
 }
 
-/** Name safe to show to any viewer: full name, then username, never an email. */
+/** Name safe to show to any viewer: full name, then username, never a contact address. */
 export function publicDisplayName(user: {
   firstName?: string | null;
   lastName?: string | null;
@@ -213,7 +213,7 @@ export type CommentViewContext = {
   viewerId: string;
   viewerIsEditor: boolean;
   now: Date;
-  /** Public identity only (no email). */
+  /** Public identity only (name + avatar). */
   directory: Map<string, { publicName: string; imageUrl: string | null }>;
   submissionIdsOldestFirst: string[];
 };

@@ -4,7 +4,7 @@ import { ArrowRight, Plus } from 'lucide-react';
 import { cn } from 'cn';
 import { StatusPill } from '@/components/cocoon/status-pill';
 import type { SubmissionStatus } from '@/lib/node-path';
-import { firstLine, type PathTodo } from './node-path';
+import { firstLine, nodeLabel, UnreadCommentDot, type PathTodo } from './node-path';
 import { NodeIcon, NodeRing, ringStatusFor } from './node-icons';
 
 // Geometry measured from design/mac/home.png (1280 frame, 1152 column).
@@ -20,6 +20,8 @@ interface NodePathDesktopProps {
   statuses: Record<string, SubmissionStatus>;
   locked: Set<string>;
   currentId: string | null;
+  /** To-dos with teacher comments the student has not seen (261004-fgj). */
+  unreadTodoIds?: string[];
 }
 
 function Connector({ kind }: { kind: Link_ }) {
@@ -46,17 +48,20 @@ function Node({
   status,
   isLocked,
   isCurrent,
+  hasUnread,
 }: {
   todo: PathTodo;
   status: SubmissionStatus;
   isLocked: boolean;
   isCurrent: boolean;
+  hasUnread: boolean;
 }) {
   const subtitle = firstLine(todo.description);
   const ring = ringStatusFor(status, isLocked, isCurrent);
 
   const body = (
     <>
+      {hasUnread && <UnreadCommentDot className="top-[22px] right-[30px]" />}
       <div className="absolute inset-[7px] flex flex-col items-center rounded-full bg-white px-5 pt-[18px] text-center">
         <div className="flex h-[80px] items-end justify-center">
           <NodeIcon status={status} locked={isLocked} size="lg" />
@@ -86,7 +91,7 @@ function Node({
   ) : (
     <Link
       href={`/todo/${todo.id}`}
-      aria-label={todo.title}
+      aria-label={nodeLabel(todo.title, hasUnread)}
       className={cn(
         nodeClass,
         'transition-transform outline-none hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-cocoon-blue/50',
@@ -103,7 +108,8 @@ function Node({
  * "+" joins the parallel pair of one row, "→" joins consecutive rows; a line that
  * continues on the next one ends with a trailing "→".
  */
-export function NodePathDesktop({ rows, statuses, locked, currentId }: NodePathDesktopProps) {
+export function NodePathDesktop({ rows, statuses, locked, currentId, unreadTodoIds = [] }: NodePathDesktopProps) {
+  const unread = new Set(unreadTodoIds);
   const flat: { todo: PathTodo; link: Link_ | null }[] = [];
   rows.forEach((row, r) =>
     row.forEach((todo, i) => {
@@ -138,6 +144,7 @@ export function NodePathDesktop({ rows, statuses, locked, currentId }: NodePathD
                     status={statuses[todo.id] ?? 'none'}
                     isLocked={locked.has(todo.id)}
                     isCurrent={todo.id === currentId}
+                    hasUnread={!locked.has(todo.id) && unread.has(todo.id)}
                   />
                   {i < line.length - 1 && link && <Connector kind={link} />}
                 </Fragment>
