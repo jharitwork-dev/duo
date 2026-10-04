@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -20,6 +21,20 @@ import { BTN_PRIMARY, INPUT, LABEL, TEXTAREA } from '@/components/cocoon/ui';
 import type { FileRequirement } from '@/lib/work-page';
 import { FileRequirementSelect } from './file-requirement-select';
 import { TodoAttachmentManager, type ManagedAttachment } from './todo-attachment-manager';
+import { formatDeadline } from '@/lib/deadline';
+import type { OverridableField } from '@/lib/classroom-task-sync';
+
+const LOCKED_CAPTION = '🔒 ล็อกโดยงานของห้องเรียน — แก้ได้จากแท็บ Phase';
+const OVERRIDE_HINT = 'แก้ที่นี่จะใช้เฉพาะกลุ่มนี้ และจะไม่ถูกอัปเดตจากงานของห้องเรียนอีก';
+
+/** Per-field caption on a classroom-task copy (261004-j6h). */
+function OverrideCaption({ overridden }: { overridden: boolean }) {
+  return overridden ? (
+    <p className="text-[12px] font-bold text-[#a86a00]">แก้เฉพาะกลุ่มนี้แล้ว</p>
+  ) : (
+    <p className="text-[12px] text-cocoon-muted">{OVERRIDE_HINT}</p>
+  );
+}
 
 type Todo = {
   id: string;
@@ -30,6 +45,9 @@ type Todo = {
   fileRequirement: FileRequirement;
   deadline: Date | null;
   attachments?: ManagedAttachment[];
+  /** Copy of a classroom-level task (261004-j6h): title / deadline / mode are locked. */
+  classroomTaskId?: string | null;
+  overriddenFields?: string[];
 };
 
 export function TodoEditForm({
@@ -51,19 +69,27 @@ export function TodoEditForm({
   );
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const linked = Boolean(todo.classroomTaskId);
+  const isOverridden = (field: OverridableField) => (todo.overriddenFields ?? []).includes(field);
 
-  const handleSave = () => {
+  const save = (input: Omit<Parameters<typeof updateTodo>[0], 'todoId'>) => {
     startTransition(async () => {
-      await updateTodo({
-        todoId: todo.id,
-        title,
-        notes: notes || undefined,
-        submissionMode,
-        fileRequirement,
-        deadline: deadline ?? null,
-      });
+      try {
+        await updateTodo({ todoId: todo.id, ...input });
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'บันทึกไม่สำเร็จ');
+      }
       router.refresh();
     });
+  };
+
+  const handleSave = () => {
+    // Linked copies never send locked fields (the server rejects changes to them anyway).
+    save(
+      linked
+        ? { notes: notes || undefined, fileRequirement }
+        : { title, notes: notes || undefined, submissionMode, fileRequirement, deadline: deadline ?? null },
+    );
   };
 
   return (
@@ -75,9 +101,12 @@ export function TodoEditForm({
           className={INPUT}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          onBlur={handleSave}
+          onBlur={linked ? undefined : handleSave}
+          readOnly={linked}
+          disabled={linked}
           placeholder="ชื่อสิ่งที่ต้องทำ"
         />
+        {linked && <p className="text-[12px] text-cocoon-muted">{LOCKED_CAPTION}</p>}
       </div>
 
       <div className="space-y-2 lg:col-span-2">
@@ -96,22 +125,19 @@ export function TodoEditForm({
           placeholder="คำแนะนำหรือบันทึกสำหรับนักเรียน (ข้อความธรรมดา)"
           rows={4}
         />
+        {linked && <OverrideCaption overridden={isOverridden('notes')} />}
       </div>
 
       <div className="space-y-2">
         <Label className={LABEL}>รูปแบบการส่งงาน</Label>
         <Select
           value={submissionMode}
+          disabled={linked}
           onValueChange={(value) => {
+            if (linked) return;
             const mode = value as 'group' | 'individual';
             setSubmissionMode(mode);
-            startTransition(async () => {
-              await updateTodo({
-                todoId: todo.id,
-                submissionMode: mode,
-              });
-              router.refresh();
-            });
+            save({ submissionMode: mode });
           }}
         >
           <SelectTrigger className="h-12 w-full rounded-[12px] border-[#f1ece5] bg-[#fffaf3] px-4 text-[16px] data-[size=default]:h-12">
@@ -122,39 +148,48 @@ export function TodoEditForm({
             <SelectItem value="individual">รายบุคคล</SelectItem>
           </SelectContent>
         </Select>
+        {linked && <p className="text-[12px] text-cocoon-muted">{LOCKED_CAPTION}</p>}
       </div>
 
-      <FileRequirementSelect
-        id={`todo-file-requirement-${todo.id}`}
-        label="ไฟล์แนบตอนส่งงาน"
-        value={fileRequirement}
-        disabled={isPending}
-        onChange={(value) => {
-          setFileRequirement(value);
-          startTransition(async () => {
-            await updateTodo({ todoId: todo.id, fileRequirement: value });
-            router.refresh();
-          });
-        }}
-      />
+      <div className="space-y-2">
+        <FileRequirementSelect
+          id={`todo-file-requirement-${todo.id}`}
+          label="ไฟล์แนบตอนส่งงาน"
+          value={fileRequirement}
+          disabled={isPending}
+          onChange={(value) => {
+            setFileRequirement(value);
+            save({ fileRequirement: value });
+          }}
+        />
+        {linked && <OverrideCaption overridden={isOverridden('fileRequirement')} />}
+      </div>
 
-      <DeadlineInput
-        idPrefix={`todo-deadline-${todo.id}`}
-        value={deadline}
-        inheritedDeadline={phaseDeadline}
-        disabled={isPending}
-        onChange={(next) => {
-          setDeadline(next);
-          startTransition(async () => {
-            await updateTodo({ todoId: todo.id, deadline: next });
-            router.refresh();
-          });
-        }}
-      />
+      {linked ? (
+        <div className="space-y-2">
+          <span className={LABEL}>กำหนดส่ง</span>
+          <p className="flex h-12 items-center rounded-[12px] border border-[#f1ece5] bg-[#f6f4f1] px-4 text-[16px] text-cocoon-muted">
+            {todo.deadline ? formatDeadline(todo.deadline) : 'ไม่มีกำหนดส่ง'}
+          </p>
+          <p className="text-[12px] text-cocoon-muted">{LOCKED_CAPTION}</p>
+        </div>
+      ) : (
+        <DeadlineInput
+          idPrefix={`todo-deadline-${todo.id}`}
+          value={deadline}
+          inheritedDeadline={phaseDeadline}
+          disabled={isPending}
+          onChange={(next) => {
+            setDeadline(next);
+            save({ deadline: next });
+          }}
+        />
+      )}
 
       {/* Teacher attachments (261004-gid) */}
-      <div className="lg:col-span-2">
+      <div className="space-y-2 lg:col-span-2">
         <TodoAttachmentManager todoId={todo.id} attachments={todo.attachments ?? []} />
+        {linked && <OverrideCaption overridden={isOverridden('attachments')} />}
       </div>
 
       <Button

@@ -19,6 +19,7 @@ import { TeacherWorkPagePanel } from '@/components/work-page/teacher-work-page-p
 import { FILE_REQUIREMENT_LABEL } from '@/lib/work-page';
 import { formatDeadline, getEffectiveDeadline } from '@/lib/deadline';
 import { CommentThreadSection, CommentThreadSkeleton } from '@/components/comment/comment-thread-section';
+import { ClassroomTaskBadge } from '@/components/classroom-task/classroom-task-badge';
 
 interface Props {
   params: Promise<{ todoId: string }>;
@@ -75,6 +76,7 @@ export default async function TodoDetailPage({ params, searchParams }: Props) {
         subtitle={`${classroom.name} · ${group.name} · ${phase.name}`}
         actions={
           <>
+            {todo.classroomTaskId && <ClassroomTaskBadge className="h-[31px] px-3 text-[14px]" />}
             <span className={cn(PILL, 'border border-cocoon-blue bg-cocoon-blue-soft text-cocoon-blue')}>
               {todo.submissionMode === 'individual' ? 'รายบุคคล' : 'กลุ่ม'}
             </span>

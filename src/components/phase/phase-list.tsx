@@ -9,6 +9,7 @@ import { InlineAddPhase } from './inline-add-phase';
 import { reorderPhases } from '@/server/actions/phase';
 import type { getClassroomPhases } from '@/server/queries/phase';
 import type { GroupOption } from '@/components/todo/assign-todo-dialog';
+import type { ClassroomTaskView } from '@/server/queries/classroom-task';
 
 export type ClassroomPhase = Awaited<ReturnType<typeof getClassroomPhases>>[number];
 
@@ -20,10 +21,13 @@ export function PhaseList({
   classroomId,
   initialPhases,
   groups,
+  classroomTasks = {},
 }: {
   classroomId: string;
   initialPhases: ClassroomPhase[];
   groups: GroupOption[];
+  /** Classroom-level tasks keyed by phase id (261004-j6h). A prop (not state) so refreshes show. */
+  classroomTasks?: Record<string, ClassroomTaskView[]>;
 }) {
   const [phases, setPhases] = useState(initialPhases);
   const [, startTransition] = useTransition();
@@ -61,7 +65,13 @@ export function PhaseList({
         }}
       >
         {phases.map((phase, index) => (
-          <PhaseItem key={phase.id} phase={phase} index={index} groups={groups} />
+          <PhaseItem
+            key={phase.id}
+            phase={phase}
+            index={index}
+            groups={groups}
+            classroomTasks={classroomTasks[phase.id] ?? []}
+          />
         ))}
       </DragDropProvider>
 

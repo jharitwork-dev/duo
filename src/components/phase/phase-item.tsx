@@ -25,6 +25,8 @@ import { AssignTodoDialog, type GroupOption } from '@/components/todo/assign-tod
 import { archivePhase } from '@/server/actions/phase';
 import { formatDeadline } from '@/lib/deadline';
 import type { ClassroomPhase } from './phase-list';
+import type { ClassroomTaskView } from '@/server/queries/classroom-task';
+import { ClassroomTaskSection } from '@/components/classroom-task/classroom-task-section';
 
 const PILL =
   'inline-flex h-[24px] items-center rounded-full border border-cocoon-line px-2.5 text-[12px] font-medium whitespace-nowrap text-cocoon-subtle';
@@ -34,10 +36,13 @@ export function PhaseItem({
   phase,
   index,
   groups,
+  classroomTasks = [],
 }: {
   phase: ClassroomPhase;
   index: number;
   groups: GroupOption[];
+  /** Classroom-level tasks of this phase, deadline-ordered (261004-j6h). */
+  classroomTasks?: ClassroomTaskView[];
 }) {
   const { ref, handleRef, isDragging } = useSortable({
     id: phase.id,
@@ -135,6 +140,14 @@ export function PhaseItem({
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      <ClassroomTaskSection
+        phaseId={phase.id}
+        phaseName={phase.name}
+        phaseDeadline={phase.deadline}
+        tasks={classroomTasks}
+        groupCount={groups.length}
+      />
 
       <AssignTodoDialog
         phaseId={phase.id}

@@ -15,7 +15,7 @@ import { asc, count, eq, max } from 'drizzle-orm';
 import { getCurrentUserId, requireRole } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { createId } from '@/lib/ids';
-import { getR2Config, presignPut, validateAttachmentFile } from '@/lib/r2';
+import { getR2Config, presignGet, presignPut, validateAttachmentFile } from '@/lib/r2';
 import { actionError, type ActionResult } from '@/lib/action-result';
 import { FILE_REQUIREMENTS } from '@/lib/work-page';
 import {
@@ -420,4 +420,35 @@ export async function removeClassroomTaskFile(
   await cleanupR2Objects([...keys]);
   revalidateClassroomTaskPages(classroomId, result.sync.groupIds);
   return { success: true, objectRemoved };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Teacher download of a classroom-task file (copies use getAttachmentDownloadUrl on their own rows)
+
+export async function getClassroomTaskFileUrl(
+  input: z.infer<typeof removeFileSchema>,
+): Promise<ActionResult<{ url: string; fileName: string }>> {
+  await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
+  const parsed = removeFileSchema.safeParse(input);
+  if (!parsed.success) return actionError(ATTACHMENT_ERRORS.input);
+
+  const row = await db.query.classroomTaskFiles.findFirst({
+    where: eq(classroomTaskFiles.id, parsed.data.fileId),
+  });
+  if (!row) return actionError(ERR_FILE_NOT_FOUND);
+  try {
+    await assertClassroomTaskEditor(row.classroomTaskId, userId);
+  } catch {
+    return actionError(ERR_NOT_AUTHORIZED);
+  }
+
+  if (!getR2Config()) return actionError(ATTACHMENT_ERRORS.noStorage);
+  const disposition = `attachment; filename="${encodeURIComponent(row.fileName)}"`;
+  try {
+    const url = await presignGet(row.fileKey, 3600, disposition);
+    return { success: true, url, fileName: row.fileName };
+  } catch {
+    return actionError(ATTACHMENT_ERRORS.noStorage);
+  }
 }

@@ -6,12 +6,15 @@ import { cn } from 'cn';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { CARD } from '@/components/cocoon/ui';
 import { formatDeadline } from '@/lib/deadline';
+import { ClassroomTaskBadge } from '@/components/classroom-task/classroom-task-badge';
 
 interface Todo {
   id: string;
   title: string;
   submissionMode: string;
   deadline: Date | null;
+  /** Copy of a classroom-level task (261004-j6h) → 🔒 badge. */
+  classroomTaskId?: string | null;
 }
 
 interface Phase {
@@ -107,7 +110,10 @@ export function GroupPhaseView({ phases }: GroupPhaseViewProps) {
                           className="flex items-center gap-3 rounded-[12px] border border-[#e4e8ee] bg-[#fafbfc] px-4 py-3 outline-none transition-colors hover:border-cocoon-blue/40 focus-visible:ring-2 focus-visible:ring-cocoon-blue/40"
                         >
                           <span className="flex min-w-0 flex-1 flex-col">
-                            <span className="truncate text-[16px] font-bold text-cocoon-ink">{todo.title}</span>
+                            <span className="flex min-w-0 items-center gap-2">
+                              <span className="truncate text-[16px] font-bold text-cocoon-ink">{todo.title}</span>
+                              {todo.classroomTaskId && <ClassroomTaskBadge />}
+                            </span>
                             <span className="text-[13px] font-medium text-cocoon-muted">
                               {todo.submissionMode === 'individual' ? 'รายบุคคล' : 'กลุ่ม'}
                               {todo.deadline &&

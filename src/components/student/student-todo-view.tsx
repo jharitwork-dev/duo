@@ -13,6 +13,7 @@ import { StudentWorkPage } from '@/components/work-page/student-work-page';
 import { TodoDetailView } from './todo-detail-view';
 import { HistoryCard, HistoryListCard, ReviewerNoteCard, type StudentSubmission } from './submission-status-view';
 import { CommentThreadSection, CommentThreadSkeleton } from '@/components/comment/comment-thread-section';
+import { ClassroomTaskBadge } from '@/components/classroom-task/classroom-task-badge';
 
 /**
  * Server component: Cocoon to-do page for students (261004-01i). One page:
@@ -36,6 +37,7 @@ export async function StudentTodoView({ todoId, userId }: { todoId: string; user
         notes: todo.notes,
         submissionMode: todo.submissionMode,
         fileRequirement: todo.fileRequirement,
+        classroomTaskId: todo.classroomTaskId ?? null,
         attachments: todo.attachments.map((a) => ({
           id: a.id,
           fileName: a.fileName,
@@ -58,6 +60,8 @@ interface StudentTodoScreenProps {
     notes: string | null;
     submissionMode: 'group' | 'individual';
     fileRequirement: FileRequirement;
+    /** Copy of a classroom-level task (261004-j6h) → 🔒 badge. */
+    classroomTaskId?: string | null;
     attachments: { id: string; fileName: string; contentType: string; fileSize: number }[];
   };
   workPage: StudentWorkPageData;
@@ -102,6 +106,7 @@ export function StudentTodoScreen({ todo, workPage, submissions, groupHome }: St
       {/* Mobile title block (260928-iwi) */}
       <div className="-mt-2 px-[31px] lg:hidden">
         <h1 className="text-[32px] leading-tight font-bold break-words text-cocoon-blue">{todo.title}</h1>
+        {todo.classroomTaskId && <ClassroomTaskBadge className="mt-1" />}
         {firstLine && <p className="text-[12px] leading-normal font-bold text-cocoon-muted">{firstLine}</p>}
         {latest && (
           <div className="mt-2">
@@ -118,7 +123,16 @@ export function StudentTodoScreen({ todo, workPage, submissions, groupHome }: St
         backLabel="งานของฉัน"
         title={todo.title}
         subtitle={firstLine || undefined}
-        actions={pill}
+        actions={
+          todo.classroomTaskId ? (
+            <>
+              <ClassroomTaskBadge className="h-[24px] px-2.5" />
+              {pill}
+            </>
+          ) : (
+            pill
+          )
+        }
       />
       {workPage.deadline && <div className="mt-4 hidden lg:block">{banner}</div>}
 

@@ -11,6 +11,7 @@ import { reorderTodos } from '@/server/actions/todo';
 import type { getActivePhases } from '@/server/queries/phase';
 import type { TodoReviewSummary } from '@/lib/todo-review-status';
 import type { DashboardCell } from '@/lib/deadline-dashboard';
+import { sortTodosByDeadline } from '@/lib/todo-order';
 
 type Todo = Awaited<ReturnType<typeof getActivePhases>>[number]['todos'][number];
 
@@ -58,10 +59,11 @@ export function TodoList({
           const targetIndex = todos.findIndex((t) => t.id === target.id);
           if (sourceIndex === -1 || targetIndex === -1) return;
 
-          // Reorder locally
-          const updated = [...todos];
-          const [moved] = updated.splice(sourceIndex, 1);
-          updated.splice(targetIndex, 0, moved);
+          // Reorder locally, then snap dated tasks back to deadline order (D-3', 261004-j6h).
+          const moved = [...todos];
+          const [item] = moved.splice(sourceIndex, 1);
+          moved.splice(targetIndex, 0, item);
+          const updated = sortTodosByDeadline(moved.map((t, i) => ({ ...t, orderIndex: i })));
           setTodos(updated);
 
           // Persist to server

@@ -6,6 +6,7 @@ import { ROLES } from '@/lib/constants';
 import { getClassroomById } from '@/server/queries/classroom';
 import { getArchivedPhases, getClassroomPhases } from '@/server/queries/phase';
 import { getTemplates } from '@/server/queries/template';
+import { getClassroomTasksByPhase } from '@/server/queries/classroom-task';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GroupCard } from '@/components/group/group-card';
 import { CreateGroupForm } from '@/components/group/create-group-form';
@@ -42,13 +43,15 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
   const { classroomId } = await params;
   const { tab } = await searchParams;
 
-  const [classroom, phases, archivedPhases, templates, overview] = await Promise.all([
+  const [classroom, phases, archivedPhases, templates, overview, classroomTasks] = await Promise.all([
     getClassroomById(classroomId, userId),
     getClassroomPhases(classroomId),
     getArchivedPhases(classroomId),
     getTemplates(userId),
     // Informational: a dashboard failure must not break the classroom editor.
     getClassroomDashboard(classroomId, userId).catch(() => null),
+    // Only rendered after getClassroomById authorized the caller (notFound below otherwise).
+    getClassroomTasksByPhase(classroomId),
   ]);
   if (!classroom) {
     notFound();
@@ -233,6 +236,7 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
                 classroomId={classroomId}
                 initialPhases={phases}
                 groups={groupOptions}
+                classroomTasks={classroomTasks}
               />
               <ArchivedPhaseList phases={archivedPhases} />
             </div>

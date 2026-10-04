@@ -40,6 +40,7 @@ import { formatSubmissionDate } from '@/lib/format';
 import type { DashboardCell } from '@/lib/deadline-dashboard';
 import { DeadlineChip } from '@/components/deadline/deadline-chip';
 import type { getActivePhases } from '@/server/queries/phase';
+import { ClassroomTaskBadge } from '@/components/classroom-task/classroom-task-badge';
 
 type Todo = Awaited<ReturnType<typeof getActivePhases>>[number]['todos'][number];
 
@@ -79,10 +80,14 @@ export function TodoItem({
     reviewStatus === 'pending' && (review?.pendingCount ?? 0) > 1 ? `รอตรวจ ${review!.pendingCount}` : undefined;
   const effectiveDeadline = getEffectiveDeadline(todo, { deadline: phaseDeadline });
   const inheritsPhaseDeadline = !todo.deadline && effectiveDeadline !== null;
+  const linked = Boolean(todo.classroomTaskId);
+  // D-3' (261004-j6h): dated tasks are ordered by deadline, so only undated tasks can be dragged.
+  const draggable = todo.deadline == null;
   const { ref, handleRef, isDragging } = useSortable({
     id: todo.id,
     index,
     group: `todos-${todo.phaseId}-${todo.groupId}`,
+    disabled: !draggable,
   });
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -110,23 +115,30 @@ export function TodoItem({
     >
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="flex flex-wrap items-center gap-2 px-3 py-3 lg:flex-nowrap lg:px-4">
-          {/* Drag handle */}
-          <button
-            ref={handleRef}
-            className="cursor-grab touch-none rounded-md text-cocoon-disabled hover:text-cocoon-blue"
-            aria-label="ลากเพื่อจัดเรียง"
-          >
-            <GripVertical className="size-4" />
-          </button>
+          {/* Drag handle (undated tasks only) */}
+          {draggable ? (
+            <button
+              ref={handleRef}
+              className="cursor-grab touch-none rounded-md text-cocoon-disabled hover:text-cocoon-blue"
+              aria-label="ลากเพื่อจัดเรียง"
+            >
+              <GripVertical className="size-4" />
+            </button>
+          ) : (
+            <span className="size-4 shrink-0" aria-hidden />
+          )}
 
           {/* Title (links to the to-do / student work) + meta line */}
           <div className="flex min-w-0 flex-1 flex-col">
-            <Link
-              href={todoHref}
-              className="truncate rounded-md text-[16px] leading-normal font-bold text-cocoon-ink outline-none hover:text-cocoon-blue hover:underline focus-visible:ring-2 focus-visible:ring-cocoon-blue/40"
-            >
-              {todo.title}
-            </Link>
+            <span className="flex min-w-0 items-center gap-2">
+              <Link
+                href={todoHref}
+                className="truncate rounded-md text-[16px] leading-normal font-bold text-cocoon-ink outline-none hover:text-cocoon-blue hover:underline focus-visible:ring-2 focus-visible:ring-cocoon-blue/40"
+              >
+                {todo.title}
+              </Link>
+              {linked && <ClassroomTaskBadge />}
+            </span>
             <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-normal font-medium text-cocoon-muted">
               <span>
                 {modeLabels[todo.submissionMode]}
@@ -209,23 +221,30 @@ export function TodoItem({
                 เปิดหน้ารายละเอียด
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleArchive}
-                disabled={isPending}
-                className="text-destructive"
-              >
-                <Archive className="mr-2 size-4" />
-                เก็บถาวร
-              </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => setDeleteScope('one')} disabled={isPending}>
-                <Trash2 className="mr-2 size-4" />
-                ลบงานนี้
-              </DropdownMenuItem>
-              {todo.assignmentId && (
-                <DropdownMenuItem variant="destructive" onClick={() => setDeleteScope('all')} disabled={isPending}>
-                  <Trash2 className="mr-2 size-4" />
-                  ลบงานนี้ในทุกกลุ่ม
-                </DropdownMenuItem>
+              {linked ? (
+                // Classroom-task copies are managed (archive/delete) from the Phase tab (261004-j6h).
+                <p className="px-2 py-1.5 text-[12px] font-medium text-cocoon-muted">จัดการได้จากแท็บ Phase</p>
+              ) : (
+                <>
+                  <DropdownMenuItem
+                    onClick={handleArchive}
+                    disabled={isPending}
+                    className="text-destructive"
+                  >
+                    <Archive className="mr-2 size-4" />
+                    เก็บถาวร
+                  </DropdownMenuItem>
+                  <DropdownMenuItem variant="destructive" onClick={() => setDeleteScope('one')} disabled={isPending}>
+                    <Trash2 className="mr-2 size-4" />
+                    ลบงานนี้
+                  </DropdownMenuItem>
+                  {todo.assignmentId && (
+                    <DropdownMenuItem variant="destructive" onClick={() => setDeleteScope('all')} disabled={isPending}>
+                      <Trash2 className="mr-2 size-4" />
+                      ลบงานนี้ในทุกกลุ่ม
+                    </DropdownMenuItem>
+                  )}
+                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
