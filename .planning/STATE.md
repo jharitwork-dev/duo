@@ -126,3 +126,12 @@ None yet.
 Last session: 2026-09-27T09:18:36.277Z
 Stopped at: Completed 02-05-PLAN.md
 Resume file: None
+
+## Session Handoff (2026-10-04, context near limit)
+
+In flight / next, in order (user authorized end-to-end execution incl. apply+deploy; ALWAYS dry-run first):
+1. **261004-03i** deadlines + edit-after-submit + teacher dashboard: Tasks 1–2 merged on main LOCALLY (not pushed — do not push until Task 3 lands; interim UI is consistent but incomplete). Task 3 (teacher dashboard) executor running in a worktree; then merge, run gsd-verifier, push (no migration needed), update the Quick Tasks table.
+2. **261004-gic** teacher review (approve/send back, auto phase unlock): PLAN written (uncommitted until checker passes); plan-checker running. Execute after 03i merges.
+3. **261004-gid** teacher attachments: PLAN written; plan-checker running. Execute after gic.
+4. Phase 6 LINE notifications: not specced; ask the user (LINE OA? which events?).
+User-side in progress: Clerk production instance (guided steps 1–2: create prod instance cloned from dev, domain build.innovators.co.th, 5 DNS CNAMEs in Cloudflare as DNS-only; then Google OAuth client, swap pk_live/sk_live in Vercel Production, migrate dev Clerk user ids → prod ids by email in DB). Also rotate the R2 token (secret was pasted in chat).
