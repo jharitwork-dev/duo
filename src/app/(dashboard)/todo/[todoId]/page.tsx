@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Check } from 'lucide-react';
@@ -15,14 +16,16 @@ import { BTN_TERTIARY, CARD, CARD_TITLE, PAGE_BODY } from '@/components/cocoon/u
 import { getTeacherWorkPageView, type TeacherWorkPageView } from '@/server/queries/work-page';
 import { TeacherWorkPagePanel } from '@/components/work-page/teacher-work-page-panel';
 import { FILE_REQUIREMENT_LABEL } from '@/lib/work-page';
+import { CommentThreadSection, CommentThreadSkeleton } from '@/components/comment/comment-thread-section';
 
 interface Props {
   params: Promise<{ todoId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 const PILL = 'inline-flex h-[31px] items-center rounded-full px-3 text-[14px] font-bold whitespace-nowrap';
 
-export default async function TodoDetailPage({ params }: Props) {
+export default async function TodoDetailPage({ params, searchParams }: Props) {
   const userId = await getCurrentUserId();
   const role = await getCurrentRole();
   const { todoId } = await params;
@@ -126,6 +129,80 @@ export default async function TodoDetailPage({ params }: Props) {
           <TeacherWorkPagePanel entries={workView.entries} submissionMode={workView.todo.submissionMode} />
         </div>
       )}
+
+      {workView && (
+        <TeacherCommentThread
+          todoId={todoId}
+          groupId={group.id}
+          submissionMode={workView.todo.submissionMode}
+          students={workView.entries.map((e) => ({ id: e.key, label: e.ownerLabel }))}
+          requestedStudent={firstParam((await searchParams).student)}
+        />
+      )}
     </>
+  );
+}
+
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+const CHIP = 'inline-flex h-9 items-center rounded-full border px-3 text-[14px] font-bold whitespace-nowrap';
+
+/** Discussion thread for classroom editors (261004-fgj): the group's thread, or a per-student picker. */
+function TeacherCommentThread({
+  todoId,
+  groupId,
+  submissionMode,
+  students,
+  requestedStudent,
+}: {
+  todoId: string;
+  groupId: string;
+  submissionMode: 'group' | 'individual';
+  students: { id: string; label: string }[];
+  requestedStudent: string | undefined;
+}) {
+  const selected =
+    submissionMode === 'individual' ? (students.find((s) => s.id === requestedStudent) ?? students[0]) : undefined;
+
+  return (
+    <div className="px-[33px] pb-6 lg:px-0 lg:pt-4">
+      <h2 className="mb-3 text-[20px] leading-normal font-bold text-cocoon-blue lg:mb-4 lg:text-[24px]">ความคิดเห็น</h2>
+      {submissionMode === 'individual' && students.length > 0 && (
+        <nav aria-label="เลือกนักเรียน" className="mb-3 flex flex-wrap gap-2 lg:mb-4">
+          {students.map((s) => {
+            const active = s.id === selected?.id;
+            return (
+              <Link
+                key={s.id}
+                href={`?student=${encodeURIComponent(s.id)}#comments`}
+                aria-current={active ? 'true' : undefined}
+                className={cn(
+                  CHIP,
+                  active
+                    ? 'border-cocoon-blue bg-cocoon-blue text-white'
+                    : 'border-cocoon-line bg-white text-cocoon-subtle hover:bg-cocoon-blue-soft',
+                )}
+              >
+                {s.label}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+      {submissionMode === 'individual' && !selected ? (
+        <p className={cn(CARD, 'text-[14px] font-medium text-cocoon-muted')}>ยังไม่มีนักเรียนในกลุ่มนี้</p>
+      ) : (
+        <Suspense key={selected?.id ?? groupId} fallback={<CommentThreadSkeleton />}>
+          <CommentThreadSection
+            todoId={todoId}
+            groupId={groupId}
+            studentId={selected?.id}
+            viewer="teacher"
+          />
+        </Suspense>
+      )}
+    </div>
   );
 }

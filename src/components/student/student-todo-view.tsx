@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { getSubmissionHistory } from '@/server/queries/submission';
 import { getStudentWorkPage, type StudentWorkPageData } from '@/server/queries/work-page';
@@ -9,6 +10,7 @@ import { StatusPill } from '@/components/cocoon/status-pill';
 import { StudentWorkPage } from '@/components/work-page/student-work-page';
 import { TodoDetailView } from './todo-detail-view';
 import { HistoryCard, HistoryListCard, ReviewerNoteCard, type StudentSubmission } from './submission-status-view';
+import { CommentThreadSection, CommentThreadSkeleton } from '@/components/comment/comment-thread-section';
 
 /**
  * Server component: Cocoon to-do page for students (261004-01i). One page:
@@ -134,6 +136,13 @@ export function StudentTodoScreen({ todo, workPage, submissions, groupHome }: St
             </div>
           </div>
         )}
+      </div>
+
+      {/* Discussion thread (261004-fgj): self-contained block under the work page + history. */}
+      <div className="mt-4 px-[33px] lg:mt-8 lg:max-w-[664px] lg:px-0 max-xl:lg:max-w-none">
+        <Suspense fallback={<CommentThreadSkeleton />}>
+          <CommentThreadSection todoId={todo.id} viewer="student" />
+        </Suspense>
       </div>
     </>
   );
