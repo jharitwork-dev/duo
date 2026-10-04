@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 Phase: 3
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-10-04 - Completed quick task 261003-wuo (classroom-level phases) + Cocoon 2026 template swap
+Last activity: 2026-10-04 - Completed + deployed quick task 261004-02p (grouping, roster, full CRUD, authz)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -118,7 +118,7 @@ None yet.
 | fast | Rename product Duo → build.Innovator (title, logs, package name) | 2026-10-03 | 2817e47 | — |
 | fast | Member names instead of Clerk ids + superadmin teacher/student role management | 2026-10-03 | bc420a7 | — |
 | 261003-wuo | Classroom-level fixed phases, per-group tasks, multi-group assignment (full: plan-checked ×2, verified 10/10, migration applied) | 2026-10-04 | 6b814eb | [261003-wuo-classroom-level-fixed-phases-with-per-gr](./quick/261003-wuo-classroom-level-fixed-phases-with-per-gr/) |
-| 261004-02p | Group member limits, student roster, self-grouping, full CRUD, classroom-teacher authz (full: checked, verified 9/9; migration NOT yet applied) | 2026-10-04 | 701e0c0 | [261004-02p-per-group-member-limit-student-roster-wi](./quick/261004-02p-per-group-member-limit-student-roster-wi/) |
+| 261004-02p | Group member limits, student roster, self-grouping, full CRUD, classroom-teacher authz (full: checked, verified 9/9; migration applied + deployed 2026-10-04) | 2026-10-04 | 701e0c0 | [261004-02p-per-group-member-limit-student-roster-wi](./quick/261004-02p-per-group-member-limit-student-roster-wi/) |
 
 ## Session Continuity
 
