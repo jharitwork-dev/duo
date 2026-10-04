@@ -126,6 +126,7 @@ None yet.
 | 261004-iyj | Students preview locked future phases (greyed, read-only) | 2026-10-04 | 16b4414 | [261004-iyj-students-can-preview-locked-future-phase](./quick/261004-iyj-students-can-preview-locked-future-phase/) |
 | 261004-j6h | Classroom-level tasks (งานของห้องเรียน): sync to all groups, locked title/deadline/mode, per-group field overrides, keep-submitted delete, deadline ordering (full: checked, verified 7/7; migration applied + deployed) | 2026-10-04 | 49016ab | [261004-j6h-classroom-level-locked-tasks-shared-by-a](./quick/261004-j6h-classroom-level-locked-tasks-shared-by-a/) |
 | fast | Official CI hand + book stickers replace distorted redraws (decor, auth hero, student home, node icon) | 2026-10-04 | 8f0dad6 | — |
+| fast | Profile: users edit their own display name (Clerk updateUser, students + teachers) | 2026-10-04 | e3b6e3b | — |
 
 ## Session Continuity
 
