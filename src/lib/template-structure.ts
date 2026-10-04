@@ -1,10 +1,13 @@
 // Template JSON structure (phase_templates.structure). Pure — shared by actions, queries and seed.
+import { FILE_REQUIREMENTS, type FileRequirement } from '@/lib/work-page';
 
 export type TemplateSubmissionMode = 'group' | 'individual';
 
 export interface TemplateTodo {
   title: string;
   submissionMode?: TemplateSubmissionMode;
+  /** Optional (261004-01i); applyTemplate falls back to 'optional'. */
+  fileRequirement?: FileRequirement;
   description?: string;
   notes?: string;
 }
@@ -50,9 +53,13 @@ export function parseTemplateStructure(json: string): TemplateStructure {
         const title = optionalString((t as { title?: unknown }).title);
         if (!title) continue;
         const mode = (t as { submissionMode?: unknown }).submissionMode;
+        const requirement = (t as { fileRequirement?: unknown }).fileRequirement;
         todos.push({
           title,
           submissionMode: mode === 'individual' || mode === 'group' ? mode : undefined,
+          fileRequirement: (FILE_REQUIREMENTS as readonly unknown[]).includes(requirement)
+            ? (requirement as FileRequirement)
+            : undefined,
           description: optionalString((t as { description?: unknown }).description),
           notes: optionalString((t as { notes?: unknown }).notes),
         });

@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { createTodo } from '@/server/actions/todo';
+import type { FileRequirement } from '@/lib/work-page';
+import { FileRequirementSelect } from './file-requirement-select';
 import { BTN_PRIMARY, DIALOG_PANEL, DIALOG_TITLE, INPUT, LABEL } from '@/components/cocoon/ui';
 
 export type GroupOption = { id: string; name: string };
@@ -125,12 +127,14 @@ export function AssignTodoDialog({
   const open = controlledOpen ?? uncontrolledOpen;
   const [title, setTitle] = useState('');
   const [submissionMode, setSubmissionMode] = useState<SubmissionMode>('group');
+  const [fileRequirement, setFileRequirement] = useState<FileRequirement>('optional');
   const [groupIds, setGroupIds] = useState<string[]>(defaultGroupIds);
   const [isPending, startTransition] = useTransition();
 
   const reset = () => {
     setTitle('');
     setSubmissionMode('group');
+    setFileRequirement('optional');
     setGroupIds(defaultGroupIds);
   };
 
@@ -152,6 +156,7 @@ export function AssignTodoDialog({
           groupIds,
           title: title.trim(),
           submissionMode,
+          fileRequirement,
         });
         toast.success(`เพิ่มงานให้ ${result.todoIds.length} กลุ่มแล้ว`);
         setOpen(false);
@@ -211,6 +216,13 @@ export function AssignTodoDialog({
                 </SelectContent>
               </Select>
             </div>
+
+            <FileRequirementSelect
+              id={`assign-file-requirement-${phaseId}`}
+              value={fileRequirement}
+              onChange={setFileRequirement}
+              disabled={isPending}
+            />
 
             <div className="space-y-2">
               <span className={LABEL}>มอบหมายให้กลุ่ม *</span>

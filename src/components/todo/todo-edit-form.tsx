@@ -20,6 +20,8 @@ import { updateTodo } from '@/server/actions/todo';
 import { formatDateShort } from '@/lib/format';
 import { cn } from 'cn';
 import { BTN_PRIMARY, INPUT, LABEL, TEXTAREA } from '@/components/cocoon/ui';
+import type { FileRequirement } from '@/lib/work-page';
+import { FileRequirementSelect } from './file-requirement-select';
 
 type Todo = {
   id: string;
@@ -27,6 +29,7 @@ type Todo = {
   description: string | null;
   notes: string | null;
   submissionMode: 'group' | 'individual';
+  fileRequirement: FileRequirement;
   deadline: Date | null;
 };
 
@@ -36,6 +39,7 @@ export function TodoEditForm({ todo }: { todo: Todo }) {
   const [submissionMode, setSubmissionMode] = useState<'group' | 'individual'>(
     todo.submissionMode,
   );
+  const [fileRequirement, setFileRequirement] = useState<FileRequirement>(todo.fileRequirement);
   const [deadline, setDeadline] = useState<Date | null>(
     todo.deadline ? new Date(todo.deadline) : null,
   );
@@ -49,6 +53,7 @@ export function TodoEditForm({ todo }: { todo: Todo }) {
         title,
         notes: notes || undefined,
         submissionMode,
+        fileRequirement,
         deadline: deadline ?? null,
       });
       router.refresh();
@@ -112,6 +117,20 @@ export function TodoEditForm({ todo }: { todo: Todo }) {
           </SelectContent>
         </Select>
       </div>
+
+      <FileRequirementSelect
+        id={`todo-file-requirement-${todo.id}`}
+        label="ไฟล์แนบตอนส่งงาน"
+        value={fileRequirement}
+        disabled={isPending}
+        onChange={(value) => {
+          setFileRequirement(value);
+          startTransition(async () => {
+            await updateTodo({ todoId: todo.id, fileRequirement: value });
+            router.refresh();
+          });
+        }}
+      />
 
       <div className="space-y-2">
         <Label className={LABEL}>กำหนดส่ง</Label>

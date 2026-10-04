@@ -91,6 +91,7 @@ export async function applyTemplate(input: z.infer<typeof applyTemplateSchema>) 
             description: templateTodo.description,
             notes: templateTodo.notes,
             submissionMode: templateTodo.submissionMode ?? 'group',
+            fileRequirement: templateTodo.fileRequirement ?? 'optional',
             orderIndex: j,
             createdBy: userId,
           })),
@@ -115,7 +116,7 @@ const saveAsTemplateSchema = z.object({
 
 /**
  * Saves the classroom's non-archived phases plus one chosen group's non-archived to-dos
- * (title, submissionMode, description, notes) as a custom template. Attachments are not copied.
+ * (title, submissionMode, fileRequirement, description, notes) as a custom template. Attachments are not copied.
  */
 export async function saveAsTemplate(input: z.infer<typeof saveAsTemplateSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
@@ -152,6 +153,7 @@ export async function saveAsTemplate(input: z.infer<typeof saveAsTemplateSchema>
         ? phase.todos.map((todo) => ({
             title: todo.title,
             submissionMode: todo.submissionMode,
+            fileRequirement: todo.fileRequirement,
             description: todo.description ?? undefined,
             notes: todo.notes ?? undefined,
           }))

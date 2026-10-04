@@ -12,6 +12,9 @@ import { StudentTodoView } from '@/components/student/student-todo-view';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 import { PageHeader } from '@/components/cocoon/page-header';
 import { BTN_TERTIARY, CARD, CARD_TITLE, PAGE_BODY } from '@/components/cocoon/ui';
+import { getTeacherWorkPageView, type TeacherWorkPageView } from '@/server/queries/work-page';
+import { TeacherWorkPagePanel } from '@/components/work-page/teacher-work-page-panel';
+import { FILE_REQUIREMENT_LABEL } from '@/lib/work-page';
 
 interface Props {
   params: Promise<{ todoId: string }>;
@@ -41,6 +44,13 @@ export default async function TodoDetailPage({ params }: Props) {
   const editorHref = `/teacher/classroom/${classroom.id}/group/${group.id}`;
   const { items } = parseDeliverables(todo.notes);
 
+  // Classroom editors see the students' work read-only (latest snapshot + live page).
+  // Anyone else who can view the to-do keeps the plain detail view.
+  let workView: TeacherWorkPageView | null = null;
+  if (isTeacher) {
+    workView = await getTeacherWorkPageView(todoId, userId).catch(() => null);
+  }
+
   return (
     <>
       <CocoonHeader variant="back" backHref={editorHref} />
@@ -53,6 +63,9 @@ export default async function TodoDetailPage({ params }: Props) {
           <>
             <span className={cn(PILL, 'border border-cocoon-blue bg-cocoon-blue-soft text-cocoon-blue')}>
               {todo.submissionMode === 'individual' ? 'รายบุคคล' : 'กลุ่ม'}
+            </span>
+            <span className={cn(PILL, 'border border-cocoon-line bg-white text-cocoon-subtle')}>
+              {FILE_REQUIREMENT_LABEL[todo.fileRequirement]}
             </span>
             {todo.deadline && (
               <span className={cn(PILL, 'border border-cocoon-line bg-white text-cocoon-subtle')}>
@@ -102,11 +115,17 @@ export default async function TodoDetailPage({ params }: Props) {
             </div>
           </section>
 
-          <div className="rounded-[16px] border border-dashed border-cocoon-line bg-white/60 p-5 text-center text-[14px] font-medium text-cocoon-muted">
-            การตรวจงานจะเปิดให้ใช้ใน Phase ถัดไป
-          </div>
         </div>
       </div>
+
+      {workView && (
+        <div className="px-[33px] pb-6 lg:px-0 lg:pt-4">
+          <h2 className="mb-3 text-[20px] leading-normal font-bold text-cocoon-blue lg:mb-4 lg:text-[24px]">
+            งานของนักเรียน
+          </h2>
+          <TeacherWorkPagePanel entries={workView.entries} submissionMode={workView.todo.submissionMode} />
+        </div>
+      )}
     </>
   );
 }

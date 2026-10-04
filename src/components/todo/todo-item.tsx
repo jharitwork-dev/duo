@@ -32,6 +32,12 @@ const modeLabels: Record<string, string> = {
   individual: 'รายบุคคล',
 };
 
+// Only the non-default requirements get a badge ('optional' is the default, 261004-01i).
+const fileRequirementBadge: Record<string, { label: string; className: string } | undefined> = {
+  none: { label: 'ไม่ต้องแนบไฟล์', className: 'bg-[rgba(15,23,42,.05)] text-cocoon-subtle' },
+  required: { label: 'ต้องแนบไฟล์', className: 'bg-[rgb(239_73_36/.12)] text-cocoon-orange' },
+};
+
 export function TodoItem({
   todo,
   index,
@@ -83,9 +89,18 @@ export function TodoItem({
           <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-cocoon-blue/40">
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-[16px] leading-normal font-bold text-cocoon-ink">{todo.title}</span>
-              <span className="text-[13px] leading-normal font-medium text-cocoon-muted">
-                {modeLabels[todo.submissionMode]}
-                {todo.deadline && ` · กำหนดส่ง ${formatDateShort(todo.deadline)}`}
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-normal font-medium text-cocoon-muted">
+                <span>
+                  {modeLabels[todo.submissionMode]}
+                  {todo.deadline && ` · กำหนดส่ง ${formatDateShort(todo.deadline)}`}
+                </span>
+                {fileRequirementBadge[todo.fileRequirement] && (
+                  <span
+                    className={`inline-flex h-[20px] items-center rounded-full px-2 text-[11px] font-bold ${fileRequirementBadge[todo.fileRequirement]!.className}`}
+                  >
+                    {fileRequirementBadge[todo.fileRequirement]!.label}
+                  </span>
+                )}
               </span>
             </span>
             <ChevronDown

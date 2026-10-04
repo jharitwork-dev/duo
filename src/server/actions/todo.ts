@@ -23,6 +23,7 @@ import {
 } from '@/server/phase-helpers';
 import { checkDeleteConfirmation } from '@/lib/group-rules';
 import { authorizeTodoViewer } from '@/server/work-page-access';
+import { FILE_REQUIREMENTS } from '@/lib/work-page';
 import { actionError, type ActionResult } from '@/lib/action-result';
 
 const createTodoSchema = z.object({
@@ -30,6 +31,7 @@ const createTodoSchema = z.object({
   groupIds: z.array(z.string().min(1)).min(1),
   title: z.string().min(1).max(200),
   submissionMode: z.enum(['group', 'individual']).optional(),
+  fileRequirement: z.enum(FILE_REQUIREMENTS).optional(),
   description: z.string().max(5000).optional(),
   notes: z.string().max(10000).optional(),
 });
@@ -78,6 +80,7 @@ export async function createTodo(input: z.infer<typeof createTodoSchema>) {
           description: data.description,
           notes: data.notes,
           submissionMode: data.submissionMode ?? 'group',
+          fileRequirement: data.fileRequirement ?? 'optional',
           orderIndex: nextOrder,
           createdBy: userId,
         })
@@ -96,6 +99,7 @@ const updateTodoSchema = z.object({
   description: z.string().max(5000).optional(),
   notes: z.string().max(10000).optional(),
   submissionMode: z.enum(['group', 'individual']).optional(),
+  fileRequirement: z.enum(FILE_REQUIREMENTS).optional(),
   deadline: z.date().nullable().optional(),
 });
 
@@ -111,6 +115,7 @@ export async function updateTodo(input: z.infer<typeof updateTodoSchema>) {
   if (updates.description !== undefined) updateFields.description = updates.description;
   if (updates.notes !== undefined) updateFields.notes = updates.notes;
   if (updates.submissionMode !== undefined) updateFields.submissionMode = updates.submissionMode;
+  if (updates.fileRequirement !== undefined) updateFields.fileRequirement = updates.fileRequirement;
   if (updates.deadline !== undefined) updateFields.deadline = updates.deadline;
 
   await db.update(todos).set(updateFields).where(eq(todos.id, todoId));

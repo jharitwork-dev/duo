@@ -39,4 +39,30 @@ describe('parseTemplateStructure', () => {
     expect(parseTemplateStructure('not json')).toEqual({ phases: [] });
     expect(parseTemplateStructure('{}')).toEqual({ phases: [] });
   });
+
+  it('keeps a valid fileRequirement and drops an unknown one (261004-01i)', () => {
+    const json = JSON.stringify({
+      phases: [
+        {
+          name: 'P',
+          todos: [
+            { title: 'A', fileRequirement: 'required' },
+            { title: 'B', fileRequirement: 'none' },
+            { title: 'C', fileRequirement: 'bogus' },
+          ],
+        },
+      ],
+    });
+    const todos = parseTemplateStructure(json).phases[0].todos;
+    expect(todos[0].fileRequirement).toBe('required');
+    expect(todos[1].fileRequirement).toBe('none');
+    expect(todos[2].fileRequirement).toBeUndefined();
+  });
+
+  it('parses old templates without fileRequirement', () => {
+    const json = JSON.stringify({ phases: [{ name: 'P', todos: [{ title: 'T', submissionMode: 'group' }] }] });
+    const todo = parseTemplateStructure(json).phases[0].todos[0];
+    expect(todo.title).toBe('T');
+    expect(todo.fileRequirement).toBeUndefined();
+  });
 });
