@@ -137,5 +137,6 @@ In flight / next, in order (user authorized end-to-end execution incl. apply+dep
 1. **261004-03i** DONE + deployed 2026-10-04.
 2. **261004-gic** DONE + deployed 2026-10-04.
 3. **261004-gid** DONE + deployed 2026-10-04.
-4. Phase 6 LINE notifications: not specced; ask the user (LINE OA? which events?).
+4. **261004-j6h** classroom-level locked tasks (งานของห้องเรียน): CONTEXT written in .planning/quick/261004-j6h-classroom-level-locked-tasks-shared-by-a/ — confirm the 3 [confirm] items with the user, then quick --full.
+5. Phase 6 LINE notifications: not specced; ask the user (LINE OA? which events?).
 User-side in progress: Clerk production instance — DONE: prod instance (secondary app, build.innovators.co.th), 5 DNS CNAMEs added via Cloudflare API (DNS only); user doing Google OAuth client (redirect https://clerk.build.innovators.co.th/v1/oauth_callback). REMAINING after that: (original plan: create prod instance cloned from dev, domain build.innovators.co.th, 5 DNS CNAMEs in Cloudflare as DNS-only; then Google OAuth client, swap pk_live/sk_live in Vercel Production, migrate dev Clerk user ids → prod ids by email in DB). Also rotate the R2 token (secret was pasted in chat).
