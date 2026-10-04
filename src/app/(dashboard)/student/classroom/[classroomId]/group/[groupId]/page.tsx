@@ -9,6 +9,7 @@ import { getClassroomGroupMode } from '@/server/queries/classroom';
 import { StudentGroupActions } from '@/components/group/student-group-actions';
 import { getActivePhases } from '@/server/queries/phase';
 import { getTodoSubmissionStatuses } from '@/server/queries/submission';
+import { getUnreadTeacherCommentTodoIds } from '@/server/queries/comment';
 import { GroupPhaseView } from '@/components/student/group-phase-view';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 import { PhaseStepper } from '@/components/student/phase-stepper';
@@ -122,7 +123,13 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
   const selected = phases.find((p) => p.id === selectedId) ?? null;
 
   const todos = selected?.todos ?? [];
-  const statuses = selected ? await getTodoSubmissionStatuses(groupId, userId, todos) : {};
+  const [statuses, unreadTodoIds] = selected
+    ? await Promise.all([
+        getTodoSubmissionStatuses(groupId, userId, todos),
+        // The dot is decorative: never let it break the home page.
+        getUnreadTeacherCommentTodoIds(groupId, userId, todos).catch(() => [] as string[]),
+      ])
+    : [{}, [] as string[]];
   const rows = buildNodeRows(todos);
   const locked = selected ? computeLockedTodoIds(selected, rows, statuses) : new Set<string>();
   const currentId = pickCurrentTodoId(rows, locked, statuses);
@@ -147,8 +154,20 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
         />
       ) : (
         <>
-          <NodePath rows={rows} statuses={statuses} locked={locked} currentId={currentId} />
-          <NodePathDesktop rows={rows} statuses={statuses} locked={locked} currentId={currentId} />
+          <NodePath
+            rows={rows}
+            statuses={statuses}
+            locked={locked}
+            currentId={currentId}
+            unreadTodoIds={unreadTodoIds}
+          />
+          <NodePathDesktop
+            rows={rows}
+            statuses={statuses}
+            locked={locked}
+            currentId={currentId}
+            unreadTodoIds={unreadTodoIds}
+          />
         </>
       )}
 

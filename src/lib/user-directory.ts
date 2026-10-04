@@ -1,9 +1,13 @@
 // Server-only: resolves Clerk user IDs to display info for teacher-facing member lists.
 import 'server-only';
 import { clerkClient } from '@clerk/nextjs/server';
+import { publicDisplayName } from '@/lib/comment-thread';
 
 export interface UserDisplay {
+  /** Teacher-facing: may fall back to the email. Never show to students. */
   name: string;
+  /** Safe for every viewer: full name, then username, never the email. */
+  publicName: string;
   email: string | null;
   imageUrl: string | null;
 }
@@ -28,6 +32,7 @@ export async function getUserDirectory(userIds: string[]): Promise<Map<string, U
       const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
       directory.set(user.id, {
         name: fullName || user.username || email || UNKNOWN_NAME,
+        publicName: publicDisplayName(user),
         email,
         imageUrl: user.hasImage ? user.imageUrl : null,
       });
@@ -35,7 +40,7 @@ export async function getUserDirectory(userIds: string[]): Promise<Map<string, U
   }
 
   for (const id of ids) {
-    if (!directory.has(id)) directory.set(id, { name: UNKNOWN_NAME, email: null, imageUrl: null });
+    if (!directory.has(id)) directory.set(id, { name: UNKNOWN_NAME, publicName: UNKNOWN_NAME, email: null, imageUrl: null });
   }
   return directory;
 }

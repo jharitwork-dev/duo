@@ -73,7 +73,8 @@ async function toConflict(page: WorkPageRow): Promise<WorkPageConflict> {
   return {
     content: (page.content as WorkPageDoc) ?? null,
     updatedAt: page.updatedAt.toISOString(),
-    updatedByName: (page.updatedBy && directory.get(page.updatedBy)?.name) || 'สมาชิกในกลุ่ม',
+    // Shown to students: publicName never falls back to a classmate's email (261004-fgj).
+    updatedByName: (page.updatedBy && directory.get(page.updatedBy)?.publicName) || 'สมาชิกในกลุ่ม',
   };
 }
 

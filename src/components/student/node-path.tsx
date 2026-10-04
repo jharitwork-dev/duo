@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- static Figma assets */
 import Link from 'next/link';
+import { MessageCircle } from 'lucide-react';
 import { cn } from 'cn';
 import { StatusPill } from '@/components/cocoon/status-pill';
 import type { SubmissionStatus } from '@/lib/node-path';
@@ -25,6 +26,31 @@ interface NodePathProps {
   statuses: Record<string, SubmissionStatus>;
   locked: Set<string>;
   currentId: string | null;
+  /** To-dos with teacher comments the student has not seen (261004-fgj). */
+  unreadTodoIds?: string[];
+}
+
+export const UNREAD_COMMENT_LABEL = 'มีความคิดเห็นใหม่จากครู';
+
+/** Small blue comment dot at a node's top-right (decorative; the node's aria-label carries the meaning). */
+export function UnreadCommentDot({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      title={UNREAD_COMMENT_LABEL}
+      className={cn(
+        'pointer-events-none absolute z-20 flex size-4 items-center justify-center rounded-full bg-cocoon-blue ring-2 ring-white',
+        className,
+      )}
+    >
+      <MessageCircle size={10} strokeWidth={3} className="text-white" />
+    </span>
+  );
+}
+
+/** Node link label, extended when there are unseen teacher comments. */
+export function nodeLabel(title: string, unread: boolean): string {
+  return unread ? `${title} (${UNREAD_COMMENT_LABEL})` : title;
 }
 
 function nodeLefts(count: number): number[] {
@@ -68,8 +94,9 @@ function buildConnectors(rows: PathTodo[][]) {
   return { lines, junctions };
 }
 
-export function NodePath({ rows, statuses, locked, currentId }: NodePathProps) {
+export function NodePath({ rows, statuses, locked, currentId, unreadTodoIds = [] }: NodePathProps) {
   if (rows.length === 0) return null;
+  const unread = new Set(unreadTodoIds);
   const height = rows.length * PITCH - ROW_GAP;
   const { lines, junctions } = buildConnectors(rows);
 
@@ -103,9 +130,11 @@ export function NodePath({ rows, statuses, locked, currentId }: NodePathProps) {
           const status = statuses[todo.id] ?? 'none';
           const subtitle = firstLine(todo.description);
           const ring = ringStatusFor(status, isLocked, isCurrent);
+          const hasUnread = !isLocked && unread.has(todo.id);
 
           const body = (
             <>
+              {hasUnread && <UnreadCommentDot className="top-[12px] right-[16px]" />}
               <div className="absolute top-[4px] left-[5px] flex h-[141px] w-[142px] flex-col items-center justify-center rounded-full bg-white px-1.5 text-center">
                 <NodeIcon status={status} locked={isLocked} />
                 <p
@@ -149,7 +178,7 @@ export function NodePath({ rows, statuses, locked, currentId }: NodePathProps) {
             <Link
               key={todo.id}
               href={`/todo/${todo.id}`}
-              aria-label={todo.title}
+              aria-label={nodeLabel(todo.title, hasUnread)}
               className={cn(
                 nodeClass,
                 'transition-transform outline-none hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-cocoon-blue/50',

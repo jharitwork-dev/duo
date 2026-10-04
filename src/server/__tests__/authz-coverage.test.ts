@@ -101,3 +101,35 @@ describe('authorization coverage of work page actions (261004-01i)', () => {
     expect(submit.body).toMatch(/lock: true/);
   });
 });
+
+describe('authorization coverage of comment thread actions (261004-fgj)', () => {
+  const fns = exportedFunctions('comment.ts');
+  // Strip comments so a mention in a comment cannot satisfy the checks.
+  const code = (body: string) => body.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  it('exports exactly the five comment actions', () => {
+    expect(fns.map((f) => f.name).sort()).toEqual(
+      ['deleteComment', 'editComment', 'listComments', 'markCommentsSeen', 'postComment'].sort(),
+    );
+  });
+
+  it.each(fns.map((f) => [f.name, f]))('%s resolves the caller, then authorizes the thread', (_name, fn) => {
+    const body = code((fn as ExportedFn).body);
+    expect(body).toMatch(/getCurrentUserId\(\)/);
+    expect(body).toMatch(/resolveCommentThread\(/);
+    expect(body.indexOf('getCurrentUserId()')).toBeLessThan(body.indexOf('resolveCommentThread('));
+  });
+
+  it('postComment writes inside a transaction', () => {
+    const post = fns.find((f) => f.name === 'postComment')!;
+    expect(post.body).toMatch(/db\.transaction\(/);
+  });
+
+  it('comment permissions do not depend on work page locks, submission status or deadlines (261004-03i)', () => {
+    const sources = [
+      fs.readFileSync(path.join(ACTIONS_DIR, 'comment.ts'), 'utf8'),
+      fs.readFileSync(path.resolve(__dirname, '../comment-access.ts'), 'utf8'),
+    ];
+    for (const src of sources) expect(code(src)).not.toMatch(/canEditWorkPage|latestStatus|latestScopedStatus|deadline/i);
+  });
+});

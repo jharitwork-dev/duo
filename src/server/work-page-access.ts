@@ -75,13 +75,15 @@ export async function findPage(
 /**
  * Returns the owner's page, creating an empty one if missing (concurrent creators are
  * resolved by the partial unique indexes + ON CONFLICT DO NOTHING, then a re-select).
+ * `markAuthor: false` (default true) creates the page with updatedBy NULL — used when a page is
+ * created only to hold a comment thread, so the commenter is not shown as the page's last editor.
  */
 export async function getOrCreatePage(
   tx: DbLike,
   todoId: string,
   owner: WorkPageOwner,
   userId: string,
-  opts?: { lock?: boolean },
+  opts?: { lock?: boolean; markAuthor?: boolean },
 ): Promise<WorkPageRow> {
   const existing = await findPage(tx, todoId, owner, opts);
   if (existing) return existing;
@@ -93,7 +95,7 @@ export async function getOrCreatePage(
       userId: owner.userId,
       content: EMPTY_DOC,
       updatedAt: new Date(),
-      updatedBy: userId,
+      updatedBy: opts?.markAuthor === false ? null : userId,
     })
     .onConflictDoNothing();
   const created = await findPage(tx, todoId, owner, opts);

@@ -48,7 +48,8 @@ export async function getStudentWorkPage(todoId: string, userId: string): Promis
       ? {
           content: page.content as WorkPageDoc,
           updatedAt: page.updatedAt.toISOString(),
-          updatedByName: page.updatedBy ? (directory.get(page.updatedBy)?.name ?? null) : null,
+          // Student-facing: publicName never falls back to a classmate's email (261004-fgj).
+          updatedByName: page.updatedBy ? (directory.get(page.updatedBy)?.publicName ?? null) : null,
         }
       : null,
     files: files.map(fileView),
