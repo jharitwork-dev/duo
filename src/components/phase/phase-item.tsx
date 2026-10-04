@@ -23,7 +23,7 @@ import { CARD } from '@/components/cocoon/ui';
 import { PhaseEditForm } from './phase-edit-form';
 import { AssignTodoDialog, type GroupOption } from '@/components/todo/assign-todo-dialog';
 import { archivePhase } from '@/server/actions/phase';
-import { formatDateShort } from '@/lib/format';
+import { formatDeadline } from '@/lib/deadline';
 import type { ClassroomPhase } from './phase-list';
 
 const PILL =
@@ -93,7 +93,7 @@ export function PhaseItem({
                 </span>
               )}
             </span>
-            {phase.deadline && <span className={PILL}>กำหนดส่ง {formatDateShort(phase.deadline)}</span>}
+            {phase.deadline && <span className={PILL}>{formatDeadline(phase.deadline)}</span>}
             {phase.isFreeAccess && <span className={PILL}>เข้าถึงอิสระ</span>}
             <ChevronDown
               className={`ml-auto size-5 text-cocoon-blue transition-transform ${
@@ -139,6 +139,7 @@ export function PhaseItem({
       <AssignTodoDialog
         phaseId={phase.id}
         phaseName={phase.name}
+        phaseDeadline={phase.deadline}
         groups={groups}
         defaultGroupIds={[]}
         open={assignOpen}

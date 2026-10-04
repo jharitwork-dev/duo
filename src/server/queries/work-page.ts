@@ -100,6 +100,8 @@ export interface TeacherWorkPageEntry {
     files: WorkPageFileView[];
   } | null;
   liveIsNewer: boolean;
+  /** Oldest in-scope submission (drives on_time / late, 261004-03i); ISO. */
+  firstSubmittedAt: string | null;
 }
 
 /**
@@ -165,6 +167,8 @@ export async function getTeacherWorkPageView(todoId: string, userId: string) {
         : null,
       // Compare with updatedAt: a student update re-snapshots the page into the same submission.
       liveIsNewer: pageHasWork && (!latest || page!.updatedAt.getTime() > latest.updatedAt.getTime()),
+      // scoped is newest first → the last row is the first submission.
+      firstSubmittedAt: scoped.length > 0 ? scoped[scoped.length - 1].createdAt.toISOString() : null,
     };
   }
 

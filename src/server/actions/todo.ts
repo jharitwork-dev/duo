@@ -34,6 +34,7 @@ const createTodoSchema = z.object({
   fileRequirement: z.enum(FILE_REQUIREMENTS).optional(),
   description: z.string().max(5000).optional(),
   notes: z.string().max(10000).optional(),
+  deadline: z.date().nullable().optional(),
 });
 
 /**
@@ -81,6 +82,7 @@ export async function createTodo(input: z.infer<typeof createTodoSchema>) {
           notes: data.notes,
           submissionMode: data.submissionMode ?? 'group',
           fileRequirement: data.fileRequirement ?? 'optional',
+          deadline: data.deadline ?? null,
           orderIndex: nextOrder,
           createdBy: userId,
         })

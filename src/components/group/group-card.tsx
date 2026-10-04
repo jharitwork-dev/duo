@@ -34,6 +34,9 @@ interface GroupCardProps {
   /** Students already in some group of the classroom. */
   assignedUserIds: string[];
   members: GroupMember[];
+  /** Dashboard counts (261004-03i); chips render only when > 0. */
+  pendingCount?: number;
+  overdueCount?: number;
 }
 
 export function GroupCard({
@@ -46,6 +49,8 @@ export function GroupCard({
   classroomMembers,
   assignedUserIds,
   members,
+  pendingCount = 0,
+  overdueCount = 0,
 }: GroupCardProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -78,6 +83,20 @@ export function GroupCard({
           />
         </div>
       </div>
+      {(pendingCount > 0 || overdueCount > 0) && (
+        <div className="-mt-2 flex flex-wrap gap-1.5">
+          {pendingCount > 0 && (
+            <span className="inline-flex h-[22px] items-center rounded-full bg-cocoon-blue-soft px-2 text-[11px] font-bold text-cocoon-blue">
+              รอตรวจ {pendingCount}
+            </span>
+          )}
+          {overdueCount > 0 && (
+            <span className="inline-flex h-[22px] items-center rounded-full bg-[rgba(255,27,15,.12)] px-2 text-[11px] font-bold text-[#d11a0f]">
+              เลยกำหนด {overdueCount}
+            </span>
+          )}
+        </div>
+      )}
 
       {members.length === 0 ? (
         <span className="text-[14px] font-medium text-cocoon-muted">ยังไม่มีสมาชิก</span>

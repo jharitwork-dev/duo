@@ -5,6 +5,7 @@ import { Lock, ChevronRight } from 'lucide-react';
 import { cn } from 'cn';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { CARD } from '@/components/cocoon/ui';
+import { formatDeadline } from '@/lib/deadline';
 
 interface Todo {
   id: string;
@@ -82,7 +83,7 @@ export function GroupPhaseView({ phases }: GroupPhaseViewProps) {
               <PhaseHeading index={index} name={phase.name} />
               {phase.deadline && (
                 <span className="hidden text-[13px] font-medium text-cocoon-muted sm:inline">
-                  กำหนดส่ง {new Date(phase.deadline).toLocaleDateString('th-TH')}
+                  {formatDeadline(phase.deadline)}
                 </span>
               )}
               <span className="ml-auto">
@@ -110,7 +111,7 @@ export function GroupPhaseView({ phases }: GroupPhaseViewProps) {
                             <span className="text-[13px] font-medium text-cocoon-muted">
                               {todo.submissionMode === 'individual' ? 'รายบุคคล' : 'กลุ่ม'}
                               {todo.deadline &&
-                                ` · กำหนดส่ง ${new Date(todo.deadline).toLocaleDateString('th-TH')}`}
+                                ` · ${formatDeadline(todo.deadline)}`}
                             </span>
                           </span>
                           <ChevronRight className="size-4 shrink-0 text-cocoon-blue" aria-hidden />

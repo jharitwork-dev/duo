@@ -53,7 +53,7 @@ const STUDENT_ITEMS: NavItem[] = [
 const TEACHER_HOME: NavItem = {
   href: '/teacher',
   label: 'หน้าแรก',
-  desktopLabel: 'ทีมของฉัน',
+  desktopLabel: 'ภาพรวม',
   icon: House,
   match: (p) =>
     p === '/teacher' ||
@@ -67,6 +67,13 @@ const TEACHER_REVIEW: NavItem = {
   label: 'ตรวจงาน',
   icon: ClipboardCheck,
   match: (p) => startsWith(p, '/teacher/review'),
+};
+
+const TEACHER_DEADLINES: NavItem = {
+  href: '/teacher/deadlines',
+  label: 'กำหนดส่ง',
+  icon: Calendar,
+  match: (p) => startsWith(p, '/teacher/deadlines'),
 };
 
 const TEACHER_PROFILE: NavItem = {
@@ -88,8 +95,8 @@ export function navItemsFor(role: NavRole): NavItem[] {
     case 'student':
       return STUDENT_ITEMS;
     case 'teacher':
-      return [TEACHER_HOME, TEACHER_REVIEW, TEACHER_PROFILE];
+      return [TEACHER_HOME, TEACHER_REVIEW, TEACHER_DEADLINES, TEACHER_PROFILE];
     case 'superadmin':
-      return [TEACHER_HOME, TEACHER_REVIEW, ADMIN, TEACHER_PROFILE];
+      return [TEACHER_HOME, TEACHER_REVIEW, TEACHER_DEADLINES, ADMIN, TEACHER_PROFILE];
   }
 }

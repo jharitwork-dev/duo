@@ -10,6 +10,7 @@ import type { GroupOption } from './assign-todo-dialog';
 import { reorderTodos } from '@/server/actions/todo';
 import type { getActivePhases } from '@/server/queries/phase';
 import type { TodoReviewSummary } from '@/lib/todo-review-status';
+import type { DashboardCell } from '@/lib/deadline-dashboard';
 
 type Todo = Awaited<ReturnType<typeof getActivePhases>>[number]['todos'][number];
 
@@ -21,18 +22,22 @@ export function TodoList({
   initialTodos,
   phaseId,
   phaseName,
+  phaseDeadline = null,
   groupId,
   groups,
   commentCounts = {},
   reviewStatuses = {},
+  deadlineCells = {},
 }: {
   initialTodos: Todo[];
   phaseId: string;
   phaseName: string;
+  phaseDeadline?: Date | null;
   groupId: string;
   groups: GroupOption[];
   commentCounts?: Record<string, number>;
   reviewStatuses?: Record<string, TodoReviewSummary>;
+  deadlineCells?: Record<string, DashboardCell>;
 }) {
   const [todos, setTodos] = useState(initialTodos);
   const [, startTransition] = useTransition();
@@ -81,6 +86,8 @@ export function TodoList({
             index={index}
             commentCount={commentCounts[todo.id] ?? 0}
             review={reviewStatuses[todo.id]}
+            phaseDeadline={phaseDeadline}
+            deadlineCell={deadlineCells[todo.id]}
           />
         ))}
       </DragDropProvider>
@@ -88,6 +95,7 @@ export function TodoList({
       <InlineAddTodo
         phaseId={phaseId}
         phaseName={phaseName}
+        phaseDeadline={phaseDeadline}
         groupId={groupId}
         groups={groups}
         onCreated={() => router.refresh()}

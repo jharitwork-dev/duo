@@ -13,6 +13,7 @@ import { TodoList } from '@/components/todo/todo-list';
 import type { GroupOption } from '@/components/todo/assign-todo-dialog';
 import type { getActivePhases } from '@/server/queries/phase';
 import type { TodoReviewSummary } from '@/lib/todo-review-status';
+import type { DashboardCell } from '@/lib/deadline-dashboard';
 import { GroupPhaseStatusSelect, PhaseStatusPill } from './group-phase-status-select';
 
 type GroupPhase = Awaited<ReturnType<typeof getActivePhases>>[number];
@@ -27,6 +28,7 @@ export function GroupPhaseBoard({
   groups,
   commentCounts = {},
   reviewStatuses = {},
+  deadlineCells = {},
 }: {
   groupId: string;
   phases: GroupPhase[];
@@ -35,6 +37,8 @@ export function GroupPhaseBoard({
   commentCounts?: Record<string, number>;
   /** Latest-submission review summary per to-do. */
   reviewStatuses?: Record<string, TodoReviewSummary>;
+  /** Deadline + review cell per to-do (261004-03i). */
+  deadlineCells?: Record<string, DashboardCell>;
 }) {
   const defaultOpenId = (phases.find((p) => p.status === 'active') ?? phases[0])?.id;
 
@@ -50,6 +54,7 @@ export function GroupPhaseBoard({
           defaultOpen={phase.id === defaultOpenId}
           commentCounts={commentCounts}
           reviewStatuses={reviewStatuses}
+          deadlineCells={deadlineCells}
         />
       ))}
     </div>
@@ -64,6 +69,7 @@ function GroupPhaseCard({
   defaultOpen,
   commentCounts,
   reviewStatuses,
+  deadlineCells,
 }: {
   phase: GroupPhase;
   index: number;
@@ -72,6 +78,7 @@ function GroupPhaseCard({
   defaultOpen: boolean;
   commentCounts: Record<string, number>;
   reviewStatuses: Record<string, TodoReviewSummary>;
+  deadlineCells: Record<string, DashboardCell>;
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -104,10 +111,12 @@ function GroupPhaseCard({
             initialTodos={phase.todos}
             phaseId={phase.id}
             phaseName={phase.name}
+            phaseDeadline={phase.deadline}
             groupId={groupId}
             groups={groups}
             commentCounts={commentCounts}
             reviewStatuses={reviewStatuses}
+            deadlineCells={deadlineCells}
           />
         </div>
       </CollapsibleContent>

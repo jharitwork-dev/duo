@@ -4,16 +4,13 @@ import { cn } from 'cn';
 import { BTN_PRIMARY, INPUT, LABEL, TEXTAREA } from '@/components/cocoon/ui';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { updatePhase } from '@/server/actions/phase';
-import { formatDateShort } from '@/lib/format';
+import { DeadlineInput } from '@/components/deadline/deadline-input';
 
 type Phase = {
   id: string;
@@ -73,57 +70,19 @@ export function PhaseEditForm({ phase }: { phase: Phase }) {
         />
       </div>
 
-      <div className="space-y-2">
-        <Label className={LABEL}>กำหนดส่ง</Label>
-        <Popover>
-          <PopoverTrigger
-            render={
-              <Button variant="outline" className={cn(INPUT, 'w-full justify-start text-left font-normal text-cocoon-ink')}>
-                <CalendarIcon className="mr-2 size-4" />
-                {deadline ? formatDateShort(deadline) : 'เลือกวันกำหนดส่ง'}
-              </Button>
-            }
-          />
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={deadline ?? undefined}
-              onSelect={(date) => {
-                setDeadline(date ?? null);
-                // Auto-save after date selection
-                startTransition(async () => {
-                  await updatePhase({
-                    phaseId: phase.id,
-                    deadline: date ?? null,
-                  });
-                  router.refresh();
-                });
-              }}
-            />
-            {deadline && (
-              <div className="border-t p-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    setDeadline(null);
-                    startTransition(async () => {
-                      await updatePhase({
-                        phaseId: phase.id,
-                        deadline: null,
-                      });
-                      router.refresh();
-                    });
-                  }}
-                >
-                  ล้างกำหนดส่ง
-                </Button>
-              </div>
-            )}
-          </PopoverContent>
-        </Popover>
-      </div>
+      <DeadlineInput
+        idPrefix={`phase-deadline-${phase.id}`}
+        value={deadline}
+        disabled={isPending}
+        onChange={(next) => {
+          setDeadline(next);
+          // Auto-save on a valid change or clear
+          startTransition(async () => {
+            await updatePhase({ phaseId: phase.id, deadline: next });
+            router.refresh();
+          });
+        }}
+      />
 
       <div className="flex items-center gap-3 lg:col-span-2">
         <Switch
