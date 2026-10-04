@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 Phase: 4
 Plan: quick 261004-03i (deadlines + dashboard) planning; next 261004-gic (review), 261004-gid (teacher attachments)
 Status: In progress — phases 1, 2, 3, 5 complete via quick tasks
-Last activity: 2026-10-04 - Completed + deployed quick task 261004-02p (grouping, roster, full CRUD, authz)
+Last activity: 2026-10-04 - Completed + deployed quick task 261004-j6h (classroom-level tasks); dialog overflow fix 8663cdd
 
 Progress: [███████▌░░] 75%
 
@@ -124,6 +124,7 @@ None yet.
 | 261004-gic | Teacher review: approve / send back, auto phase unlock, review list + detail per Figma (full: checked, verified 9/9; no migration; deployed) | 2026-10-04 | b4afa22 | [261004-gic-teacher-review-approve-reject-with-auto-](./quick/261004-gic-teacher-review-approve-reject-with-auto-/) |
 | 261004-gid | Teacher file attachments on tasks (shared-key safe deletion, limits, student download) (full: checked, verified 8/8; no migration; deployed) | 2026-10-04 | 022fb89 | [261004-gid-teacher-file-attachments-on-tasks](./quick/261004-gid-teacher-file-attachments-on-tasks/) |
 | 261004-iyj | Students preview locked future phases (greyed, read-only) | 2026-10-04 | 16b4414 | [261004-iyj-students-can-preview-locked-future-phase](./quick/261004-iyj-students-can-preview-locked-future-phase/) |
+| 261004-j6h | Classroom-level tasks (งานของห้องเรียน): sync to all groups, locked title/deadline/mode, per-group field overrides, keep-submitted delete, deadline ordering (full: checked, verified 7/7; migration applied + deployed) | 2026-10-04 | 49016ab | [261004-j6h-classroom-level-locked-tasks-shared-by-a](./quick/261004-j6h-classroom-level-locked-tasks-shared-by-a/) |
 
 ## Session Continuity
 
@@ -137,6 +138,6 @@ In flight / next, in order (user authorized end-to-end execution incl. apply+dep
 1. **261004-03i** DONE + deployed 2026-10-04.
 2. **261004-gic** DONE + deployed 2026-10-04.
 3. **261004-gid** DONE + deployed 2026-10-04.
-4. **261004-j6h** classroom-level locked tasks (งานของห้องเรียน): CONTEXT written in .planning/quick/261004-j6h-classroom-level-locked-tasks-shared-by-a/ — confirm the 3 [confirm] items with the user, then quick --full.
-5. Phase 6 LINE notifications: not specced; ask the user (LINE OA? which events?).
+4. **261004-j6h** DONE + deployed 2026-10-04.
+5. Phase 6 LINE notifications: DEFERRED by user 2026-10-04 ("ไม่ใช้ตอนนี้") — do not propose until the user asks.
 User-side in progress: Clerk production instance — DONE: prod instance (secondary app, build.innovators.co.th), 5 DNS CNAMEs added via Cloudflare API (DNS only); user doing Google OAuth client (redirect https://clerk.build.innovators.co.th/v1/oauth_callback). REMAINING after that: (original plan: create prod instance cloned from dev, domain build.innovators.co.th, 5 DNS CNAMEs in Cloudflare as DNS-only; then Google OAuth client, swap pk_live/sk_live in Vercel Production, migrate dev Clerk user ids → prod ids by email in DB). Also rotate the R2 token (secret was pasted in chat).
