@@ -19,6 +19,7 @@ import { NodePathDesktop } from '@/components/student/node-path-desktop';
 import {
   buildNodeRows,
   computeLockedTodoIds,
+  isPhasePreview,
   pickCurrentTodoId,
   pickDefaultPhaseId,
 } from '@/lib/node-path';
@@ -122,13 +123,18 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
     typeof requested === 'string' ? requested : undefined,
   );
   const selected = phases.find((p) => p.id === selectedId) ?? null;
+  // Locked phase opened from the stepper: read-only preview (261004-iyj). Every node renders locked
+  // (computeLockedTodoIds) — no links, no comment dots; work/submit/comment gates are unchanged.
+  const isPreview = selected ? isPhasePreview(selected) : false;
 
   const todos = selected?.todos ?? [];
   const [summaries, unreadTodoIds] = selected
     ? await Promise.all([
         getTodoSubmissionSummaries(groupId, userId, todos),
         // The dot is decorative: never let it break the home page.
-        getUnreadTeacherCommentTodoIds(groupId, userId, todos).catch(() => [] as string[]),
+        isPreview
+          ? Promise.resolve([] as string[])
+          : getUnreadTeacherCommentTodoIds(groupId, userId, todos).catch(() => [] as string[]),
       ])
     : [{}, [] as string[]];
   const statuses = Object.fromEntries(Object.entries(summaries).map(([id, s]) => [id, s.status]));
@@ -148,6 +154,15 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
       <h1 className="mt-[27px] px-[33px] text-[20px] leading-normal font-bold text-cocoon-blue lg:mt-[22px] lg:px-0 lg:text-[28px]">
         งานของฉัน
       </h1>
+
+      {isPreview && (
+        <p
+          role="status"
+          className="mx-[33px] mt-3 rounded-[12px] border border-cocoon-line bg-black/5 px-4 py-2.5 text-[14px] leading-normal font-bold text-cocoon-muted lg:mx-0"
+        >
+          Phase นี้ยังไม่ปลดล็อค · ดูล่วงหน้าได้ แต่ยังส่งงานไม่ได้
+        </p>
+      )}
 
       {phases.length === 0 ? (
         <EmptyCard title="ยังไม่มีเนื้อหาในกลุ่มนี้" description="ครูจะเพิ่มเนื้อหาให้เร็ว ๆ นี้" />
