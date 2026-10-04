@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentRole } from '@/lib/auth';
 import { ROLES, ROUTES } from '@/lib/constants';
 import { AppShell } from '@/components/cocoon/app-shell';
+import { getPendingReviewCount } from '@/server/queries/review';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();
@@ -16,5 +17,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   // Every signed-in role gets the Cocoon shell (desktop header at lg, bottom tab bar below lg).
   const navRole = role === ROLES.STUDENT ? 'student' : role === ROLES.SUPERADMIN ? 'superadmin' : 'teacher';
-  return <AppShell role={navRole}>{children}</AppShell>;
+  // Pending-review badge on the ตรวจงาน tab (261004-gic); never break the shell if the count fails.
+  if (navRole === 'student') return <AppShell role={navRole}>{children}</AppShell>;
+  const reviewCount = await getPendingReviewCount(userId).catch(() => 0);
+  return (
+    <AppShell role={navRole} badges={{ review: reviewCount }}>
+      {children}
+    </AppShell>
+  );
 }

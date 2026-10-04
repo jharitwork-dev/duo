@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from 'cn';
-import { navItemsFor, type NavRole } from './nav-items';
+import { badgeText, navItemsFor, type NavBadges, type NavRole } from './nav-items';
 
 // Mobile/tablet navigation (< lg). At lg the destinations move into DesktopHeader.
-export function BottomTabBar({ role }: { role: NavRole }) {
+export function BottomTabBar({ role, badges }: { role: NavRole; badges?: NavBadges }) {
   const pathname = usePathname() ?? '';
   const items = navItemsFor(role);
 
@@ -21,6 +21,7 @@ export function BottomTabBar({ role }: { role: NavRole }) {
       {items.map((item) => {
         const active = item.match(pathname);
         const Icon = item.icon;
+        const badge = item.badge ? badgeText(badges?.[item.badge]) : null;
         return (
           <Link
             key={item.href}
@@ -31,7 +32,17 @@ export function BottomTabBar({ role }: { role: NavRole }) {
               active ? 'text-cocoon-orange' : 'text-cocoon-muted',
             )}
           >
-            <Icon size={22} strokeWidth={1.75} aria-hidden />
+            <span className="relative">
+              <Icon size={22} strokeWidth={1.75} aria-hidden />
+              {badge && (
+                <span
+                  aria-label={`รอตรวจ ${badges?.[item.badge!]} งาน`}
+                  className="absolute -top-1.5 left-[14px] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-cocoon-orange px-1 text-[11px] leading-none font-bold text-white"
+                >
+                  {badge}
+                </span>
+              )}
+            </span>
             <span className="text-[11px] leading-normal font-bold">{item.label}</span>
           </Link>
         );

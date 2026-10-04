@@ -133,6 +133,9 @@ export function StudentTodoScreen({ todo, workPage, submissions, groupHome }: St
       <div className="mt-4 space-y-4 px-[33px] lg:mt-8 lg:grid lg:grid-cols-[664px_1fr] lg:items-start lg:gap-8 lg:space-y-0 lg:px-0 max-xl:lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="min-w-0 space-y-4 lg:space-y-6">
           {resubmit && <ReviewerNoteCard title="คำแนะนำจากผู้ตรวจ" comment={latest.reviewerComment} />}
+          {latest?.status === 'approved' && latest.reviewerComment && (
+            <ReviewerNoteCard tone="approved" title="ข้อความจากผู้ตรวจ" comment={latest.reviewerComment} />
+          )}
           <StudentWorkPage
             todoId={todo.id}
             todoTitle={todo.title}

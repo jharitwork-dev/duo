@@ -18,6 +18,17 @@ export interface NavItem {
   desktopLabel?: string;
   icon: LucideIcon;
   match: (pathname: string) => boolean;
+  /** Count badge key (261004-gic): the shell passes the counts in `badges`. */
+  badge?: NavBadgeKey;
+}
+
+export type NavBadgeKey = 'review';
+export type NavBadges = Partial<Record<NavBadgeKey, number>>;
+
+/** Small count pill label ("99+" cap); null when nothing to show. */
+export function badgeText(count: number | undefined): string | null {
+  if (!count || count <= 0) return null;
+  return count > 99 ? '99+' : String(count);
 }
 
 const startsWith = (pathname: string, prefix: string) =>
@@ -67,6 +78,7 @@ const TEACHER_REVIEW: NavItem = {
   label: 'ตรวจงาน',
   icon: ClipboardCheck,
   match: (p) => startsWith(p, '/teacher/review'),
+  badge: 'review',
 };
 
 const TEACHER_DEADLINES: NavItem = {

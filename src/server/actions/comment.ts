@@ -22,7 +22,7 @@ import {
 } from '@/lib/comment-thread';
 import { isInSubmissionScope } from '@/server/queries/submission';
 import { buildCommentThread } from '@/server/queries/comment';
-import { resolveCommentThread, type ResolvedCommentThread } from '@/server/comment-access';
+import { insertThreadComment, resolveCommentThread, type ResolvedCommentThread } from '@/server/comment-access';
 import { getOrCreatePage } from '@/server/work-page-access';
 
 const NOT_AUTHORIZED = 'To-do not found or not authorized';
@@ -96,7 +96,7 @@ export async function postComment(input: z.infer<typeof postSchema>): Promise<Th
     const latest = submissionRows.find((row) =>
       isInSubmissionScope(row, thread.todo.submissionMode, thread.owner.groupId, thread.owner.userId ?? ''),
     );
-    await tx.insert(comments).values({
+    await insertThreadComment(tx, {
       workPageId: workPage.id,
       submissionId: latest?.id ?? null,
       userId,

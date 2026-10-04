@@ -1,19 +1,21 @@
 'use client';
 
+import Link from 'next/link';
 import { cn } from 'cn';
 import { formatSubmissionDate } from '@/lib/format';
 import { getDeadlineStatus } from '@/lib/deadline';
 import { DeadlineChip } from '@/components/deadline/deadline-chip';
 import type { TeacherWorkPageEntry } from '@/server/queries/work-page';
 import { StatusPill } from '@/components/cocoon/status-pill';
-import { CARD, CARD_META, CARD_TITLE } from '@/components/cocoon/ui';
+import { BTN_INFO, BTN_TERTIARY, CARD, CARD_META, CARD_TITLE } from '@/components/cocoon/ui';
 import { SubmittedFiles } from '@/components/student/submission-status-view';
 import { WorkPageViewer } from './work-page-viewer';
 import { WorkPageFileList } from './work-page-files';
 
 /**
  * Teacher read-only view of a to-do's work: latest submission snapshot + the live page when it
- * changed after that submission ("ฉบับล่าสุด (ยังไม่ส่ง)"). No review actions (Phase 4).
+ * changed after that submission ("ฉบับล่าสุด (ยังไม่ส่ง)"). Review happens on /teacher/review/[id] (261004-gic):
+ * the submission card links there ("เช็คงาน" while pending, else "ดูผลตรวจ").
  */
 export function TeacherWorkPagePanel({
   entries,
@@ -94,6 +96,15 @@ function EntryBlock({
             <h2 className={cn(CARD_TITLE, 'min-w-0 flex-1')}>งานที่ส่งล่าสุด · ครั้งที่ {sub.attempt}</h2>
             <StatusPill status={sub.status} size="lg" />
             {chip}
+            <Link
+              href={`/teacher/review/${sub.id}`}
+              className={cn(
+                sub.status === 'pending' ? BTN_INFO : BTN_TERTIARY,
+                'inline-flex h-10 items-center justify-center text-[14px]',
+              )}
+            >
+              {sub.status === 'pending' ? 'เช็คงาน' : 'ดูผลตรวจ'}
+            </Link>
           </div>
           <p className={cn(CARD_META, 'mt-1')}>
             ส่งโดย {sub.submittedByName} · {formatSubmissionDate(sub.createdAt)}
