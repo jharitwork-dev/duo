@@ -1,0 +1,65 @@
+// Static guard: every teacher mutation authorizes against the classroom (not role alone).
+import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const ACTIONS_DIR = path.resolve(__dirname, '../actions');
+const SCANNED = ['classroom.ts', 'group.ts', 'phase.ts', 'todo.ts', 'template.ts', 'impact.ts'];
+const EDITOR_CHECK = /assert(Classroom|Group|Phase|Todo)Editor\(/;
+const GROUP_DELETE_CHECK = /authorizeGroupDelete\(/;
+// Template-owner checks / creation of a brand-new classroom (no classroom to check yet).
+const ALLOWLIST = new Set(['createClassroom', 'deleteTemplate', 'updateTemplate']);
+
+type ExportedFn = { file: string; name: string; body: string };
+
+function exportedFunctions(file: string): ExportedFn[] {
+  const source = fs.readFileSync(path.join(ACTIONS_DIR, file), 'utf8');
+  const re = /export async function (\w+)\s*\(/g;
+  const starts: { name: string; index: number }[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(source))) starts.push({ name: m[1], index: m.index });
+  return starts.map((s, i) => ({
+    file,
+    name: s.name,
+    body: source.slice(s.index, i + 1 < starts.length ? starts[i + 1].index : source.length),
+  }));
+}
+
+const all = SCANNED.flatMap(exportedFunctions);
+
+describe('authorization coverage of teacher server actions', () => {
+  it('scans every listed action file', () => {
+    for (const file of SCANNED) {
+      expect(all.some((f) => f.file === file), `${file} has no exported actions`).toBe(true);
+    }
+  });
+
+  it.each(all.filter((f) => f.body.includes('requireRole(ROLES.TEACHER')).map((f) => [`${f.file}:${f.name}`, f]))(
+    '%s checks the classroom editor',
+    (_label, fn) => {
+      const f = fn as ExportedFn;
+      if (ALLOWLIST.has(f.name)) return;
+      expect(EDITOR_CHECK.test(f.body), `${f.file}:${f.name} must call assert*Editor`).toBe(true);
+    },
+  );
+
+  it('every impact.ts export authorizes (editor check or group-delete rule)', () => {
+    for (const f of all.filter((x) => x.file === 'impact.ts')) {
+      expect(EDITOR_CHECK.test(f.body) || GROUP_DELETE_CHECK.test(f.body), `impact.ts:${f.name}`).toBe(true);
+    }
+  });
+
+  it('deleteGroup branches on the group-delete rule instead of a blanket teacher role check', () => {
+    const fn = all.find((f) => f.file === 'group.ts' && f.name === 'deleteGroup');
+    expect(fn).toBeDefined();
+    expect(GROUP_DELETE_CHECK.test(fn!.body)).toBe(true);
+    expect(fn!.body.includes('requireRole(ROLES.TEACHER')).toBe(false);
+  });
+
+  it('no action uses an inline classroom-owner check', () => {
+    for (const file of fs.readdirSync(ACTIONS_DIR).filter((f) => f.endsWith('.ts'))) {
+      const source = fs.readFileSync(path.join(ACTIONS_DIR, file), 'utf8');
+      expect(source.includes('eq(classrooms.createdBy'), file).toBe(false);
+    }
+  });
+});
