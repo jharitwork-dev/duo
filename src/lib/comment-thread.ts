@@ -37,7 +37,6 @@ export type CommentThreadData = { comments: CommentView[]; count: number; nowIso
 // Body
 
 // C0 controls except \t (0x09) and \n (0x0A), plus DEL.
-// eslint-disable-next-line no-control-regex
 const CONTROL_CHARS = /[\u0000-\u0008\u000B-\u001F\u007F]/g;
 
 export function normalizeCommentBody(raw: string): { ok: true; body: string } | { ok: false } {
