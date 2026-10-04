@@ -89,6 +89,8 @@ export async function getClassroomById(classroomId: string, userId: string) {
     .select({
       id: groups.id,
       name: groups.name,
+      maxMembers: groups.maxMembers,
+      createdBy: groups.createdBy,
       createdAt: groups.createdAt,
       memberCount: sql<number>`(
         SELECT COUNT(*) FROM group_members

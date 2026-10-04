@@ -5,12 +5,24 @@ import { db } from '@/db';
 import { todos } from '@/db/schema/todos';
 import { todoAttachments } from '@/db/schema/todos';
 import { groups } from '@/db/schema/groups';
-import { eq, and, max, inArray } from 'drizzle-orm';
+import { phases } from '@/db/schema/phases';
+import { submissions } from '@/db/schema/submissions';
+import { eq, and, max, inArray, count } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { presignGet } from '@/lib/r2';
 import { createId } from '@/lib/ids';
-import { assertClassroomEditor, getPhaseClassroomId } from '@/server/phase-helpers';
+import {
+  assertClassroomEditor,
+  assertPhaseEditor,
+  assertTodoEditor,
+  cleanupR2Objects,
+  collectFileKeys,
+  getPhaseClassroomId,
+} from '@/server/phase-helpers';
+import { checkDeleteConfirmation } from '@/lib/group-rules';
+import { actionError, type ActionResult } from '@/lib/action-result';
 
 const createTodoSchema = z.object({
   phaseId: z.string().min(1),
@@ -88,8 +100,10 @@ const updateTodoSchema = z.object({
 
 export async function updateTodo(input: z.infer<typeof updateTodoSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
   const data = updateTodoSchema.parse(input);
   const { todoId, ...updates } = data;
+  await assertTodoEditor(todoId, userId);
 
   const updateFields: Record<string, unknown> = { updatedAt: new Date() };
   if (updates.title !== undefined) updateFields.title = updates.title;
@@ -111,7 +125,9 @@ const reorderTodosSchema = z.object({
 
 export async function reorderTodos(input: z.infer<typeof reorderTodosSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
   const data = reorderTodosSchema.parse(input);
+  await assertPhaseEditor(data.phaseId, userId);
 
   // Verify all IDs belong to this (phase, group) and are not archived
   const existingTodos = await db
@@ -149,7 +165,9 @@ const archiveTodoSchema = z.object({
 
 export async function archiveTodo(input: z.infer<typeof archiveTodoSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
   const data = archiveTodoSchema.parse(input);
+  await assertTodoEditor(data.todoId, userId);
 
   await db
     .update(todos)
@@ -165,7 +183,9 @@ const restoreTodoSchema = z.object({
 
 export async function restoreTodo(input: z.infer<typeof restoreTodoSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
   const data = restoreTodoSchema.parse(input);
+  await assertTodoEditor(data.todoId, userId);
 
   await db
     .update(todos)
@@ -173,6 +193,73 @@ export async function restoreTodo(input: z.infer<typeof restoreTodoSchema>) {
     .where(eq(todos.id, data.todoId));
 
   return { success: true };
+}
+
+const deleteTodoSchema = z.object({
+  todoId: z.string().min(1),
+  /** Also delete every copy sharing this to-do's assignmentId (same classroom). */
+  allCopies: z.boolean().optional(),
+  confirmName: z.string().optional(),
+});
+
+/** To-do ids in a delete scope: the to-do itself, or all copies of its assignment in the classroom. */
+async function todoDeleteScope(
+  todo: { id: string; assignmentId: string | null },
+  classroomId: string,
+  allCopies: boolean | undefined,
+) {
+  if (!allCopies || !todo.assignmentId) {
+    return db
+      .select({ id: todos.id, groupId: todos.groupId })
+      .from(todos)
+      .where(eq(todos.id, todo.id));
+  }
+  return db
+    .select({ id: todos.id, groupId: todos.groupId })
+    .from(todos)
+    .innerJoin(phases, eq(phases.id, todos.phaseId))
+    .where(and(eq(todos.assignmentId, todo.assignmentId), eq(phases.classroomId, classroomId)));
+}
+
+/**
+ * Permanently deletes a to-do (or all copies of its assignment) with its attachments and
+ * submissions. Typing the to-do title is required when anything was submitted in scope.
+ * R2 objects are removed after the transaction commits.
+ */
+export async function deleteTodo(
+  input: z.infer<typeof deleteTodoSchema>,
+): Promise<ActionResult<{ deleted: number }>> {
+  await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
+  const data = deleteTodoSchema.parse(input);
+  const { todo, classroom } = await assertTodoEditor(data.todoId, userId);
+
+  const scope = await todoDeleteScope(todo, classroom.id, data.allCopies);
+  const todoIds = scope.map((t) => t.id);
+  const [row] = await db
+    .select({ n: count() })
+    .from(submissions)
+    .where(inArray(submissions.todoId, todoIds));
+  const confirmation = checkDeleteConfirmation({
+    submissionCount: row?.n ?? 0,
+    expectedName: todo.title,
+    typed: data.confirmName,
+  });
+  if (!confirmation.ok) return actionError(confirmation.error);
+
+  const keys = await db.transaction(async (tx) => {
+    const fileKeys = await collectFileKeys(tx, { todoIds });
+    // Cascades: submissions -> files/comments, todo_attachments.
+    await tx.delete(todos).where(inArray(todos.id, todoIds));
+    return fileKeys;
+  });
+
+  await cleanupR2Objects(keys);
+  for (const groupId of new Set(scope.map((t) => t.groupId))) {
+    revalidatePath(`/teacher/classroom/${classroom.id}/group/${groupId}`);
+    revalidatePath(`/student/classroom/${classroom.id}/group/${groupId}`);
+  }
+  return { success: true, deleted: todoIds.length };
 }
 
 const getAttachmentUrlSchema = z.object({

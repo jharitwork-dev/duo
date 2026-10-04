@@ -8,6 +8,8 @@ export const classrooms = pgTable('classrooms', {
   inviteCode: text('invite_code').unique(),
   maxGroupSize: integer('max_group_size'),
   isArchived: boolean('is_archived').notNull().default(false),
+  // Who forms groups: the teacher, students joining existing groups, or students creating groups too.
+  groupMode: text('group_mode', { enum: ['teacher', 'self_join', 'self_create'] }).notNull().default('teacher'),
   createdBy: text('created_by').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

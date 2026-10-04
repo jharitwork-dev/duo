@@ -5,14 +5,22 @@ import { db } from '@/db';
 import { phases } from '@/db/schema/phases';
 import { groups } from '@/db/schema/groups';
 import { groupPhaseProgress, PHASE_STATUSES } from '@/db/schema/groupPhaseProgress';
-import { eq, and, max, inArray } from 'drizzle-orm';
+import { todos } from '@/db/schema/todos';
+import { submissions } from '@/db/schema/submissions';
+import { eq, and, max, inArray, count } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import {
   assertClassroomEditor,
+  assertPhaseEditor,
+  cleanupR2Objects,
+  collectFileKeys,
   getPhaseClassroomId,
   syncClassroomProgress,
 } from '@/server/phase-helpers';
+import { checkDeleteConfirmation } from '@/lib/group-rules';
+import { actionError, type ActionResult } from '@/lib/action-result';
 
 const createPhaseSchema = z.object({
   classroomId: z.string().min(1),
@@ -205,4 +213,47 @@ export async function setGroupPhaseStatus(input: z.infer<typeof setGroupPhaseSta
     });
 
   return { success: true };
+}
+
+const deletePhaseSchema = z.object({
+  phaseId: z.string().min(1),
+  confirmName: z.string().optional(),
+});
+
+/**
+ * Permanently deletes an ARCHIVED phase with every group's to-dos in it (and their submissions,
+ * files, comments, attachments, progress rows). Typing the phase name is required when anything
+ * was submitted. R2 objects are removed after the transaction commits.
+ */
+export async function deletePhase(input: z.infer<typeof deletePhaseSchema>): Promise<ActionResult<{ name: string }>> {
+  await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
+  const data = deletePhaseSchema.parse(input);
+  const { phase, classroom } = await assertPhaseEditor(data.phaseId, userId);
+  if (!phase.isArchived) return actionError('เก็บ Phase ก่อนลบถาวร');
+
+  const [row] = await db
+    .select({ n: count() })
+    .from(submissions)
+    .innerJoin(todos, eq(todos.id, submissions.todoId))
+    .where(eq(todos.phaseId, phase.id));
+  const confirmation = checkDeleteConfirmation({
+    submissionCount: row?.n ?? 0,
+    expectedName: phase.name,
+    typed: data.confirmName,
+  });
+  if (!confirmation.ok) return actionError(confirmation.error);
+
+  const keys = await db.transaction(async (tx) => {
+    const todoRows = await tx.select({ id: todos.id }).from(todos).where(eq(todos.phaseId, phase.id));
+    const fileKeys = await collectFileKeys(tx, { todoIds: todoRows.map((t) => t.id) });
+    // Cascades: todos -> submissions/files/comments/attachments, group_phase_progress.
+    await tx.delete(phases).where(eq(phases.id, phase.id));
+    await syncClassroomProgress(tx, classroom.id);
+    return fileKeys;
+  });
+
+  await cleanupR2Objects(keys);
+  revalidatePath(`/teacher/classroom/${classroom.id}`);
+  return { success: true, name: phase.name };
 }

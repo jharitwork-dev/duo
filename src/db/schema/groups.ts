@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, unique, integer } from 'drizzle-orm/pg-core';
 import { createId } from '@/lib/ids';
 import { classrooms } from './classrooms';
 
@@ -6,6 +6,8 @@ export const groups = pgTable('groups', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   classroomId: text('classroom_id').notNull().references(() => classrooms.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
+  // Per-group member limit; null = use classrooms.max_group_size (null there = unlimited).
+  maxMembers: integer('max_members'),
   createdBy: text('created_by').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

@@ -12,6 +12,7 @@ import { ROLES } from '@/lib/constants';
 import { createId } from '@/lib/ids';
 import { parseTemplateStructure, type TemplateStructure } from '@/lib/template-structure';
 import { assertClassroomEditor, syncClassroomProgress } from '@/server/phase-helpers';
+import { actionError, type ActionResult } from '@/lib/action-result';
 
 const applyTemplateSchema = z.object({
   classroomId: z.string().min(1),
@@ -199,6 +200,35 @@ export async function deleteTemplate(input: z.infer<typeof deleteTemplateSchema>
   }
 
   await db.delete(phaseTemplates).where(eq(phaseTemplates.id, data.templateId));
+
+  return { success: true };
+}
+
+const updateTemplateSchema = z.object({
+  templateId: z.string().min(1),
+  name: z.string().trim().min(1).max(200),
+  description: z.string().max(2000).optional(),
+});
+
+/** Renames / re-describes a custom template. Only its creator may change it; built-ins are read-only. */
+export async function updateTemplate(input: z.infer<typeof updateTemplateSchema>): Promise<ActionResult> {
+  await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const userId = await getCurrentUserId();
+  const parsed = updateTemplateSchema.safeParse(input);
+  if (!parsed.success) return actionError('ชื่อเทมเพลตต้องมี 1–200 ตัวอักษร');
+  const data = parsed.data;
+
+  const template = await db.query.phaseTemplates.findFirst({
+    where: eq(phaseTemplates.id, data.templateId),
+  });
+  if (!template) throw new Error('Template not found');
+  if (template.isBuiltIn) return actionError('แก้ไขเทมเพลตมาตรฐานไม่ได้');
+  if (template.createdBy !== userId) throw new Error('You can only change templates you created');
+
+  await db
+    .update(phaseTemplates)
+    .set({ name: data.name, description: data.description?.trim() || null })
+    .where(eq(phaseTemplates.id, data.templateId));
 
   return { success: true };
 }

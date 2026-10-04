@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as schema from '@/db/schema';
 import { createId } from '@/lib/ids';
+import { GROUP_MODES } from '@/lib/group-rules';
 
 describe('Database Schema', () => {
   it('exports all table definitions', () => {
@@ -30,6 +31,15 @@ describe('Database Schema', () => {
     expect(schema.submissionsRelations).toBeDefined();
     expect(schema.submissionFilesRelations).toBeDefined();
     expect(schema.commentsRelations).toBeDefined();
+  });
+
+  it('has the group limit and group mode columns', () => {
+    expect(schema.groups.maxMembers.name).toBe('max_members');
+    expect(schema.groups.maxMembers.notNull).toBe(false);
+    expect(schema.classrooms.groupMode.name).toBe('group_mode');
+    expect(schema.classrooms.groupMode.notNull).toBe(true);
+    expect(schema.classrooms.groupMode.default).toBe('teacher');
+    expect(schema.classrooms.groupMode.enumValues).toEqual([...GROUP_MODES]);
   });
 
   it('createId generates a 24-character string', () => {
