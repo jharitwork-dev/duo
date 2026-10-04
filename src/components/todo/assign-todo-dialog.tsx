@@ -25,6 +25,8 @@ import { createTodo } from '@/server/actions/todo';
 import type { FileRequirement } from '@/lib/work-page';
 import { FileRequirementSelect } from './file-requirement-select';
 import { DeadlineInput } from '@/components/deadline/deadline-input';
+import { StagedAttachmentPicker } from './staged-attachment-picker';
+import { uploadTodoAttachment } from './upload-todo-attachment';
 import { BTN_PRIMARY, DIALOG_PANEL, DIALOG_TITLE, INPUT, LABEL } from '@/components/cocoon/ui';
 
 export type GroupOption = { id: string; name: string };
@@ -134,6 +136,7 @@ export function AssignTodoDialog({
   const [fileRequirement, setFileRequirement] = useState<FileRequirement>('optional');
   const [groupIds, setGroupIds] = useState<string[]>(defaultGroupIds);
   const [deadline, setDeadline] = useState<Date | null>(null);
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const [isPending, startTransition] = useTransition();
 
   const reset = () => {
@@ -142,6 +145,7 @@ export function AssignTodoDialog({
     setFileRequirement('optional');
     setGroupIds(defaultGroupIds);
     setDeadline(null);
+    setStagedFiles([]);
   };
 
   const setOpen = (next: boolean) => {
@@ -165,7 +169,14 @@ export function AssignTodoDialog({
           fileRequirement,
           deadline,
         });
+        // 261004-gid: each staged file is uploaded ONCE and attached to every copy (shared object).
+        let failedUploads = 0;
+        for (const file of stagedFiles) {
+          const uploaded = await uploadTodoAttachment(file, result.todoIds);
+          if (!uploaded.success) failedUploads++;
+        }
         toast.success(`เพิ่มงานให้ ${result.todoIds.length} กลุ่มแล้ว`);
+        if (failedUploads > 0) toast.error(`สร้างงานแล้ว แต่แนบไฟล์ไม่สำเร็จ ${failedUploads} ไฟล์`);
         setOpen(false);
         onCreated?.();
       } catch (error) {
@@ -249,6 +260,11 @@ export function AssignTodoDialog({
                 idPrefix={`assign-${phaseId}`}
                 disabled={isPending}
               />
+            </div>
+
+            <div className="space-y-2">
+              <span className={LABEL}>ไฟล์แนบจากครู (ไม่บังคับ)</span>
+              <StagedAttachmentPicker files={stagedFiles} onChange={setStagedFiles} disabled={isPending} />
             </div>
           </div>
 
