@@ -1,9 +1,12 @@
 import Link from 'next/link';
-import { ChevronDown, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { cn } from 'cn';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { getTeacherClassrooms } from '@/server/queries/classroom';
+import { getTeacherDashboard } from '@/server/queries/deadline';
+import { DashboardSummaryChips } from '@/components/dashboard/dashboard-summary-chips';
+import { GroupStatusCard } from '@/components/dashboard/group-status-card';
 import { ClassroomCard } from '@/components/classroom/classroom-card';
 import { Button } from '@/components/ui/button';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
@@ -22,16 +25,17 @@ function NewClassroomButton({ className }: { className?: string }) {
 export default async function TeacherDashboard() {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
   const userId = await getCurrentUserId();
-  const all = await getTeacherClassrooms(userId);
+  const [all, overview] = await Promise.all([getTeacherClassrooms(userId), getTeacherDashboard(userId)]);
   const classrooms = all.filter((c) => !c.isArchived);
   const archived = all.filter((c) => c.isArchived);
+  const now = new Date();
 
   return (
     <>
       <CocoonHeader variant="home" />
       <PageHeader
-        title="ทีมของฉัน"
-        subtitle="ห้องเรียนทั้งหมดของคุณ"
+        title="ภาพรวม"
+        subtitle="สถานะงานทุกกลุ่มในห้องเรียนของคุณ"
         actions={classrooms.length > 0 ? <NewClassroomButton /> : undefined}
       />
 
@@ -43,17 +47,61 @@ export default async function TeacherDashboard() {
             <NewClassroomButton />
           </div>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2 lg:gap-8">
-            {classrooms.map((classroom) => (
-              <ClassroomCard
-                key={classroom.id}
-                id={classroom.id}
-                name={classroom.name}
-                description={classroom.description}
-                memberCount={classroom.memberCount}
-                groupCount={classroom.groupCount}
-              />
-            ))}
+          <div className="space-y-8 lg:space-y-12">
+            <DashboardSummaryChips counts={overview.counts} />
+
+            {overview.classrooms.map(({ classroom, dashboard }) => {
+              const overviewHref = `/teacher/classroom/${classroom.id}?tab=overview`;
+              return (
+                <section key={classroom.id} aria-labelledby={`dash-${classroom.id}`} className="space-y-3 lg:space-y-4">
+                  <h2 id={`dash-${classroom.id}`} className="text-[20px] leading-normal font-bold text-cocoon-blue lg:text-[22px]">
+                    <Link href={overviewHref} className="rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-cocoon-blue/40">
+                      {classroom.name}
+                    </Link>
+                  </h2>
+                  {dashboard.groups.length === 0 ? (
+                    <p className="text-[14px] font-medium text-cocoon-muted">ห้องเรียนนี้ยังไม่มีกลุ่ม</p>
+                  ) : (
+                    <div className="grid gap-3 md:grid-cols-2 lg:gap-4 xl:grid-cols-3">
+                      {dashboard.groups.map((group) => (
+                        <GroupStatusCard
+                          key={group.id}
+                          classroomId={classroom.id}
+                          group={group}
+                          members={overview.members}
+                          now={now}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <Link
+                    href={overviewHref}
+                    className="inline-flex items-center gap-1 rounded-sm text-[14px] font-bold text-cocoon-blue outline-none hover:underline focus-visible:ring-2 focus-visible:ring-cocoon-blue/40"
+                  >
+                    ดูภาพรวมทั้งหมด
+                    <ChevronRight className="size-4" aria-hidden />
+                  </Link>
+                </section>
+              );
+            })}
+
+            <section aria-labelledby="all-classrooms" className="space-y-3 lg:space-y-4">
+              <h2 id="all-classrooms" className="text-[20px] leading-normal font-bold text-cocoon-ink lg:text-[22px]">
+                ห้องเรียนทั้งหมด
+              </h2>
+              <div className="grid gap-4 lg:grid-cols-2 lg:gap-8">
+                {classrooms.map((classroom) => (
+                  <ClassroomCard
+                    key={classroom.id}
+                    id={classroom.id}
+                    name={classroom.name}
+                    description={classroom.description}
+                    memberCount={classroom.memberCount}
+                    groupCount={classroom.groupCount}
+                  />
+                ))}
+              </div>
+            </section>
           </div>
         )}
 
