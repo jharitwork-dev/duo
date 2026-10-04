@@ -4,7 +4,14 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { ROLES } from '@/lib/constants';
 import type { UserRole } from '@/lib/constants';
 
-export async function promoteRole(): Promise<{ success: boolean; role: UserRole }> {
+export type PromoteResult = { success: true; role: UserRole } | { success: false; needsChoice: true };
+
+/**
+ * Assign the first role after sign-up. `choice` comes from the onboarding role picker
+ * (falls back to unsafeMetadata.role from older sign-up flows). With neither, the
+ * caller must ask the user, so nothing is written and `needsChoice` is returned.
+ */
+export async function promoteRole(choice?: 'student' | 'teacher'): Promise<PromoteResult> {
   const { userId } = await auth();
   if (!userId) throw new Error('Not authenticated');
 
@@ -16,17 +23,11 @@ export async function promoteRole(): Promise<{ success: boolean; role: UserRole 
   const existingRole = (user.publicMetadata as { role?: UserRole })?.role;
   if (existingRole) return { success: true, role: existingRole };
 
-  // Read the self-selected role from unsafeMetadata (set during signup)
-  const selectedRole = (user.unsafeMetadata as { role?: string })?.role;
+  const selectedRole = choice ?? (user.unsafeMetadata as { role?: string })?.role;
+  if (selectedRole !== 'teacher' && selectedRole !== 'student') return { success: false, needsChoice: true };
 
-  let targetRole: UserRole;
-  if (selectedRole === 'teacher') {
-    // Teachers start as pending -- require superadmin approval (per D-03)
-    targetRole = ROLES.TEACHER_PENDING;
-  } else {
-    // Students are immediately active (per D-02)
-    targetRole = ROLES.STUDENT;
-  }
+  // Teachers start as pending -- require superadmin approval (per D-03); students are immediately active (D-02)
+  const targetRole: UserRole = selectedRole === 'teacher' ? ROLES.TEACHER_PENDING : ROLES.STUDENT;
 
   await client.users.updateUserMetadata(userId, {
     publicMetadata: { role: targetRole },

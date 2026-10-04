@@ -1,37 +1,20 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@clerk/nextjs';
 import { promoteRole } from '@/server/actions/auth';
 import type { UserRole } from '@/lib/constants';
-import { Hourglass } from 'lucide-react';
+import { GraduationCap, Hourglass, Presentation } from 'lucide-react';
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [status, setStatus] = useState<'loading' | 'pending' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'choose' | 'pending' | 'error'>('loading');
   const { isLoaded, session } = useSession();
   const started = useRef(false);
 
-  useEffect(() => {
-    // Run once: session identity changes after reload() and must not re-trigger promotion.
-    if (!isLoaded || started.current) return;
-    started.current = true;
-
-    async function promote() {
-      try {
-        const result = await promoteRole();
-        // Refresh the session token so the new role is in sessionClaims before we navigate;
-        // otherwise the dashboard layout sees no role and bounces back here in a loop.
-        await session?.reload();
-        await session?.getToken({ skipCache: true });
-        handleRoleRedirect(result.role);
-      } catch {
-        setStatus('error');
-      }
-    }
-
-    function handleRoleRedirect(role: UserRole) {
+  const handleRoleRedirect = useCallback(
+    (role: UserRole) => {
       switch (role) {
         case 'student':
           router.push('/student');
@@ -48,13 +31,71 @@ export default function OnboardingPage() {
         default:
           router.push('/');
       }
-    }
+    },
+    [router],
+  );
 
+  const promote = useCallback(
+    async (choice?: 'student' | 'teacher') => {
+      setStatus('loading');
+      try {
+        const result = await promoteRole(choice);
+        if (!result.success) {
+          setStatus('choose');
+          return;
+        }
+        // Refresh the session token so the new role is in sessionClaims before we navigate;
+        // otherwise the dashboard layout sees no role and bounces back here in a loop.
+        await session?.reload();
+        await session?.getToken({ skipCache: true });
+        handleRoleRedirect(result.role);
+      } catch {
+        setStatus('error');
+      }
+    },
+    [session, handleRoleRedirect],
+  );
+
+  useEffect(() => {
+    // Run once: session identity changes after reload() and must not re-trigger promotion.
+    if (!isLoaded || started.current) return;
+    started.current = true;
     promote();
-  }, [router, isLoaded, session]);
+  }, [isLoaded, promote]);
 
   const card =
     'mx-[33px] flex w-[calc(100%-66px)] max-w-[440px] flex-col items-center gap-3 rounded-[16px] border border-[#f1ece5] bg-white p-8 text-center lg:mx-auto lg:mt-[54px] lg:w-full';
+
+  if (status === 'choose') {
+    const option =
+      'flex w-full items-center gap-4 rounded-[14px] border-2 border-[#f1ece5] bg-white p-4 text-left transition hover:border-cocoon-orange focus-visible:border-cocoon-orange focus-visible:outline-none';
+    return (
+      <div className={card}>
+        <h1 className="text-[22px] leading-normal font-bold text-cocoon-ink">คุณคือใคร?</h1>
+        <p className="text-[14px] leading-normal font-medium text-cocoon-muted">เลือกครั้งเดียว ใช้ตั้งค่าบัญชีของคุณ</p>
+        <div className="mt-2 flex w-full flex-col gap-3">
+          <button type="button" className={option} onClick={() => promote('student')}>
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-[12px] bg-[#eaf2ff]">
+              <GraduationCap className="size-6 text-cocoon-blue" aria-hidden />
+            </span>
+            <span>
+              <span className="block text-[17px] font-bold text-cocoon-ink">นักเรียน</span>
+              <span className="block text-[13px] font-medium text-cocoon-muted">เข้าใช้งานได้ทันที</span>
+            </span>
+          </button>
+          <button type="button" className={option} onClick={() => promote('teacher')}>
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-[12px] bg-[#fff0ea]">
+              <Presentation className="size-6 text-cocoon-orange" aria-hidden />
+            </span>
+            <span>
+              <span className="block text-[17px] font-bold text-cocoon-ink">ครู</span>
+              <span className="block text-[13px] font-medium text-cocoon-muted">ต้องรอผู้ดูแลระบบอนุมัติก่อนใช้งาน</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (status === 'pending') {
     return (
