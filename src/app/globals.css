@@ -147,3 +147,127 @@
     @apply font-sans;
   }
 }
+
+/* ---------- Work page editor (261004-01i): Tiptap content, scoped to .work-page ---------- */
+.work-page .tiptap {
+  min-height: 220px;
+  padding: 12px 0 4px;
+  font-size: 16px; /* >= 16px so iOS does not zoom on focus */
+  line-height: 1.6;
+  color: var(--color-cocoon-ink);
+  outline: none;
+  overflow-wrap: anywhere;
+}
+.work-page--readonly .tiptap {
+  min-height: 0;
+  padding-top: 0;
+}
+.tiptap-skeleton {
+  min-height: 220px;
+}
+@media (min-width: 64rem) {
+  .work-page .tiptap,
+  .tiptap-skeleton {
+    min-height: 320px;
+  }
+  .work-page--readonly .tiptap {
+    min-height: 0;
+  }
+}
+.work-page .tiptap > * + * {
+  margin-top: 0.5em;
+}
+.work-page .tiptap h1,
+.work-page .tiptap h2,
+.work-page .tiptap h3 {
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-cocoon-heading);
+  margin-top: 0.9em;
+}
+.work-page .tiptap h1 {
+  font-size: 1.5em;
+}
+.work-page .tiptap h2 {
+  font-size: 1.25em;
+}
+.work-page .tiptap h3 {
+  font-size: 1.1em;
+}
+.work-page .tiptap ul:not([data-type='taskList']) {
+  list-style: disc;
+  padding-left: 1.4em;
+}
+.work-page .tiptap ol {
+  list-style: decimal;
+  padding-left: 1.4em;
+}
+.work-page .tiptap li + li {
+  margin-top: 0.25em;
+}
+.work-page .tiptap blockquote {
+  border-left: 3px solid var(--color-cocoon-line);
+  padding-left: 0.9em;
+  color: var(--color-cocoon-subtle);
+}
+.work-page .tiptap code {
+  border-radius: 6px;
+  background: rgb(15 23 42 / 0.06);
+  padding: 0.1em 0.35em;
+  font-size: 0.9em;
+}
+.work-page .tiptap hr {
+  border: 0;
+  border-top: 1px solid var(--color-cocoon-line);
+  margin: 1em 0;
+}
+.work-page .tiptap a {
+  color: var(--color-cocoon-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.work-page .tiptap ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 0;
+}
+.work-page .tiptap ul[data-type='taskList'] ul[data-type='taskList'] {
+  padding-left: 1.6em;
+  margin-top: 0.25em;
+}
+.work-page .tiptap li[data-type='taskItem'] {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.work-page .tiptap li[data-type='taskItem'] > label {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  min-height: 1.6em; /* align the box with the first text line */
+  user-select: none;
+}
+.work-page .tiptap li[data-type='taskItem'] > label input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--color-cocoon-blue);
+}
+.work-page--readonly .tiptap li[data-type='taskItem'] > label input[type='checkbox'] {
+  cursor: default;
+}
+.work-page .tiptap li[data-type='taskItem'] > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.work-page .tiptap li[data-type='taskItem'][data-checked='true'] > div > p {
+  color: var(--color-cocoon-muted);
+  text-decoration: line-through;
+}
+.work-page .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--color-cocoon-muted);
+}

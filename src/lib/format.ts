@@ -30,14 +30,24 @@ const bangkokTime = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Asia/Bangkok',
 });
 
-export function formatSubmissionDate(date: Date | string): string {
-  const d = new Date(date);
+function bangkokHourMinute(d: Date): [string, string] {
   const parts = bangkokTime.formatToParts(d);
   const hour = (parts.find((p) => p.type === 'hour')?.value ?? '00').padStart(2, '0');
   const minute = (parts.find((p) => p.type === 'minute')?.value ?? '00').padStart(2, '0');
   // Some ICU versions render midnight as "24" with hour12:false.
-  const hh = hour === '24' ? '00' : hour;
+  return [hour === '24' ? '00' : hour, minute];
+}
+
+export function formatSubmissionDate(date: Date | string): string {
+  const d = new Date(date);
+  const [hh, minute] = bangkokHourMinute(d);
   return `${thaiDayMonth.format(d)} ${hh}.${minute}`;
+}
+
+/** "13:59" in Asia/Bangkok (autosave indicator, conflict notice). */
+export function formatBangkokTime(date: Date | string): string {
+  const [hh, minute] = bangkokHourMinute(new Date(date));
+  return `${hh}:${minute}`;
 }
 
 export function formatFileSize(bytes: number): string {

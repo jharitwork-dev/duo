@@ -15,19 +15,18 @@ import { BTN_TERTIARY, CARD, CARD_TITLE, PAGE_BODY } from '@/components/cocoon/u
 
 interface Props {
   params: Promise<{ todoId: string }>;
-  searchParams: Promise<{ step?: string | string[] }>;
 }
 
 const PILL = 'inline-flex h-[31px] items-center rounded-full px-3 text-[14px] font-bold whitespace-nowrap';
 
-export default async function TodoDetailPage({ params, searchParams }: Props) {
+export default async function TodoDetailPage({ params }: Props) {
   const userId = await getCurrentUserId();
   const role = await getCurrentRole();
   const { todoId } = await params;
 
   if (role === ROLES.STUDENT) {
-    const { step } = await searchParams;
-    return <StudentTodoView todoId={todoId} userId={userId} step={typeof step === 'string' ? step : undefined} />;
+    // The old ?step=upload flow is gone (261004-01i); a stale `step` param is simply ignored.
+    return <StudentTodoView todoId={todoId} userId={userId} />;
   }
 
   const todo = await getTodoDetail(todoId, userId);
