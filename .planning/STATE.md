@@ -119,6 +119,7 @@ None yet.
 | 261003-wuo | Classroom-level fixed phases, per-group tasks, multi-group assignment (full: plan-checked ×2, verified 10/10, migration applied) | 2026-10-04 | 6b814eb | [261003-wuo-classroom-level-fixed-phases-with-per-gr](./quick/261003-wuo-classroom-level-fixed-phases-with-per-gr/) |
 | 261004-02p | Group member limits, student roster, self-grouping, full CRUD, classroom-teacher authz (full: checked, verified 9/9; migration applied + deployed 2026-10-04) | 2026-10-04 | 701e0c0 | [261004-02p-per-group-member-limit-student-roster-wi](./quick/261004-02p-per-group-member-limit-student-roster-wi/) |
 | 261004-01i | Notion-like work page submissions, sub-todo checklist, files, teacher file requirement (full: checked, verified 9/9; migration applied + deployed 2026-10-04) | 2026-10-04 | e70e854 | [261004-01i-notion-like-work-page-submissions-with-s](./quick/261004-01i-notion-like-work-page-submissions-with-s/) |
+| 261004-fgj | Task discussion thread (teacher ↔ students) + teacher "ดูงาน" links/status pills (full: checked, verified 11/11; migration applied + deployed) | 2026-10-04 | 28d1c2c | [261004-fgj-task-discussion-thread-for-teachers-and-](./quick/261004-fgj-task-discussion-thread-for-teachers-and-/) |
 
 ## Session Continuity
 
