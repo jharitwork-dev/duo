@@ -27,6 +27,13 @@ export async function getActivePhases(groupId: string) {
         todos: {
           where: and(eq(todos.groupId, groupId), eq(todos.isArchived, false)),
           orderBy: [asc(todos.orderIndex), asc(todos.createdAt)],
+          // Teacher attachment metadata for the edit form (261004-gid); file keys are never exposed.
+          with: {
+            attachments: {
+              columns: { id: true, fileName: true, contentType: true, fileSize: true },
+              orderBy: (a, { asc: byAsc }) => [byAsc(a.createdAt)],
+            },
+          },
         },
       },
     }),

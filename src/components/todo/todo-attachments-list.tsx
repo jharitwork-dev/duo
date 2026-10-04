@@ -18,7 +18,7 @@ interface TodoAttachmentsListProps {
   attachments: Attachment[];
 }
 
-function formatFileSize(bytes: number): string {
+export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -40,6 +40,8 @@ function AttachmentRow({ attachment }: { attachment: Attachment }) {
         // Open the presigned URL in a new tab to trigger download
         window.open(result.url, '_blank');
       } catch {
+        // Thrown server errors are masked in production; expected errors (e.g. storage not
+        // configured) arrive as result.error above and are shown verbatim.
         toast.error('ไม่สามารถดาวน์โหลดไฟล์ได้');
       }
     });
@@ -61,10 +63,11 @@ function AttachmentRow({ attachment }: { attachment: Attachment }) {
         size="sm"
         onClick={handleDownload}
         disabled={isPending}
-        aria-label="ดาวน์โหลดไฟล์"
+        aria-label={`ดาวน์โหลด ${attachment.fileName}`}
         className="text-cocoon-blue hover:bg-cocoon-blue-soft hover:text-cocoon-blue"
       >
-        <Download className="h-4 w-4" />
+        <Download className="h-4 w-4" aria-hidden />
+        ดาวน์โหลด
       </Button>
     </div>
   );

@@ -100,6 +100,7 @@ export function SaveTemplateDialog({
             <DialogDescription className="text-center text-[14px] text-cocoon-muted">
               บันทึก Phase ของห้องเรียนนี้ พร้อมงานของกลุ่มที่เลือก (ไม่รวมไฟล์แนบ)
             </DialogDescription>
+            <p className="text-center text-[13px] text-cocoon-muted">ไฟล์แนบไม่ถูกบันทึกในเทมเพลต</p>
           </DialogHeader>
 
           <div className="space-y-4 py-4">

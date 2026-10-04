@@ -41,7 +41,7 @@ export function TodoDetailView({ description, notes, deliverables, attachments, 
             )}
             {attachments.length > 0 && (
               <div className="pt-2">
-                <p className="mb-2 text-[14px] leading-normal font-bold text-cocoon-ink lg:text-[16px]">ไฟล์จากครู</p>
+                <p className="mb-2 text-[14px] leading-normal font-bold text-cocoon-ink lg:text-[16px]">ไฟล์แนบจากครู</p>
                 <TodoAttachmentsList attachments={attachments} />
               </div>
             )}

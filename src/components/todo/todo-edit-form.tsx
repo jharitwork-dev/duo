@@ -19,6 +19,7 @@ import { cn } from 'cn';
 import { BTN_PRIMARY, INPUT, LABEL, TEXTAREA } from '@/components/cocoon/ui';
 import type { FileRequirement } from '@/lib/work-page';
 import { FileRequirementSelect } from './file-requirement-select';
+import { TodoAttachmentManager, type ManagedAttachment } from './todo-attachment-manager';
 
 type Todo = {
   id: string;
@@ -28,6 +29,7 @@ type Todo = {
   submissionMode: 'group' | 'individual';
   fileRequirement: FileRequirement;
   deadline: Date | null;
+  attachments?: ManagedAttachment[];
 };
 
 export function TodoEditForm({
@@ -150,12 +152,9 @@ export function TodoEditForm({
         }}
       />
 
-      {/* Attachments section placeholder */}
-      <div className="space-y-2 lg:col-span-2">
-        <Label className={LABEL}>ไฟล์แนบ</Label>
-        <div className="rounded-[12px] border border-dashed border-cocoon-blue/40 bg-cocoon-blue-soft p-4 text-center text-[14px] text-cocoon-blue">
-          อัปโหลดไฟล์แนบ (จะเปิดใช้งานเมื่อเชื่อมต่อ R2)
-        </div>
+      {/* Teacher attachments (261004-gid) */}
+      <div className="lg:col-span-2">
+        <TodoAttachmentManager todoId={todo.id} attachments={todo.attachments ?? []} />
       </div>
 
       <Button

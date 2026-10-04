@@ -11,7 +11,7 @@ import { eq, and, max, inArray, count } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
-import { presignGet } from '@/lib/r2';
+import { getR2Config, presignGet } from '@/lib/r2';
 import { createId } from '@/lib/ids';
 import {
   assertClassroomEditor,
@@ -298,6 +298,7 @@ export async function getAttachmentDownloadUrl(
 
   await authorizeTodoViewer(attachment.todoId, userId);
 
+  if (!getR2Config()) return actionError('ยังไม่ได้ตั้งค่าที่เก็บไฟล์');
   const disposition = `attachment; filename="${encodeURIComponent(attachment.fileName)}"`;
   try {
     const url = await presignGet(attachment.fileKey, 3600, disposition);

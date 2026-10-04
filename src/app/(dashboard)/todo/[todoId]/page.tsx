@@ -7,6 +7,7 @@ import { getCurrentUserId, getCurrentRole } from '@/lib/auth';
 import { getTodoDetail } from '@/server/queries/todo';
 import { TodoDetail } from '@/components/todo/todo-detail';
 import { TodoAttachmentsList } from '@/components/todo/todo-attachments-list';
+import { TodoAttachmentManager } from '@/components/todo/todo-attachment-manager';
 import { ROLES } from '@/lib/constants';
 import { parseDeliverables } from '@/lib/todo-deliverables';
 import { StudentTodoView } from '@/components/student/student-todo-view';
@@ -49,6 +50,13 @@ export default async function TodoDetailPage({ params, searchParams }: Props) {
   const { items } = parseDeliverables(todo.notes);
   const deadline = getEffectiveDeadline(todo, phase);
   const inheritsPhaseDeadline = !todo.deadline && deadline !== null;
+  // Only the metadata reaches client components (no R2 file keys).
+  const attachments = (todo.attachments ?? []).map((a) => ({
+    id: a.id,
+    fileName: a.fileName,
+    contentType: a.contentType,
+    fileSize: a.fileSize,
+  }));
 
   // Classroom editors see the students' work read-only (latest snapshot + live page).
   // Anyone else who can view the to-do keeps the plain detail view.
@@ -116,10 +124,21 @@ export default async function TodoDetailPage({ params, searchParams }: Props) {
           </section>
 
           <section className={CARD}>
-            <h2 className={CARD_TITLE}>ไฟล์แนบ</h2>
-            <div className="mt-3">
-              <TodoAttachmentsList attachments={todo.attachments ?? []} />
-            </div>
+            {workView ? (
+              // Classroom editors manage the attachments here (261004-gid).
+              <TodoAttachmentManager
+                todoId={todo.id}
+                attachments={attachments}
+                titleClassName={CARD_TITLE}
+              />
+            ) : (
+              <>
+                <h2 className={CARD_TITLE}>ไฟล์แนบ</h2>
+                <div className="mt-3">
+                  <TodoAttachmentsList attachments={attachments} />
+                </div>
+              </>
+            )}
           </section>
 
         </div>

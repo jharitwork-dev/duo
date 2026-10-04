@@ -8,11 +8,12 @@ import { todos, todoAttachments } from '@/db/schema/todos';
 import { submissions, submissionFiles } from '@/db/schema/submissions';
 import { workPages, workPageFiles } from '@/db/schema/workPages';
 import { groupPhaseProgress } from '@/db/schema/groupPhaseProgress';
-import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import { getCurrentRole } from '@/lib/auth';
 import { decideClassroomAccess } from '@/lib/classroom-access';
 import { canDeleteGroup, type DeleteGroupDecision } from '@/lib/group-rules';
 import { planProgressSync, type ProgressSyncGroup } from '@/lib/phase-progress';
+import { computeOrphanFileKeys } from '@/lib/work-page';
 
 export { cleanupR2Objects } from '@/lib/r2-cleanup';
 
@@ -129,6 +130,10 @@ export async function authorizeGroupDelete(groupId: string, userId: string) {
  * R2 keys of everything that disappears with the given to-dos: submission files, teacher
  * attachments and work page files. Call INSIDE the delete transaction, right before the DELETE, then pass the
  * result to cleanupR2Objects after the transaction commits.
+ *
+ * Teacher attachment objects can be shared by several copies of one assignment (261004-gid): an
+ * attachment key that is still referenced by a todo_attachments row OUTSIDE the deleted to-dos is
+ * NOT returned, so deleting one copy (or its phase / group / classroom) never breaks another copy.
  */
 export async function collectFileKeys(tx: DbLike, input: { todoIds: string[] }): Promise<string[]> {
   if (input.todoIds.length === 0) return [];
@@ -149,7 +154,23 @@ export async function collectFileKeys(tx: DbLike, input: { todoIds: string[] }):
       .innerJoin(workPages, eq(workPages.id, workPageFiles.workPageId))
       .where(inArray(workPages.todoId, input.todoIds)),
   ]);
-  return [...new Set([...fileRows, ...attachmentRows, ...pageFileRows].map((r) => r.key).filter(Boolean))];
+  const attachmentKeys = [...new Set(attachmentRows.map((r) => r.key).filter(Boolean))];
+  let orphanAttachmentKeys = attachmentKeys;
+  if (attachmentKeys.length > 0) {
+    const stillReferenced = await tx
+      .select({ key: todoAttachments.fileKey })
+      .from(todoAttachments)
+      .where(and(inArray(todoAttachments.fileKey, attachmentKeys), notInArray(todoAttachments.todoId, input.todoIds)));
+    orphanAttachmentKeys = computeOrphanFileKeys(
+      attachmentKeys,
+      stillReferenced.map((r) => r.key),
+    );
+  }
+  return [
+    ...new Set(
+      [...fileRows.map((r) => r.key), ...orphanAttachmentKeys, ...pageFileRows.map((r) => r.key)].filter(Boolean),
+    ),
+  ];
 }
 
 /** classroomId of a phase; throws when the phase does not exist. */

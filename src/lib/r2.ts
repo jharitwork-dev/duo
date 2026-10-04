@@ -67,9 +67,47 @@ export function submissionKey(userId: string, todoId: string, filename: string):
   return `submissions/${userId}/${todoId}/${filename}`;
 }
 
-// Teacher attachment key pattern: attachments/{todoId}/{filename}
-export function attachmentKey(todoId: string, filename: string): string {
-  return `attachments/${todoId}/${filename}`;
+// Teacher attachments (quick 261004-gid): the student allow-list plus common office/image/text types, 25 MB.
+export const ATTACHMENT_MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+
+export const ATTACHMENT_ALLOWED_TYPES = new Set([
+  ...ALLOWED_TYPES,
+  'application/vnd.ms-excel',
+  'application/vnd.ms-powerpoint',
+  'image/gif',
+  'text/plain',
+  'text/csv',
+]);
+
+export function validateAttachmentFile(contentType: string, size: number): boolean {
+  return ATTACHMENT_ALLOWED_TYPES.has(contentType) && size > 0 && size <= ATTACHMENT_MAX_FILE_SIZE;
+}
+
+// Value for the teacher <input type="file" accept>.
+export const ATTACHMENT_ACCEPT = [
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.ppt',
+  '.pptx',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.webp',
+  '.gif',
+  '.txt',
+  '.csv',
+  '.zip',
+  '.mp4',
+  ...ATTACHMENT_ALLOWED_TYPES,
+].join(',');
+
+// Teacher attachment key pattern: attachments/{scope}/{uploadId}-{safeName}
+// scope = the to-do id, or the shared assignmentId when one upload is attached to several copies.
+export function attachmentKey(scope: string, uploadId: string, safeName: string): string {
+  return `attachments/${scope}/${uploadId}-${safeName}`;
 }
 
 export async function presignPut(key: string, contentType: string, expiresSec = 1800): Promise<string> {
