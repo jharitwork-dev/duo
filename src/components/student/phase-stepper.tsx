@@ -1,11 +1,14 @@
 import Link from 'next/link';
 import { cn } from 'cn';
 import { isPhaseViewable, pickCurrentPhaseIndex } from '@/lib/node-path';
+import { formatDeadlineDate } from '@/lib/deadline';
 
 interface StepperPhase {
   id: string;
   status: 'locked' | 'active' | 'completed';
   isFreeAccess: boolean;
+  /** Phase deadline (261004-03i): "ส่ง 18 ต.ค." under the label. */
+  deadline?: Date | string | null;
 }
 
 // Mobile: ref 02 (selected label only). lg: design/mac home.png (full width, a label under every circle).
@@ -20,11 +23,16 @@ export function PhaseStepper({
 
   const currentIndex = pickCurrentPhaseIndex(phases);
   const fill = phases.length > 1 ? (currentIndex / (phases.length - 1)) * 100 : 0;
+  // The date line hangs below the absolute labels: reserve room so the heading below is not crowded.
+  const hasDeadlines = phases.some((p) => p.deadline);
 
   return (
     <nav
       aria-label="Phase"
-      className="relative mx-[33px] mt-[-15px] h-[69px] lg:mt-[49px] lg:mr-[15px] lg:ml-[6px] lg:h-[80px]"
+      className={cn(
+        'relative mx-[33px] mt-[-15px] h-[69px] lg:mt-[49px] lg:mr-[15px] lg:ml-[6px] lg:h-[80px]',
+        hasDeadlines && 'mb-3 lg:mb-5',
+      )}
     >
       {/* Track + progress fill, from first circle centre to last circle centre */}
       {phases.length > 1 && (
@@ -70,6 +78,11 @@ export function PhaseStepper({
                 )}
               >
                 Phase {n}
+                {phase.deadline && (
+                  <span className="block text-center text-[11px] leading-normal font-medium text-cocoon-muted">
+                    ส่ง {formatDeadlineDate(phase.deadline)}
+                  </span>
+                )}
               </span>
             </li>
           );

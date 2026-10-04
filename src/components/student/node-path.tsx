@@ -4,6 +4,7 @@ import { MessageCircle } from 'lucide-react';
 import { cn } from 'cn';
 import { StatusPill } from '@/components/cocoon/status-pill';
 import type { SubmissionStatus } from '@/lib/node-path';
+import { NODE_DEADLINE_TONE_CLASS, type NodeDeadline } from '@/lib/node-deadline';
 import { NodeIcon, NodeRing, ringStatusFor } from './node-icons';
 
 // Geometry from Figma (402px frame, 336px content box).
@@ -28,6 +29,8 @@ interface NodePathProps {
   currentId: string | null;
   /** To-dos with teacher comments the student has not seen (261004-fgj). */
   unreadTodoIds?: string[];
+  /** One-line deadline text per to-do (261004-03i); absent = no deadline. */
+  deadlines?: Record<string, NodeDeadline>;
 }
 
 export const UNREAD_COMMENT_LABEL = 'มีความคิดเห็นใหม่จากครู';
@@ -48,9 +51,38 @@ export function UnreadCommentDot({ className }: { className?: string }) {
   );
 }
 
-/** Node link label, extended when there are unseen teacher comments. */
-export function nodeLabel(title: string, unread: boolean): string {
-  return unread ? `${title} (${UNREAD_COMMENT_LABEL})` : title;
+/** Red overdue dot at a node's top-LEFT (the unread-comment dot owns the top-right). */
+export function OverdueDot({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      title="เลยกำหนด"
+      className={cn('pointer-events-none absolute z-20 size-3 rounded-full bg-[#d11a0f] ring-2 ring-white', className)}
+    />
+  );
+}
+
+/** One-line deadline text rendered under a node (absolute, so the path geometry is unchanged). */
+export function NodeDeadlineLine({ deadline, className }: { deadline: NodeDeadline; className?: string }) {
+  return (
+    <p
+      className={cn(
+        'pointer-events-none absolute left-1/2 z-20 max-w-full -translate-x-1/2 truncate rounded-full bg-cocoon-cream px-2 text-center text-[11px] leading-[18px] font-bold whitespace-nowrap',
+        NODE_DEADLINE_TONE_CLASS[deadline.tone],
+        className,
+      )}
+    >
+      {deadline.label}
+    </p>
+  );
+}
+
+/** Node link label, extended when there are unseen teacher comments or the to-do is overdue. */
+export function nodeLabel(title: string, unread: boolean, overdue = false): string {
+  let label = title;
+  if (overdue) label += ' (เลยกำหนด)';
+  if (unread) label += ` (${UNREAD_COMMENT_LABEL})`;
+  return label;
 }
 
 function nodeLefts(count: number): number[] {
@@ -94,7 +126,7 @@ function buildConnectors(rows: PathTodo[][]) {
   return { lines, junctions };
 }
 
-export function NodePath({ rows, statuses, locked, currentId, unreadTodoIds = [] }: NodePathProps) {
+export function NodePath({ rows, statuses, locked, currentId, unreadTodoIds = [], deadlines = {} }: NodePathProps) {
   if (rows.length === 0) return null;
   const unread = new Set(unreadTodoIds);
   const height = rows.length * PITCH - ROW_GAP;
@@ -131,10 +163,14 @@ export function NodePath({ rows, statuses, locked, currentId, unreadTodoIds = []
           const subtitle = firstLine(todo.description);
           const ring = ringStatusFor(status, isLocked, isCurrent);
           const hasUnread = !isLocked && unread.has(todo.id);
+          const deadline = deadlines[todo.id];
+          const isOverdue = !isLocked && Boolean(deadline?.overdue);
 
           const body = (
             <>
               {hasUnread && <UnreadCommentDot className="top-[12px] right-[16px]" />}
+              {isOverdue && <OverdueDot className="top-[14px] left-[18px]" />}
+              {deadline && <NodeDeadlineLine deadline={deadline} className="top-[calc(100%+4px)]" />}
               <div className="absolute top-[4px] left-[5px] flex h-[141px] w-[142px] flex-col items-center justify-center rounded-full bg-white px-1.5 text-center">
                 <NodeIcon status={status} locked={isLocked} />
                 <p
@@ -178,7 +214,7 @@ export function NodePath({ rows, statuses, locked, currentId, unreadTodoIds = []
             <Link
               key={todo.id}
               href={`/todo/${todo.id}`}
-              aria-label={nodeLabel(todo.title, hasUnread)}
+              aria-label={nodeLabel(todo.title, hasUnread, isOverdue)}
               className={cn(
                 nodeClass,
                 'transition-transform outline-none hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-cocoon-blue/50',

@@ -8,7 +8,8 @@ import { getGroupById } from '@/server/queries/group';
 import { getClassroomGroupMode } from '@/server/queries/classroom';
 import { StudentGroupActions } from '@/components/group/student-group-actions';
 import { getActivePhases } from '@/server/queries/phase';
-import { getTodoSubmissionStatuses } from '@/server/queries/submission';
+import { getTodoSubmissionSummaries } from '@/server/queries/submission';
+import { buildNodeDeadlines } from '@/lib/node-deadline';
 import { getUnreadTeacherCommentTodoIds } from '@/server/queries/comment';
 import { GroupPhaseView } from '@/components/student/group-phase-view';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
@@ -123,13 +124,16 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
   const selected = phases.find((p) => p.id === selectedId) ?? null;
 
   const todos = selected?.todos ?? [];
-  const [statuses, unreadTodoIds] = selected
+  const [summaries, unreadTodoIds] = selected
     ? await Promise.all([
-        getTodoSubmissionStatuses(groupId, userId, todos),
+        getTodoSubmissionSummaries(groupId, userId, todos),
         // The dot is decorative: never let it break the home page.
         getUnreadTeacherCommentTodoIds(groupId, userId, todos).catch(() => [] as string[]),
       ])
     : [{}, [] as string[]];
+  const statuses = Object.fromEntries(Object.entries(summaries).map(([id, s]) => [id, s.status]));
+  // Deadline line per node (261004-03i): lateness from the first submission, server clock.
+  const deadlines = buildNodeDeadlines(todos, selected, summaries, new Date());
   const rows = buildNodeRows(todos);
   const locked = selected ? computeLockedTodoIds(selected, rows, statuses) : new Set<string>();
   const currentId = pickCurrentTodoId(rows, locked, statuses);
@@ -160,6 +164,7 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
             locked={locked}
             currentId={currentId}
             unreadTodoIds={unreadTodoIds}
+            deadlines={deadlines}
           />
           <NodePathDesktop
             rows={rows}
@@ -167,6 +172,7 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
             locked={locked}
             currentId={currentId}
             unreadTodoIds={unreadTodoIds}
+            deadlines={deadlines}
           />
         </>
       )}

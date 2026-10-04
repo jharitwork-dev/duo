@@ -4,7 +4,8 @@ import { ArrowRight, Plus } from 'lucide-react';
 import { cn } from 'cn';
 import { StatusPill } from '@/components/cocoon/status-pill';
 import type { SubmissionStatus } from '@/lib/node-path';
-import { firstLine, nodeLabel, UnreadCommentDot, type PathTodo } from './node-path';
+import type { NodeDeadline } from '@/lib/node-deadline';
+import { firstLine, nodeLabel, NodeDeadlineLine, OverdueDot, UnreadCommentDot, type PathTodo } from './node-path';
 import { NodeIcon, NodeRing, ringStatusFor } from './node-icons';
 
 // Geometry measured from design/mac/home.png (1280 frame, 1152 column).
@@ -22,6 +23,8 @@ interface NodePathDesktopProps {
   currentId: string | null;
   /** To-dos with teacher comments the student has not seen (261004-fgj). */
   unreadTodoIds?: string[];
+  /** One-line deadline text per to-do (261004-03i). */
+  deadlines?: Record<string, NodeDeadline>;
 }
 
 function Connector({ kind }: { kind: Link_ }) {
@@ -49,19 +52,24 @@ function Node({
   isLocked,
   isCurrent,
   hasUnread,
+  deadline,
 }: {
   todo: PathTodo;
   status: SubmissionStatus;
   isLocked: boolean;
   isCurrent: boolean;
   hasUnread: boolean;
+  deadline?: NodeDeadline;
 }) {
+  const isOverdue = !isLocked && Boolean(deadline?.overdue);
   const subtitle = firstLine(todo.description);
   const ring = ringStatusFor(status, isLocked, isCurrent);
 
   const body = (
     <>
       {hasUnread && <UnreadCommentDot className="top-[22px] right-[30px]" />}
+      {isOverdue && <OverdueDot className="top-[26px] left-[34px]" />}
+      {deadline && <NodeDeadlineLine deadline={deadline} className="top-[calc(100%+8px)] text-[12px]" />}
       <div className="absolute inset-[7px] flex flex-col items-center rounded-full bg-white px-5 pt-[18px] text-center">
         <div className="flex h-[80px] items-end justify-center">
           <NodeIcon status={status} locked={isLocked} size="lg" />
@@ -91,7 +99,7 @@ function Node({
   ) : (
     <Link
       href={`/todo/${todo.id}`}
-      aria-label={nodeLabel(todo.title, hasUnread)}
+      aria-label={nodeLabel(todo.title, hasUnread, isOverdue)}
       className={cn(
         nodeClass,
         'transition-transform outline-none hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-cocoon-blue/50',
@@ -108,7 +116,14 @@ function Node({
  * "+" joins the parallel pair of one row, "→" joins consecutive rows; a line that
  * continues on the next one ends with a trailing "→".
  */
-export function NodePathDesktop({ rows, statuses, locked, currentId, unreadTodoIds = [] }: NodePathDesktopProps) {
+export function NodePathDesktop({
+  rows,
+  statuses,
+  locked,
+  currentId,
+  unreadTodoIds = [],
+  deadlines = {},
+}: NodePathDesktopProps) {
   const unread = new Set(unreadTodoIds);
   const flat: { todo: PathTodo; link: Link_ | null }[] = [];
   rows.forEach((row, r) =>
@@ -145,6 +160,7 @@ export function NodePathDesktop({ rows, statuses, locked, currentId, unreadTodoI
                     isLocked={locked.has(todo.id)}
                     isCurrent={todo.id === currentId}
                     hasUnread={!locked.has(todo.id) && unread.has(todo.id)}
+                    deadline={deadlines[todo.id]}
                   />
                   {i < line.length - 1 && link && <Connector kind={link} />}
                 </Fragment>
