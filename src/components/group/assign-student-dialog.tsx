@@ -28,33 +28,38 @@ interface ClassroomMember extends MemberDisplay {
 interface AssignStudentDialogProps {
   groupId: string;
   classroomMembers: ClassroomMember[];
+  /** Students already in ANY group of the classroom (hidden here; use ย้ายกลุ่ม in the roster). */
+  assignedUserIds: string[];
+  isFull?: boolean;
 }
 
 export function AssignStudentDialog({
   groupId,
   classroomMembers,
+  assignedUserIds,
+  isFull = false,
 }: AssignStudentDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [assigningUserId, setAssigningUserId] = useState<string | null>(null);
 
-  // Filter to only students (not teachers)
+  const assigned = new Set(assignedUserIds);
   const unassignedStudents = classroomMembers.filter(
-    (m) => m.role === 'student'
+    (m) => m.role === 'student' && !assigned.has(m.userId),
   );
 
   async function handleAssign(userId: string) {
     setAssigningUserId(userId);
     try {
       const result = await assignStudent({ groupId, userId });
-      if (result.success) {
-        toast.success('เพิ่มนักเรียนเข้ากลุ่มแล้ว');
-        router.refresh();
+      if (!result.success) {
+        toast.error(result.error);
+        return;
       }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'ไม่สามารถเพิ่มนักเรียนได้';
-      toast.error(message);
+      toast.success('เพิ่มนักเรียนเข้ากลุ่มแล้ว');
+      router.refresh();
+    } catch {
+      toast.error('ไม่สามารถเพิ่มนักเรียนได้');
     } finally {
       setAssigningUserId(null);
     }
@@ -74,9 +79,13 @@ export function AssignStudentDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[300px] space-y-2 overflow-y-auto">
-          {unassignedStudents.length === 0 ? (
+          {isFull ? (
+            <p className="py-4 text-center text-sm font-bold text-[#e8590c]">
+              กลุ่มนี้เต็มแล้ว — เพิ่มจำนวนสมาชิกสูงสุดได้ที่ แก้ไขกลุ่ม
+            </p>
+          ) : unassignedStudents.length === 0 ? (
             <p className="py-4 text-center text-sm text-muted-foreground">
-              ไม่มีนักเรียนที่พร้อมเพิ่มเข้ากลุ่ม
+              ไม่มีนักเรียนที่ยังไม่มีกลุ่ม
             </p>
           ) : (
             unassignedStudents.map((member) => (

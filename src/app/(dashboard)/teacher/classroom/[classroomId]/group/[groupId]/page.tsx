@@ -6,6 +6,8 @@ import { getGroupById, getGroupsByClassroom } from '@/server/queries/group';
 import { getActivePhases } from '@/server/queries/phase';
 import { getClassroomById } from '@/server/queries/classroom';
 import { GroupPhaseBoard } from '@/components/phase/group-phase-board';
+import { EditGroupDialog } from '@/components/group/edit-group-dialog';
+import { DeleteGroupButton } from '@/components/group/delete-group-button';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 import { PageHeader } from '@/components/cocoon/page-header';
 import { BTN_INFO, EMPTY_CARD, PAGE_BODY } from '@/components/cocoon/ui';
@@ -43,9 +45,23 @@ export default async function GroupPage({
         title={group.name}
         subtitle="Phase ของห้องเรียน · งานของกลุ่มนี้"
         actions={
-          <Link href={managePhasesHref} className={cn(BTN_INFO, 'inline-flex h-10 items-center text-[14px]')}>
-            จัดการ Phase
-          </Link>
+          <>
+            <EditGroupDialog
+              groupId={group.id}
+              name={group.name}
+              maxMembers={group.maxMembers}
+              memberCount={group.members.length}
+              classroomMaxGroupSize={classroom?.maxGroupSize ?? null}
+            />
+            <DeleteGroupButton
+              groupId={group.id}
+              groupName={group.name}
+              redirectHref={`${classroomHref}?tab=students`}
+            />
+            <Link href={managePhasesHref} className={cn(BTN_INFO, 'inline-flex h-10 items-center text-[14px]')}>
+              จัดการ Phase
+            </Link>
+          </>
         }
       />
 

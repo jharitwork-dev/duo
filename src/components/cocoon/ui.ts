@@ -38,3 +38,18 @@ export const DIALOG_TITLE = 'text-center text-[22px] font-bold text-cocoon-ink l
 
 /** Empty-state card. */
 export const EMPTY_CARD = `${CARD} flex flex-col items-center gap-4 py-10 text-center`;
+
+/** Destructive orange-red (delete confirmations). */
+export const BTN_DANGER = `${BTN} bg-[#e8590c] text-white hover:bg-[#e8590c]/90`;
+
+/** Small "เต็ม" pill on full groups. */
+export const PILL_FULL =
+  'inline-flex h-[22px] shrink-0 items-center rounded-full bg-[#fff1e8] px-2.5 text-[12px] font-bold text-[#e8590c]';
+
+/** Capacity pill ("3/5 คน"). */
+export const PILL_CAPACITY =
+  'inline-flex h-[26px] shrink-0 items-center gap-1 rounded-full bg-cocoon-blue-soft px-3 text-[12px] font-bold text-cocoon-blue';
+
+/** Native <select> in the INPUT language. */
+export const SELECT =
+  'h-10 min-w-0 rounded-[12px] border border-[#f1ece5] bg-[#fffaf3] px-3 text-[14px] font-medium text-cocoon-ink outline-none focus-visible:ring-2 focus-visible:ring-cocoon-blue/40 disabled:opacity-50';

@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSortable } from '@dnd-kit/react/sortable';
-import { GripVertical, ChevronDown, MoreHorizontal, Archive, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
+import { GripVertical, ChevronDown, MoreHorizontal, Archive, ExternalLink, Trash2 } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleTrigger,
@@ -18,7 +19,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { TodoEditForm } from './todo-edit-form';
-import { archiveTodo } from '@/server/actions/todo';
+import { archiveTodo, deleteTodo } from '@/server/actions/todo';
+import { ConfirmDialog } from '@/components/cocoon/confirm-dialog';
+import { useDeletionImpact } from '@/components/cocoon/use-deletion-impact';
 import { formatDateShort } from '@/lib/format';
 import type { getActivePhases } from '@/server/queries/phase';
 
@@ -45,9 +48,16 @@ export function TodoItem({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
+  const [deleteScope, setDeleteScope] = useState<'one' | 'all' | null>(null);
+
   const handleArchive = () => {
     startTransition(async () => {
-      await archiveTodo({ todoId: todo.id });
+      try {
+        await archiveTodo({ todoId: todo.id });
+        toast.success('เก็บงานแล้ว');
+      } catch {
+        toast.error('เก็บงานไม่สำเร็จ');
+      }
       router.refresh();
     });
   };
@@ -106,6 +116,16 @@ export function TodoItem({
                 <Archive className="mr-2 size-4" />
                 เก็บถาวร
               </DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => setDeleteScope('one')} disabled={isPending}>
+                <Trash2 className="mr-2 size-4" />
+                ลบงานนี้
+              </DropdownMenuItem>
+              {todo.assignmentId && (
+                <DropdownMenuItem variant="destructive" onClick={() => setDeleteScope('all')} disabled={isPending}>
+                  <Trash2 className="mr-2 size-4" />
+                  ลบงานนี้ในทุกกลุ่ม
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -116,6 +136,58 @@ export function TodoItem({
           </div>
         </CollapsibleContent>
       </Collapsible>
+      <DeleteTodoDialog
+        todoId={todo.id}
+        title={todo.title}
+        scope={deleteScope}
+        onClose={() => setDeleteScope(null)}
+      />
     </div>
+  );
+}
+
+function DeleteTodoDialog({
+  todoId,
+  title,
+  scope,
+  onClose,
+}: {
+  todoId: string;
+  title: string;
+  scope: 'one' | 'all' | null;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const allCopies = scope === 'all';
+  const impact = useDeletionImpact(allCopies ? 'todoAllCopies' : 'todo', todoId, scope !== null);
+
+  const consequences = impact
+    ? [
+        allCopies ? `งานนี้ ${impact.copies ?? impact.todos} ชุด (ทุกกลุ่มที่ได้รับงานนี้) จะถูกลบ` : 'งานนี้ของกลุ่มนี้จะถูกลบ',
+        `งานที่ส่งแล้ว ${impact.submissions} ชิ้นและไฟล์แนบจะถูกลบ`,
+      ]
+    : null;
+
+  return (
+    <ConfirmDialog
+      open={scope !== null}
+      onOpenChange={(next) => !next && onClose()}
+      title={allCopies ? `ลบ "${title}" ในทุกกลุ่ม?` : `ลบงาน "${title}"?`}
+      description="ลบแล้วกู้คืนไม่ได้ (ถ้าอยากซ่อนชั่วคราว ใช้ เก็บถาวร)"
+      consequences={consequences}
+      warning={impact && impact.submissions > 0 ? 'งานที่ส่งแล้วจะถูกลบถาวร' : undefined}
+      typeToConfirm={impact?.requiresConfirmation ? title : undefined}
+      confirmLabel={allCopies ? 'ลบในทุกกลุ่ม' : 'ลบงานนี้'}
+      onConfirm={async (typed) => {
+        const result = await deleteTodo({ todoId, allCopies, confirmName: typed });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(result.deleted > 1 ? `ลบงานแล้ว ${result.deleted} กลุ่ม` : 'ลบงานแล้ว');
+        onClose();
+        router.refresh();
+      }}
+    />
   );
 }

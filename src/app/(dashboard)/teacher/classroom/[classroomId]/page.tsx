@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { cn } from 'cn';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { getClassroomById } from '@/server/queries/classroom';
@@ -17,6 +18,13 @@ import { SaveTemplateDialog } from '@/components/template/save-template-dialog';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 import { PageHeader } from '@/components/cocoon/page-header';
 import { EMPTY_CARD, PAGE_BODY, SEGMENT_LIST, SEGMENT_TRIGGER } from '@/components/cocoon/ui';
+import { StudentRoster } from '@/components/classroom/student-roster';
+import { effectiveGroupLimit } from '@/lib/group-rules';
+
+const TABS = ['students', 'groups', 'phases', 'settings'] as const;
+type TabValue = (typeof TABS)[number];
+// Four segments: tighter padding on mobile so they fit the full-width pill.
+const TAB_TRIGGER = cn(SEGMENT_TRIGGER, 'px-2 text-[15px] lg:px-7 lg:text-[16px]');
 
 interface ClassroomDashboardProps {
   params: Promise<{ classroomId: string }>;
@@ -28,7 +36,6 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
   const userId = await getCurrentUserId();
   const { classroomId } = await params;
   const { tab } = await searchParams;
-  const defaultTab = tab === 'phases' ? 'phases' : tab === 'settings' ? 'settings' : 'groups';
 
   const [classroom, phases, archivedPhases, templates] = await Promise.all([
     getClassroomById(classroomId, userId),
@@ -43,6 +50,24 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
   const groups = classroom.groups;
   const groupOptions = groups.map((g) => ({ id: g.id, name: g.name }));
 
+  const students = classroom.members.filter((m) => m.role === 'student');
+  const assignedUserIds = [...new Set(groups.flatMap((g) => g.members.map((m) => m.userId)))];
+  const assignedSet = new Set(assignedUserIds);
+  const hasUnassigned = students.some((s) => !assignedSet.has(s.userId));
+
+  // Explicit ?tab= wins; otherwise land on the roster when someone still needs a group.
+  const requestedTab = typeof tab === 'string' && TABS.includes(tab as TabValue) ? (tab as TabValue) : null;
+  const defaultTab: TabValue = requestedTab ?? (hasUnassigned ? 'students' : 'groups');
+
+  const rosterGroups = groups.map((g) => ({
+    id: g.id,
+    name: g.name,
+    limit: effectiveGroupLimit(g.maxMembers, classroom.maxGroupSize),
+    memberIds: g.members.map((m) => m.userId),
+  }));
+  const rosterKey = rosterGroups.map((g) => `${g.id}:${g.limit}:${g.memberIds.join(',')}`).join('|') +
+    `#${students.map((s) => s.userId).join(',')}`;
+
   return (
     <>
       <CocoonHeader variant="back" backHref="/teacher" />
@@ -54,13 +79,16 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
           subtitle={classroom.description || undefined}
           actions={
             <TabsList className={SEGMENT_LIST}>
-              <TabsTrigger value="groups" className={SEGMENT_TRIGGER}>
+              <TabsTrigger value="students" className={TAB_TRIGGER}>
+                นักเรียน
+              </TabsTrigger>
+              <TabsTrigger value="groups" className={TAB_TRIGGER}>
                 กลุ่ม
               </TabsTrigger>
-              <TabsTrigger value="phases" className={SEGMENT_TRIGGER}>
+              <TabsTrigger value="phases" className={TAB_TRIGGER}>
                 Phase
               </TabsTrigger>
-              <TabsTrigger value="settings" className={SEGMENT_TRIGGER}>
+              <TabsTrigger value="settings" className={TAB_TRIGGER}>
                 ตั้งค่า
               </TabsTrigger>
             </TabsList>
@@ -68,12 +96,23 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
           className="[&>div>div:last-child]:w-full lg:[&>div>div:last-child]:w-auto"
         />
 
+        <TabsContent value="students" className={PAGE_BODY}>
+          <StudentRoster
+            key={rosterKey}
+            classroomId={classroomId}
+            students={students.map((s) => ({ userId: s.userId, name: s.name, email: s.email, imageUrl: s.imageUrl }))}
+            groups={rosterGroups}
+          />
+        </TabsContent>
+
         <TabsContent value="groups" className={PAGE_BODY}>
           <div className="mb-4 flex items-center justify-between gap-3 lg:mb-6">
             <h2 className="text-[18px] leading-normal font-bold text-cocoon-blue lg:text-[20px]">
               กลุ่มทั้งหมด ({groups.length})
             </h2>
-            {groups.length > 0 && <CreateGroupForm classroomId={classroomId} />}
+            {groups.length > 0 && (
+              <CreateGroupForm classroomId={classroomId} classroomMaxGroupSize={classroom.maxGroupSize} />
+            )}
           </div>
 
           {groups.length === 0 ? (
@@ -82,7 +121,7 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
               <p className="text-[14px] leading-normal font-medium text-cocoon-muted">
                 สร้างกลุ่มแรกในห้องเรียนนี้
               </p>
-              <CreateGroupForm classroomId={classroomId} />
+              <CreateGroupForm classroomId={classroomId} classroomMaxGroupSize={classroom.maxGroupSize} />
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:gap-8 xl:grid-cols-3">
@@ -92,9 +131,11 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
                   id={group.id}
                   name={group.name}
                   memberCount={group.memberCount}
-                  maxGroupSize={classroom.maxGroupSize}
+                  maxMembers={group.maxMembers}
+                  classroomMaxGroupSize={classroom.maxGroupSize}
                   classroomId={classroomId}
                   classroomMembers={classroom.members}
+                  assignedUserIds={assignedUserIds}
                   members={group.members}
                 />
               ))}

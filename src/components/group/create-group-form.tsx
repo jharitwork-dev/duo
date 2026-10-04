@@ -18,31 +18,42 @@ import {
 import { Plus } from 'lucide-react';
 import { cn } from 'cn';
 import { BTN_PRIMARY, DIALOG_PANEL, DIALOG_TITLE, INPUT, LABEL } from '@/components/cocoon/ui';
+import { MAX_GROUP_LIMIT } from '@/lib/group-rules';
 
 interface CreateGroupFormProps {
   classroomId: string;
+  /** Classroom default limit, shown as the placeholder. */
+  classroomMaxGroupSize?: number | null;
 }
 
-export function CreateGroupForm({ classroomId }: CreateGroupFormProps) {
+export function CreateGroupForm({ classroomId, classroomMaxGroupSize = null }: CreateGroupFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
+  const [limit, setLimit] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const parsedLimit = limit.trim() === '' ? null : Number(limit);
+  const limitValid =
+    parsedLimit === null || (Number.isInteger(parsedLimit) && parsedLimit >= 1 && parsedLimit <= MAX_GROUP_LIMIT);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !limitValid) return;
 
     setIsSubmitting(true);
     try {
-      const result = await createGroup({ classroomId, name: name.trim() });
-      if (result.success) {
-        toast.success('สร้างกลุ่มสำเร็จ');
-        setName('');
-        setOpen(false);
-        router.refresh();
+      const result = await createGroup({ classroomId, name: name.trim(), maxMembers: parsedLimit });
+      if (!result.success) {
+        toast.error(result.error);
+        return;
       }
-    } catch (error) {
+      toast.success('สร้างกลุ่มสำเร็จ');
+      setName('');
+      setLimit('');
+      setOpen(false);
+      router.refresh();
+    } catch {
       toast.error('ไม่สามารถสร้างกลุ่มได้');
     } finally {
       setIsSubmitting(false);
@@ -72,12 +83,34 @@ export function CreateGroupForm({ classroomId }: CreateGroupFormProps) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="เช่น กลุ่ม A"
+                maxLength={100}
                 autoFocus
               />
             </div>
+            <div className="mt-4 space-y-2">
+              <Label htmlFor="group-limit" className={LABEL}>จำนวนสมาชิกสูงสุด</Label>
+              <Input
+                id="group-limit"
+                className={INPUT}
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={MAX_GROUP_LIMIT}
+                value={limit}
+                onChange={(e) => setLimit(e.target.value)}
+                placeholder={
+                  classroomMaxGroupSize
+                    ? `ใช้ค่าเริ่มต้นของห้อง (${classroomMaxGroupSize} คน)`
+                    : 'ใช้ค่าเริ่มต้นของห้อง (ไม่จำกัด)'
+                }
+              />
+              {!limitValid && (
+                <p className="text-[13px] font-medium text-destructive">ใส่ตัวเลข 1–{MAX_GROUP_LIMIT} หรือเว้นว่าง</p>
+              )}
+            </div>
           </div>
           <div className="flex flex-col gap-2">
-            <Button type="submit" disabled={isSubmitting || !name.trim()} className={cn(BTN_PRIMARY, 'w-full')}>
+            <Button type="submit" disabled={isSubmitting || !name.trim() || !limitValid} className={cn(BTN_PRIMARY, 'w-full')}>
               {isSubmitting ? 'กำลังสร้าง...' : 'สร้างกลุ่ม'}
             </Button>
             <button
