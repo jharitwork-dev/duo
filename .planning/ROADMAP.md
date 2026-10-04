@@ -12,11 +12,11 @@ Duo delivers a project-based learning platform where teachers structure work int
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & Auth** - Project scaffolding, database schema, Clerk auth with roles, R2 infrastructure, localization utilities
-- [ ] **Phase 2: Content Structure** - Classrooms, groups, phases, and to-dos -- the full teacher content creation workflow
-- [ ] **Phase 3: Submissions** - Student submission flow for files (R2), links, and text with group/individual modes
+- [x] **Phase 1: Foundation & Auth** - Project scaffolding, database schema, Clerk auth with roles, R2 infrastructure, localization utilities
+- [x] **Phase 2: Content Structure** - Classrooms, groups, phases, and to-dos -- the full teacher content creation workflow
+- [x] **Phase 3: Submissions** - Student submission flow for files (R2), links, and text with group/individual modes
 - [ ] **Phase 4: Review & Progression** - Teacher review with approve/reject/comment and automatic phase unlocking
-- [ ] **Phase 5: Progression UI** - Duolingo-style visual phase path with locked/active/completed states
+- [x] **Phase 5: Progression UI** - Duolingo-style visual phase path with locked/active/completed states
 - [ ] **Phase 6: Teacher Tools & Notifications** - Bulk assignment, template duplication, pending queue, and LINE notifications
 
 ## Phase Details
@@ -107,14 +107,16 @@ Plans:
 
 ## Progress
 
+> Since 2026-09-28 work has been delivered through GSD quick tasks (see STATE.md "Quick Tasks Completed"); this table maps them to phases.
+
 **Execution Order:**
 Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5/6 (5 and 6 can run in parallel after 4)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Auth | 0/3 | Planning complete | - |
-| 2. Content Structure | 4/5 | In Progress|  |
-| 3. Submissions | 0/TBD | Not started | - |
-| 4. Review & Progression | 0/TBD | Not started | - |
-| 5. Progression UI | 0/TBD | Not started | - |
-| 6. Teacher Tools & Notifications | 0/TBD | Not started | - |
+| 1. Foundation & Auth | 3/3 | Complete | 2026-09-27 |
+| 2. Content Structure | 5/5 | Complete (reworked by quick 261003-wuo, 261004-02p) | 2026-10-04 |
+| 3. Submissions | via quick 260928-iwi, 261004-01i | Complete | 2026-10-04 |
+| 4. Review & Progression | comments done (261004-fgj); review = 261004-gic | In progress | - |
+| 5. Progression UI | via quick 260928-iwi, 260928-jkg | Complete | 2026-09-28 |
+| 6. Teacher Tools & Notifications | bulk assign + templates done; dashboard = 261004-03i; LINE pending | In progress | - |

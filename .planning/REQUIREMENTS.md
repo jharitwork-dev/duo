@@ -26,7 +26,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **GRP-01**: Teacher can create groups (student teams) within a classroom
 - [x] **GRP-02**: Teacher can assign students to groups
 - [x] **GRP-03**: Student can see their group and group members
-- [x] **GRP-04**: Groups are independent -- each has its own phases and to-dos
+- [x] **GRP-04**: Groups are independent -- each has its own to-dos (phases are shared per classroom since quick 261003-wuo)
 
 ### Phases
 
@@ -45,32 +45,32 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Submissions
 
-- [ ] **SUB-01**: Student can upload files (PDF, images, docs) via R2 presigned URLs
-- [ ] **SUB-02**: Student can submit links (URLs)
-- [ ] **SUB-03**: Student can submit free-text responses
-- [ ] **SUB-04**: For "group" to-dos, one member submits for the whole group
-- [ ] **SUB-05**: For "individual" to-dos, each group member submits separately
-- [ ] **SUB-06**: Student can view their past submissions
+- [x] **SUB-01**: Student can upload files (PDF, images, docs) via R2 presigned URLs
+- [x] **SUB-02**: Student can submit links (URLs)
+- [x] **SUB-03**: Student can submit free-text responses
+- [x] **SUB-04**: For "group" to-dos, one member submits for the whole group
+- [x] **SUB-05**: For "individual" to-dos, each group member submits separately
+- [x] **SUB-06**: Student can view their past submissions
 
 ### Review
 
-- [ ] **REV-01**: Teacher can view all submissions for a to-do
+- [x] **REV-01**: Teacher can view all submissions for a to-do
 - [ ] **REV-02**: Teacher can approve or reject a submission
-- [ ] **REV-03**: Teacher can comment on student work
+- [x] **REV-03**: Teacher can comment on student work
 - [ ] **REV-04**: Approval of all required to-dos triggers phase completion and unlocks next phase
 
 ### Teacher Tools
 
-- [ ] **TOOL-01**: Teacher can assign the same phases/to-dos to all groups in a classroom at once (bulk assign)
-- [ ] **TOOL-02**: Teacher can duplicate a phase template from one group to another
+- [x] **TOOL-01**: Teacher can assign the same phases/to-dos to all groups in a classroom at once (bulk assign)
+- [x] **TOOL-02**: Teacher can duplicate a phase template from one group to another
 - [ ] **TOOL-03**: Teacher can see a list of pending submissions needing review
 
 ### Progression UI
 
-- [ ] **UI-01**: Student sees a Duolingo-style visual path showing all phases (locked/active/completed)
-- [ ] **UI-02**: Visual path shows progress within each phase (to-dos completed vs total)
-- [ ] **UI-03**: Phase nodes are interactive -- click to enter the phase and see to-dos
-- [ ] **UI-04**: Responsive design -- works on mobile (Thai students primarily use phones)
+- [x] **UI-01**: Student sees a Duolingo-style visual path showing all phases (locked/active/completed)
+- [x] **UI-02**: Visual path shows progress within each phase (to-dos completed vs total)
+- [x] **UI-03**: Phase nodes are interactive -- click to enter the phase and see to-dos
+- [x] **UI-04**: Responsive design -- works on mobile (Thai students primarily use phones)
 
 ### Notifications
 
@@ -145,24 +145,24 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TODO-02 | Phase 2 | Complete |
 | TODO-03 | Phase 2 | Complete |
 | TODO-04 | Phase 2 | Complete |
-| SUB-01 | Phase 3 | Pending |
-| SUB-02 | Phase 3 | Pending |
-| SUB-03 | Phase 3 | Pending |
-| SUB-04 | Phase 3 | Pending |
-| SUB-05 | Phase 3 | Pending |
-| SUB-06 | Phase 3 | Pending |
-| REV-01 | Phase 4 | Pending |
-| REV-02 | Phase 4 | Pending |
-| REV-03 | Phase 4 | Pending |
-| REV-04 | Phase 4 | Pending |
-| PHASE-05 | Phase 4 | Pending |
-| UI-01 | Phase 5 | Pending |
-| UI-02 | Phase 5 | Pending |
-| UI-03 | Phase 5 | Pending |
-| UI-04 | Phase 5 | Pending |
-| TOOL-01 | Phase 6 | Pending |
-| TOOL-02 | Phase 6 | Pending |
-| TOOL-03 | Phase 6 | Pending |
+| SUB-01 | Phase 3 | Complete (quick 260928-iwi/261004-01i) |
+| SUB-02 | Phase 3 | Complete (quick 261004-01i (links in work page)) |
+| SUB-03 | Phase 3 | Complete (quick 261004-01i) |
+| SUB-04 | Phase 3 | Complete (quick 260928-iwi/261004-01i) |
+| SUB-05 | Phase 3 | Complete (quick 261004-01i) |
+| SUB-06 | Phase 3 | Complete (quick 260928-iwi/261004-01i) |
+| REV-01 | Phase 4 | Complete (quick 261004-01i/fgj (per-group view; dashboard matrix in 03i)) |
+| REV-02 | Phase 4 | In progress (quick 261004-gic) |
+| REV-03 | Phase 4 | Complete (quick 261004-fgj) |
+| REV-04 | Phase 4 | In progress (quick 261004-gic) |
+| PHASE-05 | Phase 4 | In progress (quick 261004-gic) |
+| UI-01 | Phase 5 | Complete (quick 260928-iwi/jkg) |
+| UI-02 | Phase 5 | Complete (quick 260928-iwi/jkg) |
+| UI-03 | Phase 5 | Complete (quick 260928-iwi/jkg) |
+| UI-04 | Phase 5 | Complete (quick 260928-iwi/jkg) |
+| TOOL-01 | Phase 6 | Complete (quick 261003-wuo) |
+| TOOL-02 | Phase 6 | Complete (quick 261003-wuo (save/apply classroom templates)) |
+| TOOL-03 | Phase 6 | In progress (quick 261004-03i/gic) |
 | NOTIF-01 | Phase 6 | Pending |
 | NOTIF-02 | Phase 6 | Pending |
 | NOTIF-03 | Phase 6 | Pending |
