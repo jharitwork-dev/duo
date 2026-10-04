@@ -6,7 +6,7 @@ import { groupPhaseProgress } from './groupPhaseProgress';
 import { todos, todoAttachments } from './todos';
 import { submissions, submissionFiles } from './submissions';
 import { workPages, workPageFiles } from './workPages';
-import { comments } from './comments';
+import { comments, commentReads } from './comments';
 import { phaseTemplates } from './phaseTemplates';
 
 // Classrooms relations
@@ -113,6 +113,17 @@ export const commentsRelations = relations(comments, ({ one }) => ({
     fields: [comments.submissionId],
     references: [submissions.id],
   }),
+  workPage: one(workPages, {
+    fields: [comments.workPageId],
+    references: [workPages.id],
+  }),
+}));
+
+export const commentReadsRelations = relations(commentReads, ({ one }) => ({
+  workPage: one(workPages, {
+    fields: [commentReads.workPageId],
+    references: [workPages.id],
+  }),
 }));
 
 // Work pages relations (261004-01i)
@@ -126,6 +137,7 @@ export const workPagesRelations = relations(workPages, ({ one, many }) => ({
     references: [groups.id],
   }),
   files: many(workPageFiles),
+  comments: many(comments),
 }));
 
 export const workPageFilesRelations = relations(workPageFiles, ({ one }) => ({
