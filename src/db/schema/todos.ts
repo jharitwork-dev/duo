@@ -1,5 +1,6 @@
 import { pgTable, text, timestamp, integer, boolean } from 'drizzle-orm/pg-core';
 import { createId } from '@/lib/ids';
+import { FILE_REQUIREMENTS } from '@/lib/work-page';
 import { phases } from './phases';
 import { groups } from './groups';
 
@@ -15,6 +16,8 @@ export const todos = pgTable('todos', {
   notes: text('notes'),
   orderIndex: integer('order_index').notNull().default(0),
   submissionMode: text('submission_mode', { enum: ['group', 'individual'] }).notNull().default('group'),
+  // Teacher-set file requirement for the work page (261004-01i): none | optional | required.
+  fileRequirement: text('file_requirement', { enum: FILE_REQUIREMENTS }).notNull().default('optional'),
   isArchived: boolean('is_archived').notNull().default(false),
   deadline: timestamp('deadline'),
   createdBy: text('created_by').notNull(),

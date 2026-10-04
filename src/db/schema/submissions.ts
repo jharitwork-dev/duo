@@ -1,4 +1,5 @@
-import { pgTable, text, timestamp, integer } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, jsonb } from 'drizzle-orm/pg-core';
+import type { WorkPageDoc } from '@/lib/work-page';
 import { createId } from '@/lib/ids';
 import { todos } from './todos';
 import { groups } from './groups';
@@ -11,6 +12,8 @@ export const submissions = pgTable('submissions', {
   status: text('status', { enum: ['pending', 'approved', 'rejected'] }).notNull().default('pending'),
   textContent: text('text_content'),
   linkUrl: text('link_url'),
+  // Snapshot of the work page at submit time (null for legacy file-only submissions).
+  content: jsonb('content').$type<WorkPageDoc>(),
   reviewedBy: text('reviewed_by'),
   reviewedAt: timestamp('reviewed_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import * as schema from '@/db/schema';
 import { createId } from '@/lib/ids';
 import { GROUP_MODES } from '@/lib/group-rules';
+import { FILE_REQUIREMENTS } from '@/lib/work-page';
 
 describe('Database Schema', () => {
   it('exports all table definitions', () => {
@@ -40,6 +41,23 @@ describe('Database Schema', () => {
     expect(schema.classrooms.groupMode.notNull).toBe(true);
     expect(schema.classrooms.groupMode.default).toBe('teacher');
     expect(schema.classrooms.groupMode.enumValues).toEqual([...GROUP_MODES]);
+  });
+
+  it('has the work page tables, relations and columns (261004-01i)', () => {
+    expect(schema.workPages).toBeDefined();
+    expect(schema.workPageFiles).toBeDefined();
+    expect(schema.workPagesRelations).toBeDefined();
+    expect(schema.workPageFilesRelations).toBeDefined();
+    expect(schema.todos.fileRequirement.name).toBe('file_requirement');
+    expect(schema.todos.fileRequirement.notNull).toBe(true);
+    expect(schema.todos.fileRequirement.default).toBe('optional');
+    expect(schema.todos.fileRequirement.enumValues).toEqual([...FILE_REQUIREMENTS]);
+    expect(schema.submissions.content.name).toBe('content');
+    expect(schema.submissions.content.notNull).toBe(false);
+    expect(schema.workPages.content.notNull).toBe(true);
+    expect(schema.workPages.userId.notNull).toBe(false);
+    expect(schema.workPages.groupId.notNull).toBe(false);
+    expect(schema.workPageFiles.workPageId.notNull).toBe(true);
   });
 
   it('createId generates a 24-character string', () => {
