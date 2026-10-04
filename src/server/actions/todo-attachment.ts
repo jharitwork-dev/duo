@@ -8,7 +8,8 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import { todos, todoAttachments } from '@/db/schema/todos';
-import { asc, count, eq, inArray } from 'drizzle-orm';
+import { classroomTaskFiles } from '@/db/schema/classroomTasks';
+import { and, asc, count, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { getCurrentUserId, requireRole } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { createId } from '@/lib/ids';
@@ -43,6 +44,17 @@ function revalidateTodoPages(scopes: readonly EditorScope[]) {
     revalidatePath(`/teacher/classroom/${s.classroomId}/group/${s.groupId}`);
     revalidatePath(`/student/classroom/${s.classroomId}/group/${s.groupId}`);
   }
+}
+
+/**
+ * Per-copy file edits on classroom-task copies (261004-j6h) mark 'attachments' overridden so later
+ * classroom file changes skip those copies. No-op for ordinary to-dos.
+ */
+async function markAttachmentsOverridden(tx: DbLike, todoIds: readonly string[]) {
+  await tx
+    .update(todos)
+    .set({ overriddenFields: sql`array(select distinct unnest(${todos.overriddenFields} || '{attachments}'::text[]))` })
+    .where(and(inArray(todos.id, [...todoIds]), isNotNull(todos.classroomTaskId)));
 }
 
 /** Per-to-do attachment counts (0 for to-dos without attachments). */
@@ -157,7 +169,13 @@ export async function addTodoAttachment(
       .select({ n: count() })
       .from(todoAttachments)
       .where(eq(todoAttachments.fileKey, data.key));
-    if ((existing?.n ?? 0) > 0) return { kind: 'error' as const, error: ERR_DUPLICATE };
+    const [existingTaskFile] = await tx
+      .select({ n: count() })
+      .from(classroomTaskFiles)
+      .where(eq(classroomTaskFiles.fileKey, data.key));
+    if ((existing?.n ?? 0) > 0 || (existingTaskFile?.n ?? 0) > 0) {
+      return { kind: 'error' as const, error: ERR_DUPLICATE };
+    }
 
     const capacity = checkAttachmentCapacity(await countAttachments(tx, ids), 1);
     if (!capacity.ok) return { kind: 'error' as const, error: ATTACHMENT_ERRORS.tooMany };
@@ -181,6 +199,7 @@ export async function addTodoAttachment(
         contentType: todoAttachments.contentType,
         fileSize: todoAttachments.fileSize,
       });
+    await markAttachmentsOverridden(tx, ids);
     return { kind: 'ok' as const, rows };
   });
 
@@ -224,12 +243,24 @@ export async function removeTodoAttachment(
       .where(eq(todoAttachments.fileKey, row.fileKey))
       .orderBy(asc(todoAttachments.id))
       .for('update');
+    // Inherited classroom-task files are also referenced by classroom_task_files (261004-j6h).
+    await tx
+      .select({ id: classroomTaskFiles.id })
+      .from(classroomTaskFiles)
+      .where(eq(classroomTaskFiles.fileKey, row.fileKey))
+      .orderBy(asc(classroomTaskFiles.id))
+      .for('update');
     await tx.delete(todoAttachments).where(eq(todoAttachments.id, row.id));
+    await markAttachmentsOverridden(tx, [row.todoId]);
     const [left] = await tx
       .select({ n: count() })
       .from(todoAttachments)
       .where(eq(todoAttachments.fileKey, row.fileKey));
-    return left?.n ?? 0;
+    const [leftTaskFiles] = await tx
+      .select({ n: count() })
+      .from(classroomTaskFiles)
+      .where(eq(classroomTaskFiles.fileKey, row.fileKey));
+    return (left?.n ?? 0) + (leftTaskFiles?.n ?? 0);
   });
 
   // After commit, best-effort and never throws.

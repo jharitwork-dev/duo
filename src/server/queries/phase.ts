@@ -5,6 +5,7 @@ import { groups } from '@/db/schema/groups';
 import { groupPhaseProgress, type PhaseStatus } from '@/db/schema/groupPhaseProgress';
 import { eq, and, asc } from 'drizzle-orm';
 import { resolveGroupPhaseStatuses } from '@/lib/node-path';
+import { sortTodosByDeadline } from '@/lib/todo-order';
 
 /**
  * The classroom's non-archived phases (same list for every group) with THIS group's
@@ -44,7 +45,12 @@ export async function getActivePhases(groupId: string) {
   ]);
 
   const statuses = resolveGroupPhaseStatuses(phaseRows, progressRows);
-  return phaseRows.map((phase) => ({ ...phase, status: statuses[phase.id] as PhaseStatus }));
+  // D-3' (261004-j6h): deadline ascending, undated last by order_index.
+  return phaseRows.map((phase) => ({
+    ...phase,
+    todos: sortTodosByDeadline(phase.todos),
+    status: statuses[phase.id] as PhaseStatus,
+  }));
 }
 
 /** The classroom's non-archived phases in order (no to-dos, no per-group status). */

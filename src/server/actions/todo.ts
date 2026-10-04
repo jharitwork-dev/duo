@@ -25,6 +25,10 @@ import { checkDeleteConfirmation } from '@/lib/group-rules';
 import { authorizeTodoViewer } from '@/server/work-page-access';
 import { FILE_REQUIREMENTS } from '@/lib/work-page';
 import { actionError, type ActionResult } from '@/lib/action-result';
+import { computeOverrideMarks } from '@/lib/classroom-task-sync';
+
+const ERR_CLASSROOM_TASK_LOCKED = 'งานของห้องเรียน: แก้ชื่อ กำหนดส่ง และรูปแบบการส่งได้จากแท็บ Phase เท่านั้น';
+const ERR_CLASSROOM_TASK_MANAGED = 'งานของห้องเรียนลบได้จากแท็บ Phase เท่านั้น';
 
 const createTodoSchema = z.object({
   phaseId: z.string().min(1),
@@ -110,9 +114,31 @@ export async function updateTodo(input: z.infer<typeof updateTodoSchema>) {
   const userId = await getCurrentUserId();
   const data = updateTodoSchema.parse(input);
   const { todoId, ...updates } = data;
-  await assertTodoEditor(todoId, userId);
+  const { todo } = await assertTodoEditor(todoId, userId);
 
   const updateFields: Record<string, unknown> = { updatedAt: new Date() };
+  // Copy of a classroom-level task (261004-j6h): locked fields must stay; changed overridable
+  // fields are recorded so later classroom edits skip them for this copy.
+  if (todo.classroomTaskId) {
+    const marks = computeOverrideMarks({
+      current: {
+        title: todo.title,
+        description: todo.description,
+        notes: todo.notes,
+        submissionMode: todo.submissionMode,
+        fileRequirement: todo.fileRequirement,
+        deadline: todo.deadline,
+      },
+      updates,
+      existing: todo.overriddenFields ?? [],
+    });
+    if (marks.lockedViolation) throw new Error(ERR_CLASSROOM_TASK_LOCKED);
+    updateFields.overriddenFields = marks.overriddenFields;
+    // Locked values are re-sent unchanged by the form; never write them from a copy.
+    delete updates.title;
+    delete updates.submissionMode;
+    delete updates.deadline;
+  }
   if (updates.title !== undefined) updateFields.title = updates.title;
   if (updates.description !== undefined) updateFields.description = updates.description;
   if (updates.notes !== undefined) updateFields.notes = updates.notes;
@@ -175,7 +201,8 @@ export async function archiveTodo(input: z.infer<typeof archiveTodoSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
   const userId = await getCurrentUserId();
   const data = archiveTodoSchema.parse(input);
-  await assertTodoEditor(data.todoId, userId);
+  const { todo } = await assertTodoEditor(data.todoId, userId);
+  if (todo.classroomTaskId) throw new Error(ERR_CLASSROOM_TASK_MANAGED);
 
   await db
     .update(todos)
@@ -193,7 +220,8 @@ export async function restoreTodo(input: z.infer<typeof restoreTodoSchema>) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
   const userId = await getCurrentUserId();
   const data = restoreTodoSchema.parse(input);
-  await assertTodoEditor(data.todoId, userId);
+  const { todo } = await assertTodoEditor(data.todoId, userId);
+  if (todo.classroomTaskId) throw new Error(ERR_CLASSROOM_TASK_MANAGED);
 
   await db
     .update(todos)
@@ -218,12 +246,12 @@ async function todoDeleteScope(
 ) {
   if (!allCopies || !todo.assignmentId) {
     return db
-      .select({ id: todos.id, groupId: todos.groupId })
+      .select({ id: todos.id, groupId: todos.groupId, classroomTaskId: todos.classroomTaskId })
       .from(todos)
       .where(eq(todos.id, todo.id));
   }
   return db
-    .select({ id: todos.id, groupId: todos.groupId })
+    .select({ id: todos.id, groupId: todos.groupId, classroomTaskId: todos.classroomTaskId })
     .from(todos)
     .innerJoin(phases, eq(phases.id, todos.phaseId))
     .where(and(eq(todos.assignmentId, todo.assignmentId), eq(phases.classroomId, classroomId)));
@@ -241,8 +269,11 @@ export async function deleteTodo(
   const userId = await getCurrentUserId();
   const data = deleteTodoSchema.parse(input);
   const { todo, classroom } = await assertTodoEditor(data.todoId, userId);
+  if (todo.classroomTaskId) return actionError(ERR_CLASSROOM_TASK_MANAGED);
 
   const scope = await todoDeleteScope(todo, classroom.id, data.allCopies);
+  // Never delete classroom-task copies through an assignment-wide delete (261004-j6h).
+  if (scope.some((t) => t.classroomTaskId)) return actionError(ERR_CLASSROOM_TASK_MANAGED);
   const todoIds = scope.map((t) => t.id);
   const [row] = await db
     .select({ n: count() })

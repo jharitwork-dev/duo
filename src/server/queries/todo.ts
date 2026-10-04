@@ -2,10 +2,11 @@ import { db } from '@/db';
 import { todos } from '@/db/schema/todos';
 import { classroomMembers } from '@/db/schema/classrooms';
 import { eq, and, asc } from 'drizzle-orm';
+import { sortTodosByDeadline } from '@/lib/todo-order';
 
 /**
  * Returns one group's active (non-archived) todos for a classroom phase,
- * ordered by orderIndex.
+ * deadline ascending (undated last, by orderIndex) — D-3' (261004-j6h).
  */
 export async function getActiveTodos(phaseId: string, groupId: string) {
   const result = await db.query.todos.findMany({
@@ -13,7 +14,7 @@ export async function getActiveTodos(phaseId: string, groupId: string) {
     orderBy: [asc(todos.orderIndex)],
   });
 
-  return result;
+  return sortTodosByDeadline(result);
 }
 
 /**

@@ -8,6 +8,7 @@ import { generateUniqueInviteCode } from '@/lib/invite-code';
 import { groups, groupMembers } from '@/db/schema/groups';
 import { phases } from '@/db/schema/phases';
 import { todos } from '@/db/schema/todos';
+import { classroomTasks } from '@/db/schema/classroomTasks';
 import { eq, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
@@ -253,7 +254,16 @@ export async function deleteClassroom(
       .from(todos)
       .innerJoin(phases, eq(phases.id, todos.phaseId))
       .where(eq(phases.classroomId, classroom.id));
-    const fileKeys = await collectFileKeys(tx, { todoIds: todoRows.map((t) => t.id) });
+    // Classroom tasks (and their files) cascade with the phases (261004-j6h).
+    const taskRows = await tx
+      .select({ id: classroomTasks.id })
+      .from(classroomTasks)
+      .innerJoin(phases, eq(phases.id, classroomTasks.phaseId))
+      .where(eq(phases.classroomId, classroom.id));
+    const fileKeys = await collectFileKeys(tx, {
+      todoIds: todoRows.map((t) => t.id),
+      classroomTaskIds: taskRows.map((t) => t.id),
+    });
     await tx.delete(classrooms).where(eq(classrooms.id, classroom.id));
     return fileKeys;
   });

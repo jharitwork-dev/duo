@@ -17,6 +17,7 @@ import {
   collectFileKeys,
   countGroupSubmissions,
   syncClassroomProgress,
+  syncClassroomTasks,
   type DbLike,
 } from '@/server/phase-helpers';
 import {
@@ -130,6 +131,8 @@ export async function createGroup(
       .returning({ id: groups.id });
     // Give the new group its default phase progress rows (first phase active, rest locked).
     await syncClassroomProgress(tx, data.classroomId);
+    // Copies of every classroom-level task (261004-j6h); inserts only, so no R2 keys to clean.
+    await syncClassroomTasks(tx, data.classroomId);
     return group.id;
   });
 
@@ -396,6 +399,8 @@ export async function createGroupAsStudent(
         .returning({ id: groups.id });
       await tx.insert(groupMembers).values({ groupId: group.id, userId });
       await syncClassroomProgress(tx, classroom.id);
+      // Copies of every classroom-level task (261004-j6h); inserts only, so no R2 keys to clean.
+      await syncClassroomTasks(tx, classroom.id);
       return group.id;
     });
   } catch (err) {

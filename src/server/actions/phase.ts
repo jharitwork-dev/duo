@@ -6,6 +6,7 @@ import { phases } from '@/db/schema/phases';
 import { groups } from '@/db/schema/groups';
 import { groupPhaseProgress, PHASE_STATUSES } from '@/db/schema/groupPhaseProgress';
 import { todos } from '@/db/schema/todos';
+import { classroomTasks } from '@/db/schema/classroomTasks';
 import { submissions } from '@/db/schema/submissions';
 import { eq, and, max, inArray, count } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -246,7 +247,15 @@ export async function deletePhase(input: z.infer<typeof deletePhaseSchema>): Pro
 
   const keys = await db.transaction(async (tx) => {
     const todoRows = await tx.select({ id: todos.id }).from(todos).where(eq(todos.phaseId, phase.id));
-    const fileKeys = await collectFileKeys(tx, { todoIds: todoRows.map((t) => t.id) });
+    // Classroom tasks (and their files) cascade with the phase (261004-j6h).
+    const taskRows = await tx
+      .select({ id: classroomTasks.id })
+      .from(classroomTasks)
+      .where(eq(classroomTasks.phaseId, phase.id));
+    const fileKeys = await collectFileKeys(tx, {
+      todoIds: todoRows.map((t) => t.id),
+      classroomTaskIds: taskRows.map((t) => t.id),
+    });
     // Cascades: todos -> submissions/files/comments/attachments, group_phase_progress.
     await tx.delete(phases).where(eq(phases.id, phase.id));
     await syncClassroomProgress(tx, classroom.id);

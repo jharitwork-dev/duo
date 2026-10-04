@@ -4,8 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ACTIONS_DIR = path.resolve(__dirname, '../actions');
-const SCANNED = ['classroom.ts', 'group.ts', 'phase.ts', 'todo.ts', 'template.ts', 'impact.ts', 'review.ts', 'todo-attachment.ts'];
-const EDITOR_CHECK = /assert(Classroom|Group|Phase|Todo)Editor\(/;
+const SCANNED = ['classroom.ts', 'group.ts', 'phase.ts', 'todo.ts', 'template.ts', 'impact.ts', 'review.ts', 'todo-attachment.ts', 'classroom-task.ts'];
+const EDITOR_CHECK = /assert(Classroom|ClassroomTask|Group|Phase|Todo)Editor\(/;
 const GROUP_DELETE_CHECK = /authorizeGroupDelete\(/;
 // Template-owner checks / creation of a brand-new classroom (no classroom to check yet).
 const ALLOWLIST = new Set(['createClassroom', 'deleteTemplate', 'updateTemplate']);
@@ -246,5 +246,77 @@ describe('authorization coverage of teacher attachment actions (261004-gid)', ()
     expect(start).toBeGreaterThanOrEqual(0);
     const body = source.slice(start, source.indexOf('\nexport ', start + 10));
     expect(body).toMatch(/notInArray\(todoAttachments\.todoId/);
+  });
+});
+
+describe('authorization + sync coverage of classroom-level tasks (261004-j6h)', () => {
+  const fns = exportedFunctions('classroom-task.ts');
+  const code = (body: string) => body.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  const fn = (file: string, name: string) => {
+    const f = exportedFunctions(file).find((x) => x.name === name);
+    expect(f, `${file}:${name}`).toBeDefined();
+    return code(f!.body);
+  };
+
+  it('exports the expected actions', () => {
+    expect(fns.map((f) => f.name).sort()).toEqual(
+      [
+        'addClassroomTaskFile',
+        'createClassroomTask',
+        'createClassroomTaskUploadUrl',
+        'deleteClassroomTask',
+        'getClassroomTaskDeleteImpact',
+        'removeClassroomTaskFile',
+        'updateClassroomTask',
+      ].sort(),
+    );
+  });
+
+  it.each(fns.map((f) => [f.name, f]))('%s requires the teacher role and an editor check', (_n, f) => {
+    const body = code((f as ExportedFn).body);
+    expect(body).toContain('requireRole(ROLES.TEACHER');
+    expect(body).toMatch(/assert(Phase|ClassroomTask)Editor\(/);
+    expect(body.includes('deleteObject('), 'must use cleanupR2Objects').toBe(false);
+  });
+
+  it('every mutation re-syncs the copies inside its transaction', () => {
+    for (const name of [
+      'createClassroomTask',
+      'updateClassroomTask',
+      'deleteClassroomTask',
+      'addClassroomTaskFile',
+      'removeClassroomTaskFile',
+    ]) {
+      expect(fn('classroom-task.ts', name), name).toMatch(/syncClassroomTasks\(tx/);
+    }
+  });
+
+  it('deleteClassroomTask syncs (excluding the task) before deleting the row', () => {
+    const body = fn('classroom-task.ts', 'deleteClassroomTask');
+    expect(body).toContain('excludeTaskIds');
+    expect(body.indexOf('syncClassroomTasks(tx')).toBeLessThan(body.indexOf('tx.delete(classroomTasks)'));
+  });
+
+  it('updateTodo enforces locked fields / records overrides on copies', () => {
+    expect(fn('todo.ts', 'updateTodo')).toContain('computeOverrideMarks(');
+  });
+
+  it('deleteTodo, archiveTodo and restoreTodo reject classroom-task copies', () => {
+    for (const name of ['deleteTodo', 'archiveTodo', 'restoreTodo']) {
+      expect(fn('todo.ts', name), name).toContain('classroomTaskId');
+    }
+  });
+
+  it('both group-create paths materialize classroom tasks in the same transaction', () => {
+    expect(fn('group.ts', 'createGroup')).toContain('syncClassroomTasks(tx');
+    expect(fn('group.ts', 'createGroupAsStudent')).toContain('syncClassroomTasks(tx');
+  });
+
+  it('shared-key deletion checks classroom_task_files', () => {
+    const helpers = fs.readFileSync(path.resolve(__dirname, '../phase-helpers.ts'), 'utf8');
+    const start = helpers.indexOf('export async function collectFileKeys');
+    const body = helpers.slice(start, helpers.indexOf('\nexport ', start + 10));
+    expect(body).toContain('classroomTaskFiles');
+    expect(fn('todo-attachment.ts', 'removeTodoAttachment')).toContain('classroomTaskFiles');
   });
 });
