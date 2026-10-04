@@ -16,6 +16,7 @@ import { BTN_TERTIARY, CARD, CARD_TITLE, PAGE_BODY } from '@/components/cocoon/u
 import { getTeacherWorkPageView, type TeacherWorkPageView } from '@/server/queries/work-page';
 import { TeacherWorkPagePanel } from '@/components/work-page/teacher-work-page-panel';
 import { FILE_REQUIREMENT_LABEL } from '@/lib/work-page';
+import { formatDeadline, getEffectiveDeadline } from '@/lib/deadline';
 import { CommentThreadSection, CommentThreadSkeleton } from '@/components/comment/comment-thread-section';
 
 interface Props {
@@ -46,6 +47,8 @@ export default async function TodoDetailPage({ params, searchParams }: Props) {
   const classroom = group.classroom;
   const editorHref = `/teacher/classroom/${classroom.id}/group/${group.id}`;
   const { items } = parseDeliverables(todo.notes);
+  const deadline = getEffectiveDeadline(todo, phase);
+  const inheritsPhaseDeadline = !todo.deadline && deadline !== null;
 
   // Classroom editors see the students' work read-only (latest snapshot + live page).
   // Anyone else who can view the to-do keeps the plain detail view.
@@ -70,9 +73,10 @@ export default async function TodoDetailPage({ params, searchParams }: Props) {
             <span className={cn(PILL, 'border border-cocoon-line bg-white text-cocoon-subtle')}>
               {FILE_REQUIREMENT_LABEL[todo.fileRequirement]}
             </span>
-            {todo.deadline && (
+            {deadline && (
               <span className={cn(PILL, 'border border-cocoon-line bg-white text-cocoon-subtle')}>
-                กำหนดส่ง {new Date(todo.deadline).toLocaleDateString('th-TH')}
+                {formatDeadline(deadline)}
+                {inheritsPhaseDeadline && ' (Phase)'}
               </span>
             )}
             {isTeacher && (
@@ -126,7 +130,12 @@ export default async function TodoDetailPage({ params, searchParams }: Props) {
           <h2 className="mb-3 text-[20px] leading-normal font-bold text-cocoon-blue lg:mb-4 lg:text-[24px]">
             งานของนักเรียน
           </h2>
-          <TeacherWorkPagePanel entries={workView.entries} submissionMode={workView.todo.submissionMode} />
+          <TeacherWorkPagePanel
+            entries={workView.entries}
+            submissionMode={workView.todo.submissionMode}
+            deadline={deadline ? deadline.toISOString() : null}
+            nowIso={new Date().toISOString()}
+          />
         </div>
       )}
 

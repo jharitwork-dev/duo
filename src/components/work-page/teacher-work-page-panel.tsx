@@ -2,6 +2,8 @@
 
 import { cn } from 'cn';
 import { formatSubmissionDate } from '@/lib/format';
+import { getDeadlineStatus } from '@/lib/deadline';
+import { DeadlineChip } from '@/components/deadline/deadline-chip';
 import type { TeacherWorkPageEntry } from '@/server/queries/work-page';
 import { StatusPill } from '@/components/cocoon/status-pill';
 import { CARD, CARD_META, CARD_TITLE } from '@/components/cocoon/ui';
@@ -16,9 +18,15 @@ import { WorkPageFileList } from './work-page-files';
 export function TeacherWorkPagePanel({
   entries,
   submissionMode,
+  deadline = null,
+  nowIso,
 }: {
   entries: TeacherWorkPageEntry[];
   submissionMode: 'group' | 'individual';
+  /** Effective deadline (todo ?? phase), ISO (261004-03i). */
+  deadline?: string | null;
+  /** Server time, so the chip renders identically on server and client. */
+  nowIso: string;
 }) {
   if (entries.length === 0) {
     return (
@@ -32,28 +40,64 @@ export function TeacherWorkPagePanel({
   return (
     <div className="space-y-4 lg:space-y-6">
       {entries.map((entry) => (
-        <EntryBlock key={entry.key} entry={entry} showOwner={submissionMode === 'individual'} />
+        <EntryBlock
+          key={entry.key}
+          entry={entry}
+          showOwner={submissionMode === 'individual'}
+          deadline={deadline}
+          nowIso={nowIso}
+        />
       ))}
     </div>
   );
 }
 
-function EntryBlock({ entry, showOwner }: { entry: TeacherWorkPageEntry; showOwner: boolean }) {
+function EntryBlock({
+  entry,
+  showOwner,
+  deadline,
+  nowIso,
+}: {
+  entry: TeacherWorkPageEntry;
+  showOwner: boolean;
+  deadline: string | null;
+  nowIso: string;
+}) {
   const { latestSubmission: sub, livePage, liveIsNewer } = entry;
   const nothing = !sub && !liveIsNewer;
+  const deadlineState = getDeadlineStatus({
+    deadline: deadline ? new Date(deadline) : null,
+    firstSubmittedAt: entry.firstSubmittedAt ? new Date(entry.firstSubmittedAt) : null,
+    latestStatus: sub?.status ?? 'none',
+    now: new Date(nowIso),
+  });
+  const chip = (
+    <DeadlineChip
+      status={deadlineState.status}
+      lateMs={deadlineState.lateMs}
+      overdueMs={deadlineState.overdueMs}
+      remainingMs={deadlineState.remainingMs}
+      size="md"
+    />
+  );
+  const updatedAfterSubmit =
+    !!sub && new Date(sub.updatedAt).getTime() - new Date(sub.createdAt).getTime() > 1000;
 
   return (
     <div className="space-y-3">
       {showOwner && <h3 className="text-[16px] leading-normal font-bold text-cocoon-ink lg:text-[18px]">{entry.ownerLabel}</h3>}
+      {!sub && deadlineState.status !== 'none' && deadlineState.status !== 'upcoming' && <div>{chip}</div>}
 
       {sub && (
         <section className={CARD}>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <h2 className={cn(CARD_TITLE, 'min-w-0 flex-1')}>งานที่ส่งล่าสุด · ครั้งที่ {sub.attempt}</h2>
             <StatusPill status={sub.status} size="lg" />
+            {chip}
           </div>
           <p className={cn(CARD_META, 'mt-1')}>
             ส่งโดย {sub.submittedByName} · {formatSubmissionDate(sub.createdAt)}
+            {updatedAfterSubmit && <> · อัปเดตเมื่อ {formatSubmissionDate(sub.updatedAt)}</>}
           </p>
           <div className="mt-3">
             {sub.content ? (
