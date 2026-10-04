@@ -98,11 +98,10 @@ None yet.
 ### Blockers/Concerns
 
 - Neon region (Singapore/ap-southeast-1) must be verified during Phase 1 setup
-- R2 CORS configuration via Wrangler CLI needed before Phase 3
 - Tiptap version confidence is MEDIUM -- validate API during Phase 2
 - Student uploads now go browser → R2 directly: bucket CORS must allow PUT + content-type from build.innovators.co.th and localhost
 - getAttachmentDownloadUrl lacks a classroom-membership check (pre-existing)
-- No Neon database provisioned: DATABASE_URL in .env.local is the placeholder and absent on Vercel; R2 credentials empty
+- R2 configured 2026-10-04: bucket build-innovator-uploads (APAC), Object R&W token scoped to it, CORS for localhost:3000 + build.innovators.co.th; env set locally and on Vercel (all envs). Secret was pasted in chat — rotate the token when convenient.
 - Clerk session token must include {"metadata": "{{user.public_metadata}}"} (dev instance done 2026-09-28; production instance still needs it)
 - DONE 2026-10-04: classroom-phase migration applied to the shared DB; "Cocoon 2026" now uses the "Cocoon Incubation" template (3 phases, 6 to-dos per group)
 - drizzle-kit push misreads this Postgres version's named NOT NULL constraints (false 'add unique constraint' prompt) — do NOT use push; apply schema changes via reviewed scripts in src/db/migrations (--dry-run/--apply)
@@ -119,6 +118,7 @@ None yet.
 | fast | Member names instead of Clerk ids + superadmin teacher/student role management | 2026-10-03 | bc420a7 | — |
 | 261003-wuo | Classroom-level fixed phases, per-group tasks, multi-group assignment (full: plan-checked ×2, verified 10/10, migration applied) | 2026-10-04 | 6b814eb | [261003-wuo-classroom-level-fixed-phases-with-per-gr](./quick/261003-wuo-classroom-level-fixed-phases-with-per-gr/) |
 | 261004-02p | Group member limits, student roster, self-grouping, full CRUD, classroom-teacher authz (full: checked, verified 9/9; migration applied + deployed 2026-10-04) | 2026-10-04 | 701e0c0 | [261004-02p-per-group-member-limit-student-roster-wi](./quick/261004-02p-per-group-member-limit-student-roster-wi/) |
+| 261004-01i | Notion-like work page submissions, sub-todo checklist, files, teacher file requirement (full: checked, verified 9/9; migration NOT yet applied) | 2026-10-04 | e70e854 | [261004-01i-notion-like-work-page-submissions-with-s](./quick/261004-01i-notion-like-work-page-submissions-with-s/) |
 
 ## Session Continuity
 
