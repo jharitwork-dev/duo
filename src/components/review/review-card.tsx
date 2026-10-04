@@ -4,10 +4,8 @@ import { CARD, CARD_META, BTN_APPROVE, BTN_INFO } from '@/components/cocoon/ui';
 import { StatusPill } from '@/components/cocoon/status-pill';
 import { formatSubmissionDate } from '@/lib/format';
 import type { ReviewListItem } from '@/server/queries/review';
+import { BTN_WARN } from './review-ui';
 
-/** Yellow button in the BTN_INFO shape (review components only; ui.ts has no yellow button). */
-export const BTN_WARN =
-  'h-[49px] rounded-[12px] px-5 text-[16px] font-bold bg-cocoon-yellow text-white hover:bg-cocoon-yellow/90';
 
 const LINK_BTN = 'inline-flex h-[44px] items-center justify-center lg:h-[49px] lg:min-w-[139px]';
 

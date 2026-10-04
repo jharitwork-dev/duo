@@ -38,7 +38,7 @@ export const REVIEW_TAB_LABEL: Record<ReviewTab, string> = {
 /** Round status label in the review history card. */
 export const REVIEW_ROUND_LABEL: Record<ReviewTab, string> = {
   pending: 'รอตรวจ',
-  rejected: 'ให้แก้ไข',
+  rejected: 'ต้องแก้ไข',
   approved: 'ผ่าน',
 };
 

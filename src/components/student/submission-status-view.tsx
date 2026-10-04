@@ -164,24 +164,37 @@ export function SubmittedFiles({ files, className }: { files: StudentSubmission[
   );
 }
 
-/** Yellow reviewer note (design/mac home-7 "คำแนะนำจากผู้ตรวจ", home-9 "คำแนะนำครั้งก่อน"). */
+/**
+ * Reviewer note (design/mac home-7 "คำแนะนำจากผู้ตรวจ", home-9 "คำแนะนำครั้งก่อน"): yellow by default;
+ * tone "approved" = green "ข้อความจากผู้ตรวจ" for an approval note (261004-gic).
+ */
 export function ReviewerNoteCard({
   title,
   comment,
   className,
+  tone = 'rejected',
 }: {
   title: string;
   comment: string | null | undefined;
   className?: string;
+  tone?: 'rejected' | 'approved';
 }) {
   return (
     <section
       className={cn(
-        'rounded-[12px] border border-[#fbe6b8] bg-[#fff4df] px-5 py-4 lg:rounded-[16px] lg:px-6 lg:py-[18px]',
+        'rounded-[12px] border px-5 py-4 lg:rounded-[16px] lg:px-6 lg:py-[18px]',
+        tone === 'approved' ? 'border-cocoon-green/30 bg-[rgb(0_168_107/.08)]' : 'border-[#fbe6b8] bg-[#fff4df]',
         className,
       )}
     >
-      <h2 className="text-[16px] leading-normal font-bold text-[#a86a00]">{title}</h2>
+      <h2
+        className={cn(
+          'text-[16px] leading-normal font-bold',
+          tone === 'approved' ? 'text-cocoon-green' : 'text-[#a86a00]',
+        )}
+      >
+        {title}
+      </h2>
       {comment ? (
         <p className="mt-1 text-[14px] leading-normal break-words whitespace-pre-wrap text-cocoon-ink lg:mt-2 lg:text-[16px]">
           {comment}
