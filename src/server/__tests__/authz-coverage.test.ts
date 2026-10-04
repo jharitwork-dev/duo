@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ACTIONS_DIR = path.resolve(__dirname, '../actions');
-const SCANNED = ['classroom.ts', 'group.ts', 'phase.ts', 'todo.ts', 'template.ts', 'impact.ts'];
+const SCANNED = ['classroom.ts', 'group.ts', 'phase.ts', 'todo.ts', 'template.ts', 'impact.ts', 'review.ts'];
 const EDITOR_CHECK = /assert(Classroom|Group|Phase|Todo)Editor\(/;
 const GROUP_DELETE_CHECK = /authorizeGroupDelete\(/;
 // Template-owner checks / creation of a brand-new classroom (no classroom to check yet).
@@ -155,5 +155,44 @@ describe('authorization coverage of comment thread actions (261004-fgj)', () => 
       fs.readFileSync(path.resolve(__dirname, '../comment-access.ts'), 'utf8'),
     ];
     for (const src of sources) expect(code(src)).not.toMatch(/canEditWorkPage|latestStatus|latestScopedStatus|deadline/i);
+  });
+});
+
+describe('authorization + locking of review actions (261004-gic)', () => {
+  const fns = exportedFunctions('review.ts');
+  const code = (body: string) => body.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  it('exports exactly approveSubmission and rejectSubmission', () => {
+    expect(fns.map((f) => f.name).sort()).toEqual(['approveSubmission', 'rejectSubmission']);
+  });
+
+  it.each(fns.map((f) => [f.name, f]))('%s authorizes, locks, guards on pending and posts the comment', (_name, fn) => {
+    const body = code((fn as ExportedFn).body);
+    expect(body).toMatch(/requireRole\(ROLES\.TEACHER, ROLES\.SUPERADMIN\)/);
+    expect(body).toMatch(/assertTodoEditor\(/);
+    expect(body).toMatch(/db\.transaction\(/);
+    expect(body).toMatch(/\.for\('update'\)/);
+    expect(body).toMatch(/getOrCreatePage\([^)]*lock: true/);
+    expect(body).toMatch(/lockReviewTarget\(/);
+    expect(body).toMatch(/latestScopedSubmission\(/);
+    expect(body).toContain("eq(submissions.status, 'pending')");
+    expect(body).toMatch(/insertThreadComment\(/);
+    expect(body).not.toMatch(/createdAt:|updatedAt:/);
+    // Lock order: group row → page → submission (matches 03i's page → submission order).
+    expect(body.indexOf(".for('update')")).toBeLessThan(body.indexOf('getOrCreatePage('));
+    expect(body.indexOf('getOrCreatePage(')).toBeLessThan(body.indexOf('lockReviewTarget('));
+  });
+
+  it('approveSubmission applies the auto phase unlock inside its transaction', () => {
+    const approve = code(fns.find((f) => f.name === 'approveSubmission')!.body);
+    expect(approve).toMatch(/applyAutoPhaseUnlock\(/);
+    const reject = code(fns.find((f) => f.name === 'rejectSubmission')!.body);
+    expect(reject).not.toMatch(/applyAutoPhaseUnlock\(/);
+  });
+
+  it('review-helpers locks the submission row FOR UPDATE', () => {
+    const source = fs.readFileSync(path.resolve(__dirname, '../review-helpers.ts'), 'utf8');
+    expect(source).toContain(".for('update')");
+    expect(source).not.toMatch(/^'use server'/m);
   });
 });

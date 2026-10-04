@@ -4,12 +4,14 @@
 // students may comment before and after submitting.
 
 import { db } from '@/db';
+import { comments } from '@/db/schema/comments';
 import { groupMembers } from '@/db/schema/groups';
 import { submissions } from '@/db/schema/submissions';
 import { workPages } from '@/db/schema/workPages';
 import { and, eq } from 'drizzle-orm';
 import { resolveThreadOwner, type ThreadOwner } from '@/lib/comment-thread';
 import { authorizeTodoViewer, findPage, type WorkPageRow } from '@/server/work-page-access';
+import type { DbLike } from '@/server/phase-helpers';
 
 const NOT_AUTHORIZED = 'To-do not found or not authorized';
 
@@ -96,4 +98,31 @@ export async function resolveCommentThread(
     owner: resolved.owner,
     page,
   };
+}
+
+/**
+ * Inserts one thread comment (shared by postComment and the review actions, 261004-gic). `content` must already be
+ * normalised (normalizeCommentBody). Callers authorize first; this only writes. Returns the inserted row.
+ */
+export async function insertThreadComment(
+  tx: DbLike,
+  v: {
+    workPageId: string;
+    submissionId: string | null;
+    userId: string;
+    authorRole: 'teacher' | 'student';
+    content: string;
+  },
+) {
+  const [row] = await tx
+    .insert(comments)
+    .values({
+      workPageId: v.workPageId,
+      submissionId: v.submissionId,
+      userId: v.userId,
+      authorRole: v.authorRole,
+      content: v.content,
+    })
+    .returning();
+  return row;
 }
