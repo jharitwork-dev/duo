@@ -122,6 +122,7 @@ None yet.
 | 261004-fgj | Task discussion thread (teacher ↔ students) + teacher "ดูงาน" links/status pills (full: checked, verified 11/11; migration applied + deployed) | 2026-10-04 | 28d1c2c | [261004-fgj-task-discussion-thread-for-teachers-and-](./quick/261004-fgj-task-discussion-thread-for-teachers-and-/) |
 | 261004-03i | Deadlines (overdue/late/on-time), edit-after-submit before deadline, teacher dashboard + matrix + timeline (full: checked, executed in 3 runs, verified 10/10; no migration; deployed) | 2026-10-04 | 942fb94 | [261004-03i-clear-deadlines-with-overdue-and-late-su](./quick/261004-03i-clear-deadlines-with-overdue-and-late-su/) |
 | 261004-gic | Teacher review: approve / send back, auto phase unlock, review list + detail per Figma (full: checked, verified 9/9; no migration; deployed) | 2026-10-04 | b4afa22 | [261004-gic-teacher-review-approve-reject-with-auto-](./quick/261004-gic-teacher-review-approve-reject-with-auto-/) |
+| 261004-gid | Teacher file attachments on tasks (shared-key safe deletion, limits, student download) (full: checked, verified 8/8; no migration; deployed) | 2026-10-04 | 022fb89 | [261004-gid-teacher-file-attachments-on-tasks](./quick/261004-gid-teacher-file-attachments-on-tasks/) |
 
 ## Session Continuity
 
@@ -134,6 +135,6 @@ Resume file: None
 In flight / next, in order (user authorized end-to-end execution incl. apply+deploy; ALWAYS dry-run first):
 1. **261004-03i** DONE + deployed 2026-10-04.
 2. **261004-gic** DONE + deployed 2026-10-04.
-3. **261004-gid** teacher attachments: executor running in a worktree (then verify → push).
+3. **261004-gid** DONE + deployed 2026-10-04.
 4. Phase 6 LINE notifications: not specced; ask the user (LINE OA? which events?).
-User-side in progress: Clerk production instance (guided steps 1–2: create prod instance cloned from dev, domain build.innovators.co.th, 5 DNS CNAMEs in Cloudflare as DNS-only; then Google OAuth client, swap pk_live/sk_live in Vercel Production, migrate dev Clerk user ids → prod ids by email in DB). Also rotate the R2 token (secret was pasted in chat).
+User-side in progress: Clerk production instance — DONE: prod instance (secondary app, build.innovators.co.th), 5 DNS CNAMEs added via Cloudflare API (DNS only); user doing Google OAuth client (redirect https://clerk.build.innovators.co.th/v1/oauth_callback). REMAINING after that: (original plan: create prod instance cloned from dev, domain build.innovators.co.th, 5 DNS CNAMEs in Cloudflare as DNS-only; then Google OAuth client, swap pk_live/sk_live in Vercel Production, migrate dev Clerk user ids → prod ids by email in DB). Also rotate the R2 token (secret was pasted in chat).
