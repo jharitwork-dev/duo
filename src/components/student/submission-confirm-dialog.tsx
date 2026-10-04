@@ -19,8 +19,36 @@ interface SubmissionConfirmDialogProps {
   summary: SubmissionSummary;
   submitting: boolean;
   onConfirm: () => void;
+  /** Legacy flag; equivalent to mode 'resubmit'. */
   resubmit?: boolean;
+  /** 'update' replaces the pending snapshot in place (261004-03i). Defaults from `resubmit`. */
+  mode?: 'submit' | 'resubmit' | 'update';
+  /** A new round after the deadline: shows the "ส่งช้า" warning (submitting stays allowed). */
+  late?: boolean;
+  /** Attempt number being replaced (update mode copy). */
+  attempt?: number;
 }
+
+const COPY = {
+  submit: {
+    title: 'ยืนยันส่งงาน?',
+    confirm: 'ยืนยันส่งงาน',
+    busy: 'กำลังส่ง…',
+    button: 'bg-cocoon-orange',
+  },
+  resubmit: {
+    title: 'ยืนยันส่งอีกครั้ง?',
+    confirm: 'ยืนยันส่งอีกครั้ง',
+    busy: 'กำลังส่ง…',
+    button: 'bg-cocoon-yellow',
+  },
+  update: {
+    title: 'อัปเดตงานที่ส่ง?',
+    confirm: 'อัปเดตงาน',
+    busy: 'กำลังอัปเดต…',
+    button: 'bg-cocoon-blue',
+  },
+} as const;
 
 /** "ข้อความ · to-do 3/5 · 2 ไฟล์" (absent parts omitted). */
 export function summaryLine(summary: SubmissionSummary): string {
@@ -39,7 +67,15 @@ export function SubmissionConfirmDialog({
   submitting,
   onConfirm,
   resubmit = false,
+  mode = resubmit ? 'resubmit' : 'submit',
+  late = false,
+  attempt,
 }: SubmissionConfirmDialogProps) {
+  const copy = COPY[mode];
+  const description =
+    mode === 'update'
+      ? `งานที่ส่ง${attempt ? `ครั้งที่ ${attempt}` : ''} จะถูกแทนที่ด้วยฉบับนี้ (ไม่นับเป็นการส่งใหม่)`
+      : 'หลังส่งแล้วแก้ไขและอัปเดตได้จนถึงกำหนดส่ง หรือจนกว่าครูจะตรวจ';
   const total = summary.files.reduce((sum, f) => sum + f.size, 0);
 
   return (
@@ -61,13 +97,22 @@ export function SubmissionConfirmDialog({
 
         <div className="space-y-1">
           <DialogTitle className="text-[22px] leading-normal font-bold text-cocoon-heading">
-            {resubmit ? 'ยืนยันส่งอีกครั้ง?' : 'ยืนยันส่งงาน?'}
+            {copy.title}
           </DialogTitle>
           <p className="text-[17px] leading-normal font-bold break-words text-[#0269a7]">{todoTitle}</p>
           <DialogDescription className="text-[14px] leading-normal font-normal text-cocoon-subtle">
-            หลังส่งแล้วจะแก้ไขหน้างานไม่ได้จนกว่าครูจะตรวจ
+            {description}
           </DialogDescription>
         </div>
+
+        {late && mode !== 'update' && (
+          <p
+            role="alert"
+            className="rounded-[10px] border border-cocoon-orange/40 bg-[rgb(239_73_36/.08)] px-4 py-3 text-[14px] leading-normal font-bold text-cocoon-orange"
+          >
+            ส่งหลังกำหนด ระบบจะบันทึกว่าส่งช้า
+          </p>
+        )}
 
         <div className="rounded-[10px] border border-[#ebe5dd] bg-cocoon-cream p-4">
           <p className="text-[14px] leading-normal font-bold text-cocoon-heading">{summaryLine(summary)}</p>
@@ -97,11 +142,11 @@ export function SubmissionConfirmDialog({
             disabled={submitting}
             className={cn(
               'flex h-12 w-full items-center justify-center gap-2 rounded-[10px] text-[16px] font-bold text-white disabled:opacity-80',
-              resubmit ? 'bg-cocoon-yellow' : 'bg-cocoon-orange',
+              copy.button,
             )}
           >
             {submitting && <Loader2 className="size-4 animate-spin" aria-hidden />}
-            {submitting ? 'กำลังส่ง…' : resubmit ? 'ยืนยันส่งอีกครั้ง' : 'ยืนยันส่งงาน'}
+            {submitting ? copy.busy : copy.confirm}
           </button>
           <button
             type="button"

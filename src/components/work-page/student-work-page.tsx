@@ -1,28 +1,32 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Editor } from '@tiptap/react';
 import { ChevronDown, ListChecks, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from 'cn';
-import { formatBangkokTime } from '@/lib/format';
+import { formatBangkokTime, formatSubmissionDate } from '@/lib/format';
 import type { SubmissionStatus } from '@/lib/node-path';
 import {
   EMPTY_DOC,
   canSubmitWorkPage,
   checklistProgress,
+  getWorkPageLock,
   hasPageContent,
   type FileRequirement,
   type WorkPageDoc,
+  type WorkPageLock,
 } from '@/lib/work-page';
 import {
   saveWorkPage,
   submitWorkPage,
+  updateSubmittedWorkPage,
   type WorkPageConflict,
   type WorkPageFileDTO,
 } from '@/server/actions/work-page';
 import { SubmissionConfirmDialog } from '@/components/student/submission-confirm-dialog';
+import { useNow } from '@/components/deadline/use-now';
 import { WorkPageEditor } from './work-page-editor';
 import { WorkPageViewer } from './work-page-viewer';
 import { WorkPageFiles } from './work-page-files';
@@ -44,14 +48,23 @@ export interface StudentWorkPageProps {
   latestStatus: SubmissionStatus;
   /** Latest submission was rejected: the submit button becomes the yellow "ส่งอีกครั้ง". */
   resubmit: boolean;
-  /** Effective deadline ISO (261004-03i; Task 2 adds the full update / live-lock UX). */
-  deadline?: string | null;
-  /** Server time ISO used for client-side eligibility (deterministic SSR / hydration). */
-  serverNow?: string;
+  /** Effective deadline ISO (todo ?? phase); null = no deadline (261004-03i). */
+  deadline: string | null;
+  /** Server-computed lock at render time; the client adds the live deadline lock on top. */
+  lock: WorkPageLock | null;
+  /** Latest in-scope submission (ISO dates); the "อัปเดตงานที่ส่ง" target while pending. */
+  latestSubmission: { id: string; createdAt: string; updatedAt: string } | null;
+  /** Attempt number of the latest submission (update dialog copy). */
+  latestAttempt?: number;
+  /** Server time ISO: seeds the live clock so SSR and hydration agree. */
+  serverNow: string;
 }
 
-const READ_ONLY_BANNER: Partial<Record<SubmissionStatus | 'locked', { text: string; className: string }>> = {
-  pending: { text: 'ส่งแล้ว รอตรวจ', className: 'border-cocoon-blue/30 bg-cocoon-blue-soft text-cocoon-blue' },
+const PENDING_BANNER_CLASS = 'border-cocoon-blue/30 bg-cocoon-blue-soft text-cocoon-blue';
+
+const READ_ONLY_BANNER: Record<WorkPageLock | 'pending', { text: string; className: string }> = {
+  pending: { text: 'ส่งแล้ว รอตรวจ', className: PENDING_BANNER_CLASS },
+  deadline_passed: { text: 'เลยกำหนดแก้ไขแล้ว · ส่งแล้ว รอตรวจ', className: PENDING_BANNER_CLASS },
   approved: { text: 'ผ่านแล้ว', className: 'border-cocoon-green/30 bg-[rgb(0_168_107/.08)] text-cocoon-green' },
   locked: {
     text: 'Phase นี้ยังไม่ปลดล็อค',
@@ -75,7 +88,10 @@ export function StudentWorkPage({
   phaseViewable,
   latestStatus,
   resubmit,
-  deadline = null,
+  deadline,
+  lock,
+  latestSubmission,
+  latestAttempt,
   serverNow,
 }: StudentWorkPageProps) {
   const router = useRouter();
@@ -105,7 +121,14 @@ export function StudentWorkPage({
     setFiles(initialFiles);
   }
 
-  const editable = canEdit && !submitting;
+  // Live deadline lock (261004-03i): the page goes read-only the moment the deadline passes while open.
+  const now = useNow(serverNow);
+  const deadlineDate = useMemo(() => (deadline ? new Date(deadline) : null), [deadline]);
+  const clientLock = getWorkPageLock({ latestStatus, phaseViewable, deadline: deadlineDate, now });
+  const effectiveLock = lock ?? clientLock;
+  const liveCanEdit = canEdit && clientLock === null;
+  const updateMode = latestStatus === 'pending' && liveCanEdit && latestSubmission !== null;
+  const editable = liveCanEdit && !submitting;
 
   const applyConflict = useCallback((conflict: WorkPageConflict) => {
     const editor = editorRef.current;
@@ -199,6 +222,13 @@ export function StudentWorkPage({
     [],
   );
 
+  // When the live lock starts, push any unsaved edits once (the server decides whether they land).
+  const prevLockRef = useRef<WorkPageLock | null>(clientLock);
+  useEffect(() => {
+    if (clientLock && !prevLockRef.current && (pendingRef.current || timerRef.current)) void flush();
+    prevLockRef.current = clientLock;
+  }, [clientLock, flush]);
+
   function retrySave() {
     if (!pendingRef.current) pendingRef.current = (editorRef.current?.getJSON() as WorkPageDoc) ?? doc;
     okRef.current = true;
@@ -224,9 +254,10 @@ export function StudentWorkPage({
     hasContent: hasPageContent(doc),
     latestStatus,
     phaseViewable,
-    deadline: deadline ? new Date(deadline) : null,
-    now: serverNow ? new Date(serverNow) : new Date(),
+    deadline: deadlineDate,
+    now,
   });
+  const late = eligibility.ok && eligibility.late;
 
   async function openConfirm() {
     if (!eligibility.ok || preparing) return;
@@ -252,34 +283,48 @@ export function StudentWorkPage({
         setConfirmOpen(false);
         return;
       }
-      const result = await submitWorkPage({ todoId, baseUpdatedAt: baseRef.current });
+      const result =
+        updateMode && latestSubmission
+          ? await updateSubmittedWorkPage({
+              todoId,
+              submissionId: latestSubmission.id,
+              baseUpdatedAt: baseRef.current,
+            })
+          : await submitWorkPage({ todoId, baseUpdatedAt: baseRef.current });
       if (!result.success) {
         if (result.conflict) {
           applyConflict(result.conflict);
           setConfirmOpen(false);
         }
         toast.error(result.error);
+        if (result.reviewed) {
+          // The teacher reviewed it meanwhile: show the reviewed state.
+          setConfirmOpen(false);
+          router.refresh();
+        }
         return;
       }
       setConfirmOpen(false);
-      toast.success('ส่งงานแล้ว');
+      toast.success(updateMode ? 'อัปเดตงานที่ส่งแล้ว' : 'ส่งงานแล้ว');
       router.refresh();
     } catch {
-      toast.error('ส่งงานไม่สำเร็จ ลองอีกครั้ง');
+      toast.error(updateMode ? 'อัปเดตไม่สำเร็จ ลองอีกครั้ง' : 'ส่งงานไม่สำเร็จ ลองอีกครั้ง');
     } finally {
       setSubmitting(false);
     }
   }
 
-  // A pending page can now be editable until the deadline (261004-03i); it still shows "ส่งแล้ว รอตรวจ".
-  const banner =
-    !canEdit || latestStatus === 'pending'
-      ? READ_ONLY_BANNER[!phaseViewable ? 'locked' : latestStatus === 'approved' ? 'approved' : 'pending']
-      : undefined;
+  // Three modes: draft/submit, pending-update (before the deadline), read-only (locked/approved/deadline).
+  const banner = !liveCanEdit
+    ? READ_ONLY_BANNER[effectiveLock ?? (latestStatus === 'approved' ? 'approved' : 'pending')]
+    : undefined;
+  const updatedLater =
+    latestSubmission !== null &&
+    new Date(latestSubmission.updatedAt).getTime() - new Date(latestSubmission.createdAt).getTime() > 1000;
   const title = submissionMode === 'group' ? 'หน้างานของกลุ่ม · แก้ไขได้ทุกคน' : 'หน้างานของฉัน';
-  // Interim (Task 1): no submit bar while pending; Task 2 adds the "อัปเดตงานที่ส่ง" bar.
-  const showSubmitBar = canEdit && latestStatus !== 'pending';
-  const submitLabel = resubmit ? 'ส่งอีกครั้ง' : 'ส่งงาน';
+  const showSubmitBar = liveCanEdit;
+  const submitLabel = updateMode ? 'อัปเดตงานที่ส่ง' : resubmit ? 'ส่งอีกครั้ง' : 'ส่งงาน';
+  const submitColor = updateMode ? 'bg-cocoon-blue' : resubmit ? 'bg-cocoon-yellow' : 'bg-cocoon-orange';
 
   return (
     <div className={cn('space-y-4 lg:space-y-6', showSubmitBar && 'pb-4')}>
@@ -292,13 +337,26 @@ export function StudentWorkPage({
               to-do {progress.done}/{progress.total}
             </span>
           )}
-          {canEdit && <SaveIndicator status={saveStatus} savedAt={savedAt} onRetry={retrySave} />}
+          {liveCanEdit && <SaveIndicator status={saveStatus} savedAt={savedAt} onRetry={retrySave} />}
         </div>
 
         {banner && (
           <p className={cn('mb-3 rounded-[12px] border px-4 py-2 text-[14px] leading-normal font-bold', banner.className)}>
             {banner.text}
           </p>
+        )}
+
+        {updateMode && (
+          <div className={cn('mb-3 rounded-[12px] border px-4 py-2', PENDING_BANNER_CLASS)} role="status">
+            <p className="text-[14px] leading-normal font-bold">
+              ส่งแล้ว รอตรวจ · แก้ไขและอัปเดตได้{deadline ? 'จนถึงกำหนดส่ง' : 'จนกว่าครูจะตรวจ'}
+            </p>
+            {updatedLater && latestSubmission && (
+              <p className="text-[12px] leading-normal font-medium text-cocoon-subtle">
+                อัปเดตล่าสุด {formatSubmissionDate(latestSubmission.updatedAt)}
+              </p>
+            )}
+          </div>
         )}
 
         {notice && (
@@ -326,7 +384,7 @@ export function StudentWorkPage({
                   <button
                     type="button"
                     onClick={restoreMine}
-                    disabled={!canEdit}
+                    disabled={!liveCanEdit}
                     className="h-10 rounded-[10px] bg-cocoon-blue px-4 text-[14px] font-bold text-white disabled:opacity-50"
                   >
                     ใช้ฉบับของฉันแทน
@@ -388,7 +446,7 @@ export function StudentWorkPage({
             disabled={!eligibility.ok || preparing || submitting}
             className={cn(
               'flex h-[52px] w-full items-center justify-center gap-2 rounded-[12px] text-[16px] font-bold text-white transition-opacity hover:opacity-90 disabled:bg-[#d5d7dc] disabled:hover:opacity-100 lg:h-[49px] lg:w-[293px]',
-              resubmit ? 'bg-cocoon-yellow' : 'bg-cocoon-orange',
+              submitColor,
             )}
           >
             {preparing && <Loader2 className="size-4 animate-spin" aria-hidden />}
@@ -408,7 +466,9 @@ export function StudentWorkPage({
         }}
         submitting={submitting}
         onConfirm={() => void confirmSubmit()}
-        resubmit={resubmit}
+        mode={updateMode ? 'update' : resubmit ? 'resubmit' : 'submit'}
+        late={late}
+        attempt={latestAttempt}
       />
     </div>
   );

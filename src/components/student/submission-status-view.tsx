@@ -14,6 +14,8 @@ export interface StudentSubmission {
   id: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: Date | string;
+  /** Bumped by "อัปเดตงานที่ส่ง" (261004-03i); createdAt stays the first-send time. */
+  updatedAt?: Date | string;
   attempt: number;
   files: { id: string; fileName: string; fileSize: number }[];
   reviewerComment?: string | null;
@@ -47,6 +49,13 @@ function historyDate(date: Date | string): string {
   return formatSubmissionDate(date).replace(/(\d{2})\.(\d{2})$/, '$1:$2');
 }
 
+/** "อัปเดตล่าสุด …" when the pending snapshot was updated after it was sent (> 1 s apart). */
+function updatedLabel(s: StudentSubmission, desktop?: boolean): string | null {
+  if (!s.updatedAt) return null;
+  if (new Date(s.updatedAt).getTime() - new Date(s.createdAt).getTime() <= 1000) return null;
+  return `อัปเดตล่าสุด ${desktop ? historyDate(s.updatedAt) : formatSubmissionDate(s.updatedAt)}`;
+}
+
 function hasSnapshot(s: StudentSubmission): boolean {
   return Boolean(s.content) || s.files.length > 0;
 }
@@ -72,13 +81,19 @@ function AttemptSummary({ s, desktop }: { s: StudentSubmission; desktop?: boolea
         ● ครั้งที่ {s.attempt} · {STATUS_LABEL[s.status]}
       </span>
       <span className="mt-1 block text-[14px] leading-normal font-medium text-cocoon-muted">{historyDate(s.createdAt)}</span>
+      {updatedLabel(s, true) && (
+        <span className="block text-[13px] leading-normal font-medium text-cocoon-muted">{updatedLabel(s, true)}</span>
+      )}
     </span>
   ) : (
     <>
       <span className={cn('min-w-0 flex-1 text-[12px] leading-normal font-normal', STATUS_COLOR[s.status])}>
         ● ครั้งที่ {s.attempt} · {STATUS_LABEL[s.status]}
       </span>
-      <span className="text-[12px] leading-normal font-medium text-cocoon-muted">{formatSubmissionDate(s.createdAt)}</span>
+      <span className="text-right text-[12px] leading-normal font-medium text-cocoon-muted">
+        {formatSubmissionDate(s.createdAt)}
+        {updatedLabel(s) && <span className="block text-[11px]">{updatedLabel(s)}</span>}
+      </span>
     </>
   );
 }

@@ -4,6 +4,8 @@ import { getSubmissionHistory } from '@/server/queries/submission';
 import { getStudentWorkPage, type StudentWorkPageData } from '@/server/queries/work-page';
 import { parseDeliverables } from '@/lib/todo-deliverables';
 import type { FileRequirement } from '@/lib/work-page';
+import { getDeadlineStatus } from '@/lib/deadline';
+import { DeadlineBanner } from '@/components/deadline/deadline-banner';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 import { PageHeader } from '@/components/cocoon/page-header';
 import { StatusPill } from '@/components/cocoon/status-pill';
@@ -75,6 +77,24 @@ export function StudentTodoScreen({ todo, workPage, submissions, groupHome }: St
   const resubmit = latest?.status === 'rejected';
   const pill = latest ? <StatusPill status={latest.status} size="xl" /> : undefined;
 
+  // Lateness is decided by the FIRST submission (oldest = last, since newest first).
+  const first = submissions.length > 0 ? submissions[submissions.length - 1] : undefined;
+  const deadlineInfo = getDeadlineStatus({
+    deadline: workPage.deadline,
+    firstSubmittedAt: first?.createdAt ?? null,
+    latestStatus: workPage.latestStatus,
+    now: new Date(workPage.serverNow),
+  });
+  const banner = (
+    <DeadlineBanner
+      deadline={workPage.deadline}
+      status={deadlineInfo.status}
+      lateMs={deadlineInfo.lateMs}
+      overdueMs={deadlineInfo.overdueMs}
+      nowIso={workPage.serverNow}
+    />
+  );
+
   return (
     <>
       <CocoonHeader variant="back" backHref={groupHome} />
@@ -88,6 +108,7 @@ export function StudentTodoScreen({ todo, workPage, submissions, groupHome }: St
             <StatusPill status={latest.status} size="lg" />
           </div>
         )}
+        {workPage.deadline && <div className="mt-3">{banner}</div>}
       </div>
 
       {/* Desktop page header (design/mac) */}
@@ -99,6 +120,7 @@ export function StudentTodoScreen({ todo, workPage, submissions, groupHome }: St
         subtitle={firstLine || undefined}
         actions={pill}
       />
+      {workPage.deadline && <div className="mt-4 hidden lg:block">{banner}</div>}
 
       <TodoDetailView
         description={moreDescription}
@@ -124,6 +146,9 @@ export function StudentTodoScreen({ todo, workPage, submissions, groupHome }: St
             latestStatus={workPage.latestStatus}
             resubmit={resubmit}
             deadline={workPage.deadline}
+            lock={workPage.lock}
+            latestSubmission={workPage.latestSubmission}
+            latestAttempt={latest?.attempt}
             serverNow={workPage.serverNow}
           />
         </div>
