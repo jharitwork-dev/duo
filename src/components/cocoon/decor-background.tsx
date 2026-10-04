@@ -114,7 +114,7 @@ function DesktopShapes() {
     <>
       {/* Yellow hand, top-right */}
       <div className="absolute top-[222px] right-[-58px] size-[190px] rotate-[-28deg]">
-        <HandIllustration outlined className="size-full" />
+        <HandIllustration className="size-full" />
       </div>
       {/* Orange briefcase, right edge */}
       <img alt="" src={f('03336.svg')} className="absolute top-[528px] right-[-92px] w-[250px] max-w-none rotate-[18deg]" />
@@ -127,7 +127,7 @@ function DesktopShapes() {
       {/* Green eye / lightbulb rays, bottom-centre */}
       <img alt="" src={f('987f9.svg')} className="absolute bottom-[-120px] left-[38.5%] w-[250px] max-w-none rotate-[-18deg]" />
       {/* Blue book + pencil, bottom-right */}
-      <img alt="" src={f('cbd85.svg')} className="absolute right-[12%] bottom-[-60px] w-[200px] max-w-none rotate-[-8deg]" />
+      <img alt="" src="/ci/book.svg" className="absolute right-[12%] bottom-[-60px] w-[200px] max-w-none rotate-[-8deg]" />
     </>
   );
 }

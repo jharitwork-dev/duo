@@ -61,7 +61,7 @@ export function AuthHero({ title = 'เข้าสู่ระบบ' }: { titl
           <RocketShapes />
         </div>
         {/* Book + pencil */}
-        <img alt="" src="/figma/cbd85.svg" className="absolute top-[36px] left-[190px] w-[150px] max-w-none rotate-[-12deg]" />
+        <img alt="" src="/ci/book.svg" className="absolute top-[36px] left-[190px] w-[150px] max-w-none rotate-[-12deg]" />
         {/* Lightbulb */}
         <img alt="" src="/figma/ec2ea.svg" className="absolute top-[28px] left-[382px] w-[114px] max-w-none" />
       </div>
