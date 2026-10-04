@@ -123,6 +123,7 @@ None yet.
 | 261004-03i | Deadlines (overdue/late/on-time), edit-after-submit before deadline, teacher dashboard + matrix + timeline (full: checked, executed in 3 runs, verified 10/10; no migration; deployed) | 2026-10-04 | 942fb94 | [261004-03i-clear-deadlines-with-overdue-and-late-su](./quick/261004-03i-clear-deadlines-with-overdue-and-late-su/) |
 | 261004-gic | Teacher review: approve / send back, auto phase unlock, review list + detail per Figma (full: checked, verified 9/9; no migration; deployed) | 2026-10-04 | b4afa22 | [261004-gic-teacher-review-approve-reject-with-auto-](./quick/261004-gic-teacher-review-approve-reject-with-auto-/) |
 | 261004-gid | Teacher file attachments on tasks (shared-key safe deletion, limits, student download) (full: checked, verified 8/8; no migration; deployed) | 2026-10-04 | 022fb89 | [261004-gid-teacher-file-attachments-on-tasks](./quick/261004-gid-teacher-file-attachments-on-tasks/) |
+| 261004-iyj | Students preview locked future phases (greyed, read-only) | 2026-10-04 | 16b4414 | [261004-iyj-students-can-preview-locked-future-phase](./quick/261004-iyj-students-can-preview-locked-future-phase/) |
 
 ## Session Continuity
 
