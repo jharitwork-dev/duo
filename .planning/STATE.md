@@ -120,6 +120,7 @@ None yet.
 | 261004-02p | Group member limits, student roster, self-grouping, full CRUD, classroom-teacher authz (full: checked, verified 9/9; migration applied + deployed 2026-10-04) | 2026-10-04 | 701e0c0 | [261004-02p-per-group-member-limit-student-roster-wi](./quick/261004-02p-per-group-member-limit-student-roster-wi/) |
 | 261004-01i | Notion-like work page submissions, sub-todo checklist, files, teacher file requirement (full: checked, verified 9/9; migration applied + deployed 2026-10-04) | 2026-10-04 | e70e854 | [261004-01i-notion-like-work-page-submissions-with-s](./quick/261004-01i-notion-like-work-page-submissions-with-s/) |
 | 261004-fgj | Task discussion thread (teacher ↔ students) + teacher "ดูงาน" links/status pills (full: checked, verified 11/11; migration applied + deployed) | 2026-10-04 | 28d1c2c | [261004-fgj-task-discussion-thread-for-teachers-and-](./quick/261004-fgj-task-discussion-thread-for-teachers-and-/) |
+| 261004-03i | Deadlines (overdue/late/on-time), edit-after-submit before deadline, teacher dashboard + matrix + timeline (full: checked, executed in 3 runs, verified 10/10; no migration; deployed) | 2026-10-04 | 942fb94 | [261004-03i-clear-deadlines-with-overdue-and-late-su](./quick/261004-03i-clear-deadlines-with-overdue-and-late-su/) |
 
 ## Session Continuity
 
@@ -130,8 +131,8 @@ Resume file: None
 ## Session Handoff (2026-10-04, context near limit)
 
 In flight / next, in order (user authorized end-to-end execution incl. apply+deploy; ALWAYS dry-run first):
-1. **261004-03i** deadlines + edit-after-submit + teacher dashboard: Tasks 1–2 merged on main LOCALLY (not pushed — do not push until Task 3 lands; interim UI is consistent but incomplete). Task 3 (teacher dashboard) executor running in a worktree; then merge, run gsd-verifier, push (no migration needed), update the Quick Tasks table.
-2. **261004-gic** teacher review (approve/send back, auto phase unlock): PLAN written (uncommitted until checker passes); plan-checker running. Execute after 03i merges.
-3. **261004-gid** teacher attachments: PLAN written; plan-checker running. Execute after gic.
+1. **261004-03i** DONE + deployed 2026-10-04.
+2. **261004-gic** teacher review: plan checked + committed; executor running in a worktree (then verify → push; no migration expected).
+3. **261004-gid** teacher attachments: plan checked + committed; execute after gic merges.
 4. Phase 6 LINE notifications: not specced; ask the user (LINE OA? which events?).
 User-side in progress: Clerk production instance (guided steps 1–2: create prod instance cloned from dev, domain build.innovators.co.th, 5 DNS CNAMEs in Cloudflare as DNS-only; then Google OAuth client, swap pk_live/sk_live in Vercel Production, migrate dev Clerk user ids → prod ids by email in DB). Also rotate the R2 token (secret was pasted in chat).
