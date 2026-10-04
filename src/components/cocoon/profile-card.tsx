@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- Clerk avatar URL */
 import { ProfileSignOut } from '@/components/student/profile-sign-out';
+import { ProfileName } from './profile-name';
 
 interface ProfileCardProps {
   name: string;
@@ -8,7 +9,7 @@ interface ProfileCardProps {
   roleLabel: string;
 }
 
-// Shared profile body for every role (avatar, name, contact, role label, sign-out).
+// Shared profile body for every role (avatar, editable name, contact, role label, sign-out).
 export function ProfileCard({ name, contact, imageUrl, roleLabel }: ProfileCardProps) {
   return (
     <div className="px-[33px] pt-4 lg:mx-auto lg:max-w-[560px] lg:px-0 lg:pt-10">
@@ -19,7 +20,7 @@ export function ProfileCard({ name, contact, imageUrl, roleLabel }: ProfileCardP
         ) : (
           <div className="size-[72px] rounded-full bg-cocoon-blue-soft" />
         )}
-        <p className="mt-3 text-[20px] leading-normal font-bold text-cocoon-ink">{name}</p>
+        <ProfileName name={name} />
         {contact && (
           <p className="text-[14px] leading-normal font-medium break-all text-cocoon-muted">{contact}</p>
         )}
