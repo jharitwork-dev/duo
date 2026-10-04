@@ -18,9 +18,9 @@ export function JoinCodeInput() {
 
     startTransition(async () => {
       try {
-        await joinByCode({ code: code.trim().toUpperCase() });
+        const result = await joinByCode({ code: code.trim().toUpperCase() });
         toast.success('เข้าร่วมห้องเรียนสำเร็จ');
-        router.refresh();
+        router.push(`/student/classroom/${result.classroomId}`);
       } catch (error) {
         const message =
           error instanceof Error ? error.message : 'เกิดข้อผิดพลาด';

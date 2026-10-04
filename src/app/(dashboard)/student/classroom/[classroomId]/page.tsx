@@ -4,6 +4,11 @@ import { ROLES } from '@/lib/constants';
 import { getClassroomById } from '@/server/queries/classroom';
 import { getStudentGroup } from '@/server/queries/group';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
+import { PageHeader } from '@/components/cocoon/page-header';
+import { HandIllustration } from '@/components/cocoon/illustrations';
+import { StudentGroupPicker } from '@/components/group/student-group-picker';
+import { EMPTY_CARD, PAGE_BODY } from '@/components/cocoon/ui';
+import { effectiveGroupLimit } from '@/lib/group-rules';
 
 interface Props {
   params: Promise<{ classroomId: string }>;
@@ -28,18 +33,40 @@ export default async function StudentClassroomPage({ params }: Props) {
     redirect(`/student/classroom/${classroomId}/group/${group.id}`);
   }
 
-  // No group: show waiting state
+  const groupMode = classroom.groupMode;
+
   return (
     <>
       <CocoonHeader variant="home" />
-      <div className="px-[33px] pt-4 lg:px-0 lg:pt-[26px]">
-        <h1 className="text-[20px] leading-normal font-bold text-cocoon-blue lg:text-[30px]">{classroom.name}</h1>
-        <div className="mt-4 space-y-1 rounded-[12px] border border-cocoon-line bg-white p-6 lg:mx-auto lg:mt-8 lg:max-w-[560px] lg:rounded-[16px] lg:border-[#f1ece5] lg:p-10 text-center">
-          <p className="text-[16px] leading-normal font-bold text-cocoon-ink">รอจัดกลุ่ม</p>
-          <p className="text-[14px] leading-normal font-medium text-cocoon-muted">
-            ครูจะจัดกลุ่มให้คุณเร็ว ๆ นี้ กรุณารอสักครู่
-          </p>
-        </div>
+      <PageHeader
+        title={classroom.name}
+        subtitle={classroom.description || undefined}
+      />
+      <div className={PAGE_BODY}>
+        {groupMode === 'teacher' ? (
+          <div className={`${EMPTY_CARD} lg:mx-auto lg:max-w-[560px]`}>
+            <HandIllustration className="h-20 w-auto" />
+            <p className="text-[18px] leading-normal font-bold text-cocoon-ink">รอครูจัดกลุ่ม</p>
+            <p className="text-[14px] leading-normal font-medium text-cocoon-muted">
+              ครูจะเพิ่มคุณเข้ากลุ่มเร็ว ๆ นี้ — เมื่อมีกลุ่มแล้วหน้านี้จะพาไปที่งานของกลุ่ม
+            </p>
+          </div>
+        ) : (
+          <StudentGroupPicker
+            classroomId={classroomId}
+            groupMode={groupMode}
+            groups={[...classroom.groups]
+              .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+              .map((g) => ({
+                id: g.id,
+                name: g.name,
+                memberCount: g.memberCount,
+                limit: effectiveGroupLimit(g.maxMembers, classroom.maxGroupSize),
+                // Classmates' emails never reach the client.
+                members: g.members.map((m) => ({ name: m.name, imageUrl: m.imageUrl })),
+              }))}
+          />
+        )}
       </div>
     </>
   );

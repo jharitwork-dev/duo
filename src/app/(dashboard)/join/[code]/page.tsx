@@ -24,15 +24,17 @@ export default async function JoinPage({ params }: Props) {
 
   // Attempt to join
   let error: string | null = null;
+  let classroomId: string | null = null;
   try {
-    await joinByCode({ code: code.toUpperCase() });
+    const result = await joinByCode({ code: code.toUpperCase() });
+    classroomId = result.classroomId;
   } catch (e) {
     error = e instanceof Error ? e.message : 'เกิดข้อผิดพลาดในการเข้าร่วม';
   }
 
-  // On success, redirect to student home
-  if (!error) {
-    redirect('/student');
+  // On success, go to the classroom page: it shows the group picker (self modes) or the waiting card.
+  if (!error && classroomId) {
+    redirect(`/student/classroom/${classroomId}`);
   }
 
   // On error, show error message with link back

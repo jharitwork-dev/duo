@@ -5,6 +5,8 @@ import { PageHeader } from '@/components/cocoon/page-header';
 import { BTN_INFO, EMPTY_CARD, PAGE_BODY } from '@/components/cocoon/ui';
 import { getCurrentUserId, getCurrentRole } from '@/lib/auth';
 import { getGroupById } from '@/server/queries/group';
+import { getClassroomGroupMode } from '@/server/queries/classroom';
+import { StudentGroupActions } from '@/components/group/student-group-actions';
 import { getActivePhases } from '@/server/queries/phase';
 import { getTodoSubmissionStatuses } from '@/server/queries/submission';
 import { GroupPhaseView } from '@/components/student/group-phase-view';
@@ -124,6 +126,8 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
   const rows = buildNodeRows(todos);
   const locked = selected ? computeLockedTodoIds(selected, rows, statuses) : new Set<string>();
   const currentId = pickCurrentTodoId(rows, locked, statuses);
+  // Self-grouping classrooms: students may leave (and the self_create creator may delete) their group.
+  const groupMode = await getClassroomGroupMode(group.classroomId);
 
   return (
     <>
@@ -146,6 +150,15 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
           <NodePath rows={rows} statuses={statuses} locked={locked} currentId={currentId} />
           <NodePathDesktop rows={rows} statuses={statuses} locked={locked} currentId={currentId} />
         </>
+      )}
+
+      {groupMode && groupMode !== 'teacher' && (
+        <StudentGroupActions
+          classroomId={group.classroomId}
+          groupId={group.id}
+          groupName={group.name}
+          canDelete={groupMode === 'self_create' && group.createdBy === userId}
+        />
       )}
     </>
   );

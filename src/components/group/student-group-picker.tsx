@@ -3,106 +3,168 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { joinGroup } from '@/server/actions/group';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Users } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
+import { cn } from 'cn';
+import { createGroupAsStudent, joinGroup } from '@/server/actions/group';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { MemberAvatar } from '@/components/cocoon/member-identity';
+import {
+  BTN_PRIMARY,
+  CARD,
+  CARD_META,
+  CARD_TITLE,
+  EMPTY_CARD,
+  INPUT,
+  LABEL,
+  PILL_CAPACITY,
+  PILL_FULL,
+} from '@/components/cocoon/ui';
+import { capacityLabel, isGroupFull, type GroupMode } from '@/lib/group-rules';
 
-interface GroupOption {
+export interface PickerGroup {
   id: string;
   name: string;
   memberCount: number;
+  /** Effective limit; null = unlimited. */
+  limit: number | null;
+  /** Classmates: name + avatar only (no emails). */
+  members: { name: string; imageUrl: string | null }[];
 }
 
 interface StudentGroupPickerProps {
-  groups: GroupOption[];
-  maxGroupSize: number | null;
   classroomId: string;
+  groupMode: Exclude<GroupMode, 'teacher'>;
+  groups: PickerGroup[];
 }
 
-export function StudentGroupPicker({
-  groups,
-  maxGroupSize,
-  classroomId,
-}: StudentGroupPickerProps) {
+/** Groupless student in a self_join / self_create classroom: join a group (or create one). */
+export function StudentGroupPicker({ classroomId, groupMode, groups }: StudentGroupPickerProps) {
   const router = useRouter();
-  const [joiningGroupId, setJoiningGroupId] = useState<string | null>(null);
+  const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [newName, setNewName] = useState('');
+  const [creating, setCreating] = useState(false);
+  const busy = joiningId !== null || creating;
 
-  async function handleJoin(groupId: string) {
-    setJoiningGroupId(groupId);
+  async function handleJoin(group: PickerGroup) {
+    setJoiningId(group.id);
     try {
-      const result = await joinGroup({ groupId });
-      if (result.success) {
-        toast.success('เข้าร่วมกลุ่มสำเร็จ');
-        router.push(`/student/classroom/${classroomId}`);
+      const result = await joinGroup({ groupId: group.id });
+      if (!result.success) {
+        toast.error(result.error);
+        router.refresh();
+        return;
       }
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'ไม่สามารถเข้าร่วมกลุ่มได้';
-      toast.error(message);
+      toast.success(`เข้าร่วม ${group.name} แล้ว`);
+      router.push(`/student/classroom/${classroomId}/group/${result.groupId}`);
+    } catch {
+      toast.error('เข้าร่วมกลุ่มไม่สำเร็จ');
     } finally {
-      setJoiningGroupId(null);
+      setJoiningId(null);
+    }
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    const name = newName.trim();
+    if (!name) return;
+    setCreating(true);
+    try {
+      const result = await createGroupAsStudent({ classroomId, name });
+      if (!result.success) {
+        toast.error(result.error);
+        router.refresh();
+        return;
+      }
+      toast.success(`สร้างกลุ่ม ${name} แล้ว`);
+      router.push(`/student/classroom/${classroomId}/group/${result.groupId}`);
+    } catch {
+      toast.error('สร้างกลุ่มไม่สำเร็จ');
+    } finally {
+      setCreating(false);
     }
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">เลือกกลุ่ม</h2>
-      <p className="text-sm text-muted-foreground">
-        เลือกกลุ่มที่ต้องการเข้าร่วม
-      </p>
+    <div className="space-y-4 lg:space-y-6">
+      <div>
+        <h2 className={CARD_TITLE}>เลือกกลุ่มของคุณ</h2>
+        <p className={CARD_META}>
+          {groupMode === 'self_create'
+            ? 'เข้าร่วมกลุ่มที่มีอยู่ หรือสร้างกลุ่มใหม่ให้เพื่อนเข้าร่วม'
+            : 'เลือกกลุ่มที่ต้องการเข้าร่วม'}
+        </p>
+      </div>
+
+      {groupMode === 'self_create' && (
+        <form onSubmit={handleCreate} className={cn(CARD, 'space-y-3 border-dashed border-cocoon-blue/40 bg-cocoon-blue-soft')}>
+          <div className="space-y-2">
+            <Label htmlFor="new-group-name" className={LABEL}>สร้างกลุ่มใหม่</Label>
+            <Input
+              id="new-group-name"
+              className={cn(INPUT, 'bg-white')}
+              value={newName}
+              maxLength={100}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="ตั้งชื่อกลุ่ม"
+              disabled={busy}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={busy || !newName.trim()}
+            className={cn(BTN_PRIMARY, 'inline-flex w-full items-center justify-center gap-2 disabled:opacity-50 lg:w-auto')}
+          >
+            <Plus className="size-4" aria-hidden />
+            {creating ? 'กำลังสร้าง...' : 'สร้างกลุ่มใหม่'}
+          </button>
+        </form>
+      )}
 
       {groups.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-8 text-center">
-          <p className="text-muted-foreground">
-            ยังไม่มีกลุ่มในห้องเรียนนี้ กรุณารอให้คุณครูสร้างกลุ่ม
+        <div className={EMPTY_CARD}>
+          <p className="text-[16px] leading-normal font-bold text-cocoon-ink">ยังไม่มีกลุ่มให้เลือก</p>
+          <p className="text-[14px] leading-normal font-medium text-cocoon-muted">
+            {groupMode === 'self_create' ? 'สร้างกลุ่มแรกของห้องเรียนได้เลย' : 'รอครูสร้างกลุ่ม'}
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 lg:gap-6">
           {groups.map((group) => {
-            const isFull =
-              maxGroupSize !== null && group.memberCount >= maxGroupSize;
-            const spotsRemaining = maxGroupSize
-              ? maxGroupSize - group.memberCount
-              : null;
-
+            const full = isGroupFull(group.memberCount, group.limit);
             return (
-              <Card
-                key={group.id}
-                className={isFull ? 'opacity-60' : undefined}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{group.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="gap-1">
-                      <Users className="size-3" />
-                      {group.memberCount} คน
-                    </Badge>
-                    {spotsRemaining !== null && (
-                      <span className="text-xs text-muted-foreground">
-                        {isFull
-                          ? 'เต็มแล้ว'
-                          : `เหลือ ${spotsRemaining} ที่`}
-                      </span>
-                    )}
+              <div key={group.id} className={cn(CARD, 'flex flex-col gap-4', full && 'bg-[#fafbfc]')}>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="min-w-0 text-[18px] leading-normal font-bold break-words text-cocoon-ink">{group.name}</p>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {full && <span className={PILL_FULL}>เต็ม</span>}
+                    <span className={PILL_CAPACITY}>
+                      <Users className="size-3.5" aria-hidden />
+                      {capacityLabel(group.memberCount, group.limit)}
+                    </span>
                   </div>
-                  <Button
-                    className="w-full"
-                    disabled={isFull || joiningGroupId === group.id}
-                    onClick={() => handleJoin(group.id)}
-                  >
-                    {joiningGroupId === group.id
-                      ? 'กำลังเข้าร่วม...'
-                      : 'เข้าร่วม'}
-                  </Button>
-                </CardContent>
-              </Card>
+                </div>
+                {group.members.length === 0 ? (
+                  <p className="text-[14px] font-medium text-cocoon-muted">ยังไม่มีสมาชิก — เป็นคนแรกได้เลย</p>
+                ) : (
+                  <ul className="flex flex-wrap gap-x-3 gap-y-2">
+                    {group.members.map((m, i) => (
+                      <li key={`${m.name}-${i}`} className="flex min-w-0 items-center gap-2">
+                        <MemberAvatar name={m.name} imageUrl={m.imageUrl} className="size-7" />
+                        <span className="max-w-[140px] truncate text-[13px] font-medium text-cocoon-ink">{m.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <button
+                  type="button"
+                  disabled={full || busy}
+                  onClick={() => handleJoin(group)}
+                  className={cn(BTN_PRIMARY, 'mt-auto w-full disabled:opacity-50')}
+                >
+                  {joiningId === group.id ? 'กำลังเข้าร่วม...' : full ? 'กลุ่มเต็มแล้ว' : 'เข้าร่วมกลุ่มนี้'}
+                </button>
+              </div>
             );
           })}
         </div>

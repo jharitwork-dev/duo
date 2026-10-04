@@ -19,6 +19,7 @@ import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 import { PageHeader } from '@/components/cocoon/page-header';
 import { EMPTY_CARD, PAGE_BODY, SEGMENT_LIST, SEGMENT_TRIGGER } from '@/components/cocoon/ui';
 import { StudentRoster } from '@/components/classroom/student-roster';
+import { ClassroomDangerZone } from '@/components/classroom/classroom-danger-zone';
 import { effectiveGroupLimit } from '@/lib/group-rules';
 
 const TABS = ['students', 'groups', 'phases', 'settings'] as const;
@@ -71,7 +72,8 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
   return (
     <>
       <CocoonHeader variant="back" backHref="/teacher" />
-      <Tabs defaultValue={defaultTab} className="gap-0">
+      {/* Remount only when ?tab= changes (e.g. redirect to the roster) — not when hasUnassigned flips. */}
+      <Tabs key={requestedTab ?? 'auto'} defaultValue={defaultTab} className="gap-0">
         <PageHeader
           backHref="/teacher"
           backLabel="ทีมของฉัน"
@@ -186,7 +188,13 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
               name={classroom.name}
               description={classroom.description ?? ''}
               maxGroupSize={classroom.maxGroupSize}
+              groupMode={classroom.groupMode}
               members={classroom.members}
+            />
+            <ClassroomDangerZone
+              classroomId={classroomId}
+              classroomName={classroom.name}
+              isArchived={classroom.isArchived}
             />
           </div>
         </TabsContent>

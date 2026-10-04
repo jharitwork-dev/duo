@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { ChevronDown, Plus } from 'lucide-react';
 import { cn } from 'cn';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
@@ -22,7 +22,9 @@ function NewClassroomButton({ className }: { className?: string }) {
 export default async function TeacherDashboard() {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
   const userId = await getCurrentUserId();
-  const classrooms = await getTeacherClassrooms(userId);
+  const all = await getTeacherClassrooms(userId);
+  const classrooms = all.filter((c) => !c.isArchived);
+  const archived = all.filter((c) => c.isArchived);
 
   return (
     <>
@@ -53,6 +55,28 @@ export default async function TeacherDashboard() {
               />
             ))}
           </div>
+        )}
+
+        {archived.length > 0 && (
+          <details className="group mt-6 lg:mt-10">
+            <summary className="flex cursor-pointer list-none items-center gap-2 rounded-sm text-[15px] font-bold text-cocoon-muted outline-none focus-visible:ring-2 focus-visible:ring-cocoon-blue/40 [&::-webkit-details-marker]:hidden">
+              ห้องเรียนที่เก็บไว้ ({archived.length})
+              <ChevronDown className="size-5 transition-transform group-open:rotate-180" aria-hidden />
+            </summary>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2 lg:gap-8">
+              {archived.map((classroom) => (
+                <ClassroomCard
+                  key={classroom.id}
+                  id={classroom.id}
+                  name={classroom.name}
+                  description={classroom.description}
+                  memberCount={classroom.memberCount}
+                  groupCount={classroom.groupCount}
+                  isArchived
+                />
+              ))}
+            </div>
+          </details>
         )}
       </div>
     </>

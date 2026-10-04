@@ -139,6 +139,15 @@ export async function getClassroomById(classroomId: string, userId: string) {
   };
 }
 
+/** Grouping mode of a classroom (light query for the student group page). */
+export async function getClassroomGroupMode(classroomId: string) {
+  const classroom = await db.query.classrooms.findFirst({
+    where: eq(classrooms.id, classroomId),
+    columns: { groupMode: true },
+  });
+  return classroom?.groupMode ?? null;
+}
+
 /**
  * Returns classroom id and name for the join flow (by invite code).
  */
