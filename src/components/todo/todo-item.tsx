@@ -1,10 +1,23 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSortable } from '@dnd-kit/react/sortable';
 import { toast } from 'sonner';
-import { GripVertical, ChevronDown, MoreHorizontal, Archive, ExternalLink, Trash2 } from 'lucide-react';
+import {
+  GripVertical,
+  ChevronDown,
+  MoreHorizontal,
+  Archive,
+  ExternalLink,
+  MessageCircle,
+  Trash2,
+} from 'lucide-react';
+import { cn } from 'cn';
+import { StatusPill } from '@/components/cocoon/status-pill';
+import { BTN_INFO } from '@/components/cocoon/ui';
+import type { TodoReviewSummary } from '@/lib/todo-review-status';
 import {
   Collapsible,
   CollapsibleTrigger,
@@ -41,10 +54,20 @@ const fileRequirementBadge: Record<string, { label: string; className: string } 
 export function TodoItem({
   todo,
   index,
+  commentCount = 0,
+  review,
 }: {
   todo: Todo;
   index: number;
+  /** Non-deleted comments across this to-do's threads (261004-fgj). */
+  commentCount?: number;
+  /** Latest-submission review summary (undefined = nothing submitted yet). */
+  review?: TodoReviewSummary;
 }) {
+  const todoHref = `/todo/${todo.id}`;
+  const reviewStatus = review?.status ?? 'none';
+  const reviewLabel =
+    reviewStatus === 'pending' && (review?.pendingCount ?? 0) > 1 ? `รอตรวจ ${review!.pendingCount}` : undefined;
   const { ref, handleRef, isDragging } = useSortable({
     id: todo.id,
     index,
@@ -75,7 +98,7 @@ export function TodoItem({
       style={{ opacity: isDragging ? 0.5 : 1 }}
     >
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="flex items-center gap-2 px-3 py-3 lg:px-4">
+        <div className="flex flex-wrap items-center gap-2 px-3 py-3 lg:flex-nowrap lg:px-4">
           {/* Drag handle */}
           <button
             ref={handleRef}
@@ -85,29 +108,64 @@ export function TodoItem({
             <GripVertical className="size-4" />
           </button>
 
-          {/* Todo title + trigger */}
-          <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-cocoon-blue/40">
-            <span className="flex min-w-0 flex-col">
-              <span className="truncate text-[16px] leading-normal font-bold text-cocoon-ink">{todo.title}</span>
-              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-normal font-medium text-cocoon-muted">
-                <span>
-                  {modeLabels[todo.submissionMode]}
-                  {todo.deadline && ` · กำหนดส่ง ${formatDateShort(todo.deadline)}`}
-                </span>
-                {fileRequirementBadge[todo.fileRequirement] && (
-                  <span
-                    className={`inline-flex h-[20px] items-center rounded-full px-2 text-[11px] font-bold ${fileRequirementBadge[todo.fileRequirement]!.className}`}
-                  >
-                    {fileRequirementBadge[todo.fileRequirement]!.label}
-                  </span>
-                )}
+          {/* Title (links to the to-do / student work) + meta line */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            <Link
+              href={todoHref}
+              className="truncate rounded-md text-[16px] leading-normal font-bold text-cocoon-ink outline-none hover:text-cocoon-blue hover:underline focus-visible:ring-2 focus-visible:ring-cocoon-blue/40"
+            >
+              {todo.title}
+            </Link>
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-normal font-medium text-cocoon-muted">
+              <span>
+                {modeLabels[todo.submissionMode]}
+                {todo.deadline && ` · กำหนดส่ง ${formatDateShort(todo.deadline)}`}
               </span>
+              {fileRequirementBadge[todo.fileRequirement] && (
+                <span
+                  className={`inline-flex h-[20px] items-center rounded-full px-2 text-[11px] font-bold ${fileRequirementBadge[todo.fileRequirement]!.className}`}
+                >
+                  {fileRequirementBadge[todo.fileRequirement]!.label}
+                </span>
+              )}
+              {commentCount > 0 && (
+                <Link
+                  href={`${todoHref}#comments`}
+                  aria-label={`ความคิดเห็น ${commentCount} รายการ`}
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="inline-flex h-[20px] items-center gap-1 rounded-full bg-cocoon-blue-soft px-2 text-[11px] font-bold text-cocoon-blue outline-none hover:bg-cocoon-blue hover:text-white focus-visible:ring-2 focus-visible:ring-cocoon-blue/40"
+                >
+                  <MessageCircle size={12} aria-hidden />
+                  {commentCount}
+                </Link>
+              )}
             </span>
-            <ChevronDown
-              className={`ml-auto size-4 shrink-0 text-cocoon-blue transition-transform ${
-                isOpen ? 'rotate-180' : ''
-              }`}
+          </div>
+
+          {/* Review status + "ดูงาน" (wraps under the title on mobile) */}
+          <div className="flex items-center gap-2 max-lg:order-last max-lg:w-full max-lg:justify-end max-lg:pl-6">
+            <StatusPill
+              status={reviewStatus}
+              label={reviewLabel}
+              className="h-[24px] px-2.5 text-[12px] font-bold"
             />
+            <Link
+              href={todoHref}
+              onPointerDown={(e) => e.stopPropagation()}
+              className={cn(BTN_INFO, 'inline-flex h-9 shrink-0 items-center px-4 text-[14px]')}
+            >
+              ดูงาน
+            </Link>
+          </div>
+
+          {/* Edit details toggle */}
+          <CollapsibleTrigger
+            aria-label="แก้ไขรายละเอียดงาน"
+            title="แก้ไขรายละเอียดงาน"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-cocoon-blue outline-none hover:bg-cocoon-blue-soft focus-visible:ring-2 focus-visible:ring-cocoon-blue/40"
+          >
+            <ChevronDown className={cn('size-4 transition-transform', isOpen && 'rotate-180')} />
           </CollapsibleTrigger>
 
           {/* Actions dropdown */}

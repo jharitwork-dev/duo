@@ -5,6 +5,9 @@ import { cn } from 'cn';
 import { getGroupById, getGroupsByClassroom } from '@/server/queries/group';
 import { getActivePhases } from '@/server/queries/phase';
 import { getClassroomById } from '@/server/queries/classroom';
+import { getGroupCommentCounts } from '@/server/queries/comment';
+import { getGroupTodoReviewStatuses } from '@/server/queries/submission';
+import type { TodoReviewSummary } from '@/lib/todo-review-status';
 import { GroupPhaseBoard } from '@/components/phase/group-phase-board';
 import { EditGroupDialog } from '@/components/group/edit-group-dialog';
 import { DeleteGroupButton } from '@/components/group/delete-group-button';
@@ -25,10 +28,13 @@ export default async function GroupPage({
   const group = await getGroupById(groupId, userId);
   if (!group || group.classroomId !== classroomId) redirect(`/teacher/classroom/${classroomId}`);
 
-  const [phases, classroom, classroomGroups] = await Promise.all([
+  const [phases, classroom, classroomGroups, commentCounts, reviewStatuses] = await Promise.all([
     getActivePhases(groupId),
     getClassroomById(classroomId, userId),
     getGroupsByClassroom(classroomId),
+    // Row chips / pills are informational: never let them break the editor page.
+    getGroupCommentCounts(groupId, userId).catch(() => ({}) as Record<string, number>),
+    getGroupTodoReviewStatuses(groupId, userId).catch(() => ({}) as Record<string, TodoReviewSummary>),
   ]);
   const classroomHref = `/teacher/classroom/${classroomId}`;
   const managePhasesHref = `${classroomHref}?tab=phases`;
@@ -77,7 +83,13 @@ export default async function GroupPage({
             </Link>
           </div>
         ) : (
-          <GroupPhaseBoard groupId={groupId} phases={phases} groups={groupOptions} />
+          <GroupPhaseBoard
+            groupId={groupId}
+            phases={phases}
+            groups={groupOptions}
+            commentCounts={commentCounts}
+            reviewStatuses={reviewStatuses}
+          />
         )}
       </div>
     </>

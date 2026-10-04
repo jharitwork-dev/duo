@@ -4,10 +4,12 @@ import { groupMembers } from '@/db/schema/groups';
 import { classroomMembers } from '@/db/schema/classrooms';
 import { submissions } from '@/db/schema/submissions';
 import { comments } from '@/db/schema/comments';
-import { eq, and, desc, inArray } from 'drizzle-orm';
+import { eq, and, desc, inArray, isNull } from 'drizzle-orm';
 import { statusFromSubmission, type SubmissionStatus } from '@/lib/node-path';
 import { getGroupPhaseStatus } from '@/server/queries/phase';
 import type { WorkPageDoc } from '@/lib/work-page';
+import { summarizeTodoReview, type TodoReviewSummary } from '@/lib/todo-review-status';
+import { assertGroupEditor } from '@/server/phase-helpers';
 
 type SubmissionMode = 'group' | 'individual';
 
@@ -105,6 +107,41 @@ export async function getTodoSubmissionStatuses(
   return result;
 }
 
+/**
+ * Teacher group page: review summary per to-do of the group (latest submission per owner; see
+ * summarizeTodoReview). Throws for non-editors. To-dos without submissions are omitted (= 'none').
+ */
+export async function getGroupTodoReviewStatuses(
+  groupId: string,
+  userId: string,
+): Promise<Record<string, TodoReviewSummary>> {
+  await assertGroupEditor(groupId, userId);
+  const rows = await db
+    .select({
+      todoId: submissions.todoId,
+      submissionMode: todos.submissionMode,
+      groupId: submissions.groupId,
+      submittedBy: submissions.submittedBy,
+      status: submissions.status,
+    })
+    .from(submissions)
+    .innerJoin(todos, eq(todos.id, submissions.todoId))
+    .where(eq(todos.groupId, groupId))
+    .orderBy(desc(submissions.createdAt));
+
+  const byTodo = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const list = byTodo.get(row.todoId) ?? [];
+    list.push(row);
+    byTodo.set(row.todoId, list);
+  }
+  const result: Record<string, TodoReviewSummary> = {};
+  for (const [todoId, list] of byTodo) {
+    result[todoId] = summarizeTodoReview(list, list[0].submissionMode, groupId);
+  }
+  return result;
+}
+
 export interface SubmissionHistoryEntry {
   id: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -131,8 +168,15 @@ export async function getSubmissionHistory(todoId: string, userId: string) {
     orderBy: [desc(submissions.createdAt)],
     with: {
       files: true,
-      // Read-only: latest reviewer comment per submission (written by Phase 4 review).
-      comments: { orderBy: [desc(comments.createdAt)], limit: 1, columns: { content: true } },
+      // Read-only: latest non-deleted TEACHER comment tied to each submission (261004-fgj).
+      // Phase 4 review dialogs must post their คำแนะนำ through the comment insert path with
+      // submissionId = the reviewed submission and authorRole = 'teacher' (see actions/comment.ts).
+      comments: {
+        where: and(eq(comments.authorRole, 'teacher'), isNull(comments.deletedAt)),
+        orderBy: [desc(comments.createdAt)],
+        limit: 1,
+        columns: { content: true },
+      },
     },
   });
 

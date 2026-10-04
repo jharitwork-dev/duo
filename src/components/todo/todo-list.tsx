@@ -9,6 +9,7 @@ import { InlineAddTodo } from './inline-add-todo';
 import type { GroupOption } from './assign-todo-dialog';
 import { reorderTodos } from '@/server/actions/todo';
 import type { getActivePhases } from '@/server/queries/phase';
+import type { TodoReviewSummary } from '@/lib/todo-review-status';
 
 type Todo = Awaited<ReturnType<typeof getActivePhases>>[number]['todos'][number];
 
@@ -22,12 +23,16 @@ export function TodoList({
   phaseName,
   groupId,
   groups,
+  commentCounts = {},
+  reviewStatuses = {},
 }: {
   initialTodos: Todo[];
   phaseId: string;
   phaseName: string;
   groupId: string;
   groups: GroupOption[];
+  commentCounts?: Record<string, number>;
+  reviewStatuses?: Record<string, TodoReviewSummary>;
 }) {
   const [todos, setTodos] = useState(initialTodos);
   const [, startTransition] = useTransition();
@@ -70,7 +75,13 @@ export function TodoList({
         }}
       >
         {todos.map((todo, index) => (
-          <TodoItem key={todo.id} todo={todo} index={index} />
+          <TodoItem
+            key={todo.id}
+            todo={todo}
+            index={index}
+            commentCount={commentCounts[todo.id] ?? 0}
+            review={reviewStatuses[todo.id]}
+          />
         ))}
       </DragDropProvider>
 

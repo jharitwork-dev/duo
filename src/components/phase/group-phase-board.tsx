@@ -12,6 +12,7 @@ import { CARD } from '@/components/cocoon/ui';
 import { TodoList } from '@/components/todo/todo-list';
 import type { GroupOption } from '@/components/todo/assign-todo-dialog';
 import type { getActivePhases } from '@/server/queries/phase';
+import type { TodoReviewSummary } from '@/lib/todo-review-status';
 import { GroupPhaseStatusSelect, PhaseStatusPill } from './group-phase-status-select';
 
 type GroupPhase = Awaited<ReturnType<typeof getActivePhases>>[number];
@@ -24,10 +25,16 @@ export function GroupPhaseBoard({
   groupId,
   phases,
   groups,
+  commentCounts = {},
+  reviewStatuses = {},
 }: {
   groupId: string;
   phases: GroupPhase[];
   groups: GroupOption[];
+  /** Non-deleted comments per to-do (261004-fgj). */
+  commentCounts?: Record<string, number>;
+  /** Latest-submission review summary per to-do. */
+  reviewStatuses?: Record<string, TodoReviewSummary>;
 }) {
   const defaultOpenId = (phases.find((p) => p.status === 'active') ?? phases[0])?.id;
 
@@ -41,6 +48,8 @@ export function GroupPhaseBoard({
           groupId={groupId}
           groups={groups}
           defaultOpen={phase.id === defaultOpenId}
+          commentCounts={commentCounts}
+          reviewStatuses={reviewStatuses}
         />
       ))}
     </div>
@@ -53,12 +62,16 @@ function GroupPhaseCard({
   groupId,
   groups,
   defaultOpen,
+  commentCounts,
+  reviewStatuses,
 }: {
   phase: GroupPhase;
   index: number;
   groupId: string;
   groups: GroupOption[];
   defaultOpen: boolean;
+  commentCounts: Record<string, number>;
+  reviewStatuses: Record<string, TodoReviewSummary>;
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -93,6 +106,8 @@ function GroupPhaseCard({
             phaseName={phase.name}
             groupId={groupId}
             groups={groups}
+            commentCounts={commentCounts}
+            reviewStatuses={reviewStatuses}
           />
         </div>
       </CollapsibleContent>
