@@ -22,6 +22,7 @@ import {
   getPhaseClassroomId,
 } from '@/server/phase-helpers';
 import { checkDeleteConfirmation } from '@/lib/group-rules';
+import { authorizeTodoViewer } from '@/server/work-page-access';
 import { actionError, type ActionResult } from '@/lib/action-result';
 
 const createTodoSchema = z.object({
@@ -270,8 +271,14 @@ const getAttachmentUrlSchema = z.object({
  * Returns a presigned download URL for a todo attachment.
  * Any authenticated user with classroom membership can download.
  */
-export async function getAttachmentDownloadUrl(input: z.infer<typeof getAttachmentUrlSchema>) {
-  await getCurrentUserId();
+/**
+ * Signed download URL for a teacher attachment. Gated to classroom editors of the to-do's
+ * classroom or students in the to-do's group (authorizeTodoViewer throws for anyone else).
+ */
+export async function getAttachmentDownloadUrl(
+  input: z.infer<typeof getAttachmentUrlSchema>,
+): Promise<ActionResult<{ url: string; fileName: string }>> {
+  const userId = await getCurrentUserId();
   const data = getAttachmentUrlSchema.parse(input);
 
   const attachment = await db.query.todoAttachments.findFirst({
@@ -282,8 +289,13 @@ export async function getAttachmentDownloadUrl(input: z.infer<typeof getAttachme
     throw new Error('Attachment not found');
   }
 
-  const disposition = `attachment; filename="${encodeURIComponent(attachment.fileName)}"`;
-  const url = await presignGet(attachment.fileKey, 3600, disposition);
+  await authorizeTodoViewer(attachment.todoId, userId);
 
-  return { url, fileName: attachment.fileName };
+  const disposition = `attachment; filename="${encodeURIComponent(attachment.fileName)}"`;
+  try {
+    const url = await presignGet(attachment.fileKey, 3600, disposition);
+    return { success: true, url, fileName: attachment.fileName };
+  } catch {
+    return actionError('ยังไม่ได้ตั้งค่าที่เก็บไฟล์');
+  }
 }

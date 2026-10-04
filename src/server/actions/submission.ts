@@ -11,6 +11,7 @@ import { createId } from '@/lib/ids';
 import { presignGet, presignPut, submissionKey, validateSubmissionFile } from '@/lib/r2';
 import { isPhaseViewable } from '@/lib/node-path';
 import { isInSubmissionScope, resolveStudentTodoAccess } from '@/server/queries/submission';
+import { authorizeTodoViewer } from '@/server/work-page-access';
 
 type Fail = { ok: false; error: string };
 
@@ -48,7 +49,7 @@ export async function createSubmissionUploadUrl(
     const url = await presignPut(key, data.contentType);
     return { ok: true, key, url };
   } catch {
-    return { ok: false, error: 'ระบบจัดเก็บไฟล์ไม่พร้อมใช้งาน' };
+    return { ok: false, error: 'ยังไม่ได้ตั้งค่าที่เก็บไฟล์' };
   }
 }
 
@@ -132,10 +133,13 @@ export async function createSubmission(
 
 const fileUrlSchema = z.object({ fileId: z.string().min(1) });
 
+/**
+ * Signed URL for a submitted file. Classroom editors may open any file of the classroom's to-dos;
+ * students only files in their own submission scope (group / own). Unrelated users → throws.
+ */
 export async function getSubmissionFileUrl(
   input: z.infer<typeof fileUrlSchema>,
 ): Promise<{ ok: true; url: string } | Fail> {
-  await requireRole(ROLES.STUDENT);
   const userId = await getCurrentUserId();
   const parsed = fileUrlSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: ERR_INPUT };
@@ -146,9 +150,11 @@ export async function getSubmissionFileUrl(
   });
   if (!file) return { ok: false, error: 'ไม่พบไฟล์' };
 
-  const access = await resolveStudentTodoAccess(file.submission.todoId, userId);
-  if (!access) return { ok: false, error: ERR_ACCESS };
-  if (!isInSubmissionScope(file.submission, access.todo.submissionMode, access.groupId, userId)) {
+  const viewer = await authorizeTodoViewer(file.submission.todoId, userId);
+  if (
+    viewer.kind === 'student' &&
+    !isInSubmissionScope(file.submission, viewer.todo.submissionMode, viewer.groupId, userId)
+  ) {
     return { ok: false, error: ERR_ACCESS };
   }
 
@@ -160,6 +166,6 @@ export async function getSubmissionFileUrl(
     );
     return { ok: true, url };
   } catch {
-    return { ok: false, error: 'ระบบจัดเก็บไฟล์ไม่พร้อมใช้งาน' };
+    return { ok: false, error: 'ยังไม่ได้ตั้งค่าที่เก็บไฟล์' };
   }
 }

@@ -33,6 +33,10 @@ function AttachmentRow({ attachment }: { attachment: Attachment }) {
         const result = await getAttachmentDownloadUrl({
           attachmentId: attachment.id,
         });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
         // Open the presigned URL in a new tab to trigger download
         window.open(result.url, '_blank');
       } catch {

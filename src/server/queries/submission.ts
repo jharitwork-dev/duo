@@ -7,6 +7,7 @@ import { comments } from '@/db/schema/comments';
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { statusFromSubmission, type SubmissionStatus } from '@/lib/node-path';
 import { getGroupPhaseStatus } from '@/server/queries/phase';
+import type { WorkPageDoc } from '@/lib/work-page';
 
 type SubmissionMode = 'group' | 'individual';
 
@@ -112,6 +113,8 @@ export interface SubmissionHistoryEntry {
   files: { id: string; fileName: string; contentType: string; fileSize: number }[];
   /** Latest reviewer comment on this submission, if any (read-only). */
   reviewerComment: string | null;
+  /** Work page snapshot (null for legacy file-only submissions). */
+  content: WorkPageDoc | null;
 }
 
 /**
@@ -149,6 +152,7 @@ export async function getSubmissionHistory(todoId: string, userId: string) {
       fileSize: f.fileSize,
     })),
     reviewerComment: row.comments[0]?.content ?? null,
+    content: (row.content as WorkPageDoc | null) ?? null,
   }));
 
   return { todo, phase, groupId, classroomId, submissions: history };

@@ -6,6 +6,7 @@ import { groups } from '@/db/schema/groups';
 import { phases } from '@/db/schema/phases';
 import { todos, todoAttachments } from '@/db/schema/todos';
 import { submissions, submissionFiles } from '@/db/schema/submissions';
+import { workPages, workPageFiles } from '@/db/schema/workPages';
 import { groupPhaseProgress } from '@/db/schema/groupPhaseProgress';
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
 import { getCurrentRole } from '@/lib/auth';
@@ -22,7 +23,7 @@ const NOT_AUTHORIZED = 'Classroom not found or not authorized';
 type ClassroomRow = typeof classrooms.$inferSelect;
 
 /** Loads a classroom and decides (without throwing) whether the caller may edit it. */
-async function loadClassroomAccess(
+export async function loadClassroomAccess(
   classroomId: string,
   userId: string,
 ): Promise<{ classroom: ClassroomRow | undefined; allowed: boolean }> {
@@ -125,13 +126,13 @@ export async function authorizeGroupDelete(groupId: string, userId: string) {
 }
 
 /**
- * R2 keys of everything that disappears with the given to-dos: submission files and teacher
- * attachments. Call INSIDE the delete transaction, right before the DELETE, then pass the
+ * R2 keys of everything that disappears with the given to-dos: submission files, teacher
+ * attachments and work page files. Call INSIDE the delete transaction, right before the DELETE, then pass the
  * result to cleanupR2Objects after the transaction commits.
  */
 export async function collectFileKeys(tx: DbLike, input: { todoIds: string[] }): Promise<string[]> {
   if (input.todoIds.length === 0) return [];
-  const [fileRows, attachmentRows] = await Promise.all([
+  const [fileRows, attachmentRows, pageFileRows] = await Promise.all([
     tx
       .select({ key: submissionFiles.fileKey })
       .from(submissionFiles)
@@ -141,8 +142,14 @@ export async function collectFileKeys(tx: DbLike, input: { todoIds: string[] }):
       .select({ key: todoAttachments.fileKey })
       .from(todoAttachments)
       .where(inArray(todoAttachments.todoId, input.todoIds)),
+    // Work page files cascade with their to-do (261004-01i); submissions may share the same keys.
+    tx
+      .select({ key: workPageFiles.fileKey })
+      .from(workPageFiles)
+      .innerJoin(workPages, eq(workPages.id, workPageFiles.workPageId))
+      .where(inArray(workPages.todoId, input.todoIds)),
   ]);
-  return [...new Set([...fileRows, ...attachmentRows].map((r) => r.key).filter(Boolean))];
+  return [...new Set([...fileRows, ...attachmentRows, ...pageFileRows].map((r) => r.key).filter(Boolean))];
 }
 
 /** classroomId of a phase; throws when the phase does not exist. */

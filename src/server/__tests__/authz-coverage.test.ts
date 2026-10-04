@@ -56,10 +56,48 @@ describe('authorization coverage of teacher server actions', () => {
     expect(fn!.body.includes('requireRole(ROLES.TEACHER')).toBe(false);
   });
 
+  it('getAttachmentDownloadUrl and getSubmissionFileUrl gate on the to-do viewer rule', () => {
+    const attachment = all.find((f) => f.file === 'todo.ts' && f.name === 'getAttachmentDownloadUrl');
+    expect(attachment).toBeDefined();
+    expect(attachment!.body).toMatch(/authorizeTodoViewer\(/);
+    const submissionFile = exportedFunctions('submission.ts').find((f) => f.name === 'getSubmissionFileUrl');
+    expect(submissionFile).toBeDefined();
+    expect(submissionFile!.body).toMatch(/authorizeTodoViewer\(/);
+  });
+
   it('no action uses an inline classroom-owner check', () => {
     for (const file of fs.readdirSync(ACTIONS_DIR).filter((f) => f.endsWith('.ts'))) {
       const source = fs.readFileSync(path.join(ACTIONS_DIR, file), 'utf8');
       expect(source.includes('eq(classrooms.createdBy'), file).toBe(false);
     }
+  });
+});
+
+describe('authorization coverage of work page actions (261004-01i)', () => {
+  const WORK_PAGE_CHECK = /resolveWorkPageAccess\(|authorizeTodoViewer\(/;
+  const fns = exportedFunctions('work-page.ts');
+
+  it('exports the expected actions', () => {
+    expect(fns.map((f) => f.name).sort()).toEqual(
+      [
+        'attachWorkPageFile',
+        'createWorkPageUploadUrl',
+        'getWorkPageFileUrl',
+        'removeWorkPageFile',
+        'saveWorkPage',
+        'submitWorkPage',
+      ].sort(),
+    );
+  });
+
+  it.each(fns.map((f) => [f.name, f]))('%s authorizes the work page / to-do viewer', (_name, fn) => {
+    const f = fn as ExportedFn;
+    expect(WORK_PAGE_CHECK.test(f.body), `work-page.ts:${f.name}`).toBe(true);
+  });
+
+  it('submitWorkPage locks the page row (FOR UPDATE) inside its transaction', () => {
+    const submit = fns.find((f) => f.name === 'submitWorkPage')!;
+    expect(submit.body).toMatch(/db\.transaction\(/);
+    expect(submit.body).toMatch(/lock: true/);
   });
 });
