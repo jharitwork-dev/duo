@@ -85,6 +85,22 @@ describe('Database Schema', () => {
     expect(id).toHaveLength(24);
   });
 
+  it('has the classroom task tables, relations and todo columns (261004-j6h)', () => {
+    expect(schema.classroomTasks).toBeDefined();
+    expect(schema.classroomTaskFiles).toBeDefined();
+    expect(schema.classroomTasksRelations).toBeDefined();
+    expect(schema.classroomTaskFilesRelations).toBeDefined();
+    expect(schema.classroomTasks.phaseId.notNull).toBe(true);
+    expect(schema.classroomTasks.fileRequirement.default).toBe('optional');
+    expect(schema.classroomTasks.submissionMode.default).toBe('group');
+    expect(schema.classroomTaskFiles.classroomTaskId.name).toBe('classroom_task_id');
+    expect(schema.classroomTaskFiles.classroomTaskId.notNull).toBe(true);
+    expect(schema.todos.classroomTaskId.name).toBe('classroom_task_id');
+    expect(schema.todos.classroomTaskId.notNull).toBe(false);
+    expect(schema.todos.overriddenFields.name).toBe('overridden_fields');
+    expect(schema.todos.overriddenFields.notNull).toBe(true);
+  });
+
   it('createId generates unique values', () => {
     const ids = new Set(Array.from({ length: 100 }, () => createId()));
     expect(ids.size).toBe(100);
