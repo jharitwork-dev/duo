@@ -6,9 +6,12 @@ import {
   WORK_PAGE_MARK_TYPES,
   WORK_PAGE_NODE_TYPES,
   MAX_CONTENT_BYTES,
+  WORK_PAGE_LOCK_MESSAGE,
   canEditWorkPage,
   canSubmitWorkPage,
   checklistProgress,
+  computeOrphanFileKeys,
+  getWorkPageLock,
   hasPageContent,
   isSaveConflict,
   plainTextFromDoc,
@@ -100,20 +103,149 @@ describe('workPageOwnerKey', () => {
   });
 });
 
-describe('canEditWorkPage', () => {
-  it.each<[SubmissionStatus, boolean, boolean]>([
-    ['none', true, true],
-    ['rejected', true, true],
-    ['pending', true, false],
-    ['approved', true, false],
-    ['none', false, false],
-    ['rejected', false, false],
-  ])('latest=%s viewable=%s → %s', (status, viewable, expected) => {
-    expect(canEditWorkPage(status, viewable)).toBe(expected);
+const NOW = new Date('2026-10-18T10:00:00Z');
+const BEFORE = new Date(NOW.getTime() + 3_600_000); // deadline still ahead
+const AFTER = new Date(NOW.getTime() - 3_600_000); // deadline passed
+const DEADLINES: [string, Date | null][] = [
+  ['none', null],
+  ['before', BEFORE],
+  ['after', AFTER],
+];
+const rules = (latestStatus: SubmissionStatus, deadline: Date | null, phaseViewable = true) => ({
+  latestStatus,
+  phaseViewable,
+  deadline,
+  now: NOW,
+});
+const okSubmit = (latestStatus: SubmissionStatus, deadline: Date | null, action?: 'submit' | 'update', phaseViewable = true) =>
+  canSubmitWorkPage({
+    fileRequirement: 'optional',
+    fileCount: 0,
+    hasContent: true,
+    ...rules(latestStatus, deadline, phaseViewable),
+    action,
+  });
+
+describe('getWorkPageLock / canEditWorkPage', () => {
+  it('a locked phase wins over everything', () => {
+    expect(getWorkPageLock(rules('none', null, false))).toBe('locked');
+    expect(getWorkPageLock(rules('approved', AFTER, false))).toBe('locked');
+  });
+
+  it('pending at exactly the deadline is locked (now >= deadline)', () => {
+    expect(getWorkPageLock(rules('pending', NOW))).toBe('deadline_passed');
+  });
+
+  it('has a Thai message for every lock', () => {
+    expect(WORK_PAGE_LOCK_MESSAGE).toEqual({
+      locked: 'Phase นี้ยังไม่ปลดล็อค',
+      approved: 'ผ่านแล้ว แก้ไขไม่ได้',
+      deadline_passed: 'เลยกำหนดแก้ไขแล้ว',
+    });
   });
 });
 
-describe('canSubmitWorkPage', () => {
+/**
+ * Eligibility matrix: status × deadline (none / before / after) × action (edit / update / submit).
+ * expected: 'ok' | 'ok:late' | block reason.
+ */
+describe('work page eligibility matrix', () => {
+  type Action = 'edit' | 'update' | 'submit';
+  const expectations: Record<SubmissionStatus, Record<string, Record<Action, string>>> = {
+    none: {
+      none: { edit: 'ok', update: 'not_submitted', submit: 'ok' },
+      before: { edit: 'ok', update: 'not_submitted', submit: 'ok' },
+      after: { edit: 'ok', update: 'not_submitted', submit: 'ok:late' },
+    },
+    pending: {
+      none: { edit: 'ok', update: 'ok', submit: 'already_submitted' },
+      before: { edit: 'ok', update: 'ok', submit: 'already_submitted' },
+      after: { edit: 'deadline_passed', update: 'deadline_passed', submit: 'deadline_passed' },
+    },
+    rejected: {
+      none: { edit: 'ok', update: 'not_submitted', submit: 'ok' },
+      before: { edit: 'ok', update: 'not_submitted', submit: 'ok' },
+      after: { edit: 'ok', update: 'not_submitted', submit: 'ok:late' },
+    },
+    approved: {
+      none: { edit: 'approved', update: 'already_submitted', submit: 'already_submitted' },
+      before: { edit: 'approved', update: 'already_submitted', submit: 'already_submitted' },
+      after: { edit: 'approved', update: 'already_submitted', submit: 'already_submitted' },
+    },
+  };
+
+  const cases: [SubmissionStatus, string, Date | null, Action, string][] = [];
+  for (const status of ['none', 'pending', 'rejected', 'approved'] as SubmissionStatus[]) {
+    for (const [label, deadline] of DEADLINES) {
+      for (const action of ['edit', 'update', 'submit'] as Action[]) {
+        cases.push([status, label, deadline, action, expectations[status][label][action]]);
+      }
+    }
+  }
+
+  it.each(cases)('latest=%s deadline=%s action=%s → %s', (status, _label, deadline, action, expected) => {
+    if (action === 'edit') {
+      const lock = getWorkPageLock(rules(status, deadline));
+      expect(lock ?? 'ok').toBe(expected);
+      expect(canEditWorkPage(rules(status, deadline))).toBe(expected === 'ok');
+      return;
+    }
+    const r = okSubmit(status, deadline, action);
+    if (expected.startsWith('ok')) {
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.mode).toBe(action === 'update' ? 'update' : status === 'rejected' ? 'resubmit' : 'submit');
+        expect(r.late).toBe(expected === 'ok:late');
+      }
+    } else {
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.reason).toBe(expected);
+        expect(r.message.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('without an explicit action the mode is derived (none → submit, rejected → resubmit, pending → update)', () => {
+    expect(okSubmit('none', null)).toEqual({ ok: true, mode: 'submit', late: false });
+    expect(okSubmit('rejected', AFTER)).toEqual({ ok: true, mode: 'resubmit', late: true });
+    expect(okSubmit('pending', BEFORE)).toEqual({ ok: true, mode: 'update', late: false });
+    expect(okSubmit('pending', null)).toEqual({ ok: true, mode: 'update', late: false });
+  });
+
+  it('an update is never late (lateness is fixed by the first submission)', () => {
+    const r = okSubmit('pending', BEFORE, 'update');
+    expect(r.ok && r.late).toBe(false);
+  });
+
+  it('submitting exactly at the deadline is not late', () => {
+    expect(okSubmit('none', NOW)).toEqual({ ok: true, mode: 'submit', late: false });
+  });
+
+  it('pending submit tells the student to use the update button', () => {
+    const r = okSubmit('pending', BEFORE, 'submit');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toBe('งานนี้ส่งแล้ว ใช้ "อัปเดตงานที่ส่ง"');
+  });
+
+  it('deadline_passed message', () => {
+    const r = okSubmit('pending', AFTER, 'update');
+    expect(r).toEqual({ ok: false, reason: 'deadline_passed', message: 'เลยกำหนดแก้ไขแล้ว' });
+  });
+
+  it.each(['edit', 'update', 'submit'] as Action[])('phase not viewable blocks %s with locked', (action) => {
+    for (const status of ['none', 'pending', 'rejected', 'approved'] as SubmissionStatus[]) {
+      if (action === 'edit') expect(getWorkPageLock(rules(status, null, false))).toBe('locked');
+      else {
+        const r = okSubmit(status, null, action, false);
+        expect(r.ok).toBe(false);
+        if (!r.ok) expect(r.reason).toBe('locked');
+      }
+    }
+  });
+});
+
+describe('canSubmitWorkPage file / content requirements', () => {
   type Case = [FileRequirement, number, boolean, SubmissionStatus, true | string];
   const cases: Case[] = [];
   for (const req of FILE_REQUIREMENTS) {
@@ -121,7 +253,7 @@ describe('canSubmitWorkPage', () => {
       for (const hasContent of [false, true]) {
         for (const status of ['none', 'rejected', 'pending', 'approved'] as SubmissionStatus[]) {
           let expected: true | string;
-          if (status === 'pending' || status === 'approved') expected = 'already_submitted';
+          if (status === 'approved') expected = 'already_submitted';
           else if (req === 'required') expected = fileCount >= 1 ? true : 'file_required';
           else if (req === 'optional') expected = hasContent || fileCount >= 1 ? true : 'empty';
           else expected = hasContent ? true : 'empty';
@@ -131,16 +263,20 @@ describe('canSubmitWorkPage', () => {
     }
   }
 
-  it.each(cases)('req=%s files=%i content=%s latest=%s → %s', (req, fileCount, hasContent, status, expected) => {
+  it.each(cases)('req=%s files=%i content=%s latest=%s → %s (submit and update)', (req, fileCount, hasContent, status, expected) => {
     const result = canSubmitWorkPage({
       fileRequirement: req,
       fileCount,
       hasContent,
       latestStatus: status,
       phaseViewable: true,
+      deadline: null,
+      now: NOW,
     });
-    if (expected === true) expect(result).toEqual({ ok: true });
-    else {
+    if (expected === true) {
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.mode).toBe(status === 'pending' ? 'update' : status === 'rejected' ? 'resubmit' : 'submit');
+    } else {
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.reason).toBe(expected);
@@ -150,14 +286,39 @@ describe('canSubmitWorkPage', () => {
   });
 
   it('uses the Thai hint for required files', () => {
-    const r = canSubmitWorkPage({ fileRequirement: 'required', fileCount: 0, hasContent: true, latestStatus: 'none', phaseViewable: true });
+    const r = canSubmitWorkPage({ fileRequirement: 'required', fileCount: 0, hasContent: true, latestStatus: 'none', phaseViewable: true, deadline: null, now: NOW });
     expect(r).toEqual({ ok: false, reason: 'file_required', message: 'งานนี้ต้องแนบไฟล์อย่างน้อย 1 ไฟล์' });
   });
 
+  it('file rules also apply to an update', () => {
+    const r = canSubmitWorkPage({ fileRequirement: 'required', fileCount: 0, hasContent: true, latestStatus: 'pending', phaseViewable: true, deadline: BEFORE, now: NOW, action: 'update' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toBe('file_required');
+  });
+
   it('a locked phase blocks submission first', () => {
-    const r = canSubmitWorkPage({ fileRequirement: 'optional', fileCount: 1, hasContent: true, latestStatus: 'none', phaseViewable: false });
+    const r = canSubmitWorkPage({ fileRequirement: 'optional', fileCount: 1, hasContent: true, latestStatus: 'none', phaseViewable: false, deadline: null, now: NOW });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toBe('locked');
+  });
+});
+
+describe('computeOrphanFileKeys (R2 cleanup after an update)', () => {
+  it('old keys minus keys still referenced', () => {
+    expect(computeOrphanFileKeys(['a', 'b', 'c'], ['b'])).toEqual(['a', 'c']);
+  });
+
+  it('subtracts every referenced set (new snapshot, other submissions, live page)', () => {
+    expect(computeOrphanFileKeys(['a', 'b', 'c', 'd'], ['a'], new Set(['c']), ['x'])).toEqual(['b', 'd']);
+  });
+
+  it('dedupes and drops empty keys', () => {
+    expect(computeOrphanFileKeys(['a', 'a', '', 'b'])).toEqual(['a', 'b']);
+  });
+
+  it('nothing to delete when all are still referenced', () => {
+    expect(computeOrphanFileKeys(['a', 'b'], ['b', 'a'])).toEqual([]);
+    expect(computeOrphanFileKeys([], ['a'])).toEqual([]);
   });
 });
 
