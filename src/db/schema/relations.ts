@@ -4,6 +4,7 @@ import { groups, groupMembers } from './groups';
 import { phases } from './phases';
 import { groupPhaseProgress } from './groupPhaseProgress';
 import { todos, todoAttachments } from './todos';
+import { classroomTasks, classroomTaskFiles } from './classroomTasks';
 import { submissions, submissionFiles } from './submissions';
 import { workPages, workPageFiles } from './workPages';
 import { comments, commentReads } from './comments';
@@ -50,6 +51,24 @@ export const phasesRelations = relations(phases, ({ one, many }) => ({
   }),
   todos: many(todos),
   progress: many(groupPhaseProgress),
+  classroomTasks: many(classroomTasks),
+}));
+
+// Classroom-level tasks (261004-j6h)
+export const classroomTasksRelations = relations(classroomTasks, ({ one, many }) => ({
+  phase: one(phases, {
+    fields: [classroomTasks.phaseId],
+    references: [phases.id],
+  }),
+  files: many(classroomTaskFiles),
+  copies: many(todos),
+}));
+
+export const classroomTaskFilesRelations = relations(classroomTaskFiles, ({ one }) => ({
+  classroomTask: one(classroomTasks, {
+    fields: [classroomTaskFiles.classroomTaskId],
+    references: [classroomTasks.id],
+  }),
 }));
 
 // Per-group phase progress relations
@@ -73,6 +92,10 @@ export const todosRelations = relations(todos, ({ one, many }) => ({
   group: one(groups, {
     fields: [todos.groupId],
     references: [groups.id],
+  }),
+  classroomTask: one(classroomTasks, {
+    fields: [todos.classroomTaskId],
+    references: [classroomTasks.id],
   }),
   attachments: many(todoAttachments),
   submissions: many(submissions),
