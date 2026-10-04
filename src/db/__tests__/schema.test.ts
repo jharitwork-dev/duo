@@ -60,6 +60,25 @@ describe('Database Schema', () => {
     expect(schema.workPageFiles.workPageId.notNull).toBe(true);
   });
 
+  it('has the comment thread columns, comment_reads table and relations (261004-fgj)', () => {
+    expect(schema.comments.workPageId.name).toBe('work_page_id');
+    expect(schema.comments.workPageId.notNull).toBe(false);
+    expect(schema.comments.submissionId.notNull).toBe(false);
+    expect(schema.comments.authorRole.name).toBe('author_role');
+    expect(schema.comments.authorRole.notNull).toBe(true);
+    expect(schema.comments.authorRole.default).toBe('student');
+    expect(schema.comments.authorRole.enumValues).toEqual(['teacher', 'student']);
+    expect(schema.comments.editedAt.name).toBe('edited_at');
+    expect(schema.comments.editedAt.notNull).toBe(false);
+    expect(schema.comments.deletedAt.name).toBe('deleted_at');
+    expect(schema.comments.deletedAt.notNull).toBe(false);
+    expect(schema.commentReads).toBeDefined();
+    expect(schema.commentReads.userId.notNull).toBe(true);
+    expect(schema.commentReads.workPageId.notNull).toBe(true);
+    expect(schema.commentReads.lastSeenAt.notNull).toBe(true);
+    expect(schema.commentReadsRelations).toBeDefined();
+  });
+
   it('createId generates a 24-character string', () => {
     const id = createId();
     expect(typeof id).toBe('string');
