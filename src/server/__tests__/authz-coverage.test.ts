@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ACTIONS_DIR = path.resolve(__dirname, '../actions');
-const SCANNED = ['classroom.ts', 'group.ts', 'phase.ts', 'todo.ts', 'template.ts', 'impact.ts', 'review.ts'];
+const SCANNED = ['classroom.ts', 'group.ts', 'phase.ts', 'todo.ts', 'template.ts', 'impact.ts', 'review.ts', 'todo-attachment.ts'];
 const EDITOR_CHECK = /assert(Classroom|Group|Phase|Todo)Editor\(/;
 const GROUP_DELETE_CHECK = /authorizeGroupDelete\(/;
 // Template-owner checks / creation of a brand-new classroom (no classroom to check yet).
@@ -194,5 +194,57 @@ describe('authorization + locking of review actions (261004-gic)', () => {
     const source = fs.readFileSync(path.resolve(__dirname, '../review-helpers.ts'), 'utf8');
     expect(source).toContain(".for('update')");
     expect(source).not.toMatch(/^'use server'/m);
+  });
+});
+
+describe('authorization coverage of teacher attachment actions (261004-gid)', () => {
+  const fns = exportedFunctions('todo-attachment.ts');
+  const byName = (name: string) => {
+    const fn = fns.find((f) => f.name === name);
+    expect(fn, name).toBeDefined();
+    return fn!;
+  };
+
+  it('exports exactly the three attachment actions', () => {
+    expect(fns.map((f) => f.name).sort()).toEqual(
+      ['addTodoAttachment', 'createAttachmentUploadUrl', 'removeTodoAttachment'].sort(),
+    );
+  });
+
+  it.each(fns.map((f) => [f.name, f]))('%s requires the teacher role and the to-do editor check', (_n, fn) => {
+    const f = fn as ExportedFn;
+    expect(f.body).toContain('requireRole(ROLES.TEACHER');
+    expect(f.body).toContain('assertTodoEditor(');
+    expect(f.body.includes('deleteObject('), `${f.name} must use cleanupR2Objects`).toBe(false);
+  });
+
+  it('upload URL and add authorize EVERY target to-do', () => {
+    for (const name of ['createAttachmentUploadUrl', 'addTodoAttachment']) {
+      const body = byName(name).body;
+      const loop = body.search(/for \(const \w+ of/);
+      const check = body.indexOf('assertTodoEditor(');
+      expect(loop, `${name} loops over ids`).toBeGreaterThanOrEqual(0);
+      expect(loop < check, `${name} calls assertTodoEditor inside the loop`).toBe(true);
+    }
+  });
+
+  it('addTodoAttachment verifies the key scope and locks the to-dos', () => {
+    const body = byName('addTodoAttachment').body;
+    expect(body).toContain('isAttachmentKeyInScope(');
+    expect(body).toContain(".for('update')");
+  });
+
+  it('removeTodoAttachment locks rows sharing the key and cleans up via cleanupR2Objects', () => {
+    const body = byName('removeTodoAttachment').body;
+    expect(body).toContain(".for('update')");
+    expect(body).toContain('cleanupR2Objects(');
+  });
+
+  it('collectFileKeys keeps attachment keys still referenced outside the deleted to-dos', () => {
+    const source = fs.readFileSync(path.resolve(__dirname, '../phase-helpers.ts'), 'utf8');
+    const start = source.indexOf('export async function collectFileKeys');
+    expect(start).toBeGreaterThanOrEqual(0);
+    const body = source.slice(start, source.indexOf('\nexport ', start + 10));
+    expect(body).toMatch(/notInArray\(todoAttachments\.todoId/);
   });
 });
