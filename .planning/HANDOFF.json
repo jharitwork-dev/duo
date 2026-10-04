@@ -1,0 +1,16 @@
+{
+  "paused_at": "2026-10-04",
+  "phase": "04-review-progression",
+  "mode": "quick-tasks",
+  "head": "2369a75",
+  "status": "paused — nothing in flight, all completed work merged + deployed",
+  "completed_today": ["261003-wuo","261004-02p","261004-01i","261004-fgj","261004-03i","261004-gic","261004-gid","261004-iyj","ops: 15 Cocoon 2026 groups"],
+  "next": [
+    {"id":"261004-j6h","name":"Classroom-level locked tasks (งานของห้องเรียน)","status":"spec written; ask user 3 [confirm] items in CONTEXT, then quick --full"},
+    {"name":"Clerk production","status":"prod instance + 5 DNS CNAMEs done; user doing Google OAuth client (redirect https://clerk.build.innovators.co.th/v1/oauth_callback); then swap pk_live/sk_live in Vercel Production + migrate dev Clerk user ids -> prod ids by email in DB"},
+    {"name":"Phase 6 LINE notifications","status":"not specced; ask user (LINE OA? which events?)"}
+  ],
+  "user_actions_pending": ["delete Cloudflare DNS API token (pasted in chat)","rotate R2 token (secret pasted in chat)","finish Google OAuth in Clerk"],
+  "rules": ["never drizzle-kit push; schema changes via src/db/migrations scripts --dry-run then --apply","DB shared by dev and live site","user authorized end-to-end execution incl. apply+deploy; always dry-run first"],
+  "uncommitted_files": []
+}
