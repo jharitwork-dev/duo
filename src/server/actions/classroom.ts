@@ -5,7 +5,7 @@ import { classrooms, classroomMembers } from '@/db/schema/classrooms';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { generateUniqueInviteCode } from '@/lib/invite-code';
-import { groups, groupMembers } from '@/db/schema/groups';
+import { groups, groupMembers, groupTeachers } from '@/db/schema/groups';
 import { phases } from '@/db/schema/phases';
 import { todos } from '@/db/schema/todos';
 import { classroomTasks } from '@/db/schema/classroomTasks';
@@ -22,6 +22,7 @@ import {
   decideAddTeacher,
   decideRemoveTeacher,
 } from '@/lib/classroom-teachers';
+import { TEACHER_RANKS, decideSetTeacherRank } from '@/lib/group-teachers';
 
 function revalidateClassroom(classroomId: string) {
   revalidatePath(`/teacher/classroom/${classroomId}`);
@@ -289,14 +290,55 @@ export async function removeClassroomTeacher(input: z.infer<typeof classroomTeac
   });
   if (!decision.ok) return actionError(decision.error);
 
-  await db.delete(classroomMembers).where(and(
+  // D-04: drop the teacher's group responsibilities in this classroom together with the membership.
+  await db.transaction(async (tx) => {
+    await tx.delete(groupTeachers).where(and(
+      eq(groupTeachers.userId, data.userId),
+      inArray(
+        groupTeachers.groupId,
+        tx.select({ id: groups.id }).from(groups).where(eq(groups.classroomId, data.classroomId)),
+      ),
+    ));
+    await tx.delete(classroomMembers).where(and(
+      eq(classroomMembers.classroomId, data.classroomId),
+      eq(classroomMembers.userId, data.userId),
+      eq(classroomMembers.role, 'teacher'),
+    ));
+  });
+
+  revalidateClassroom(data.classroomId);
+  revalidatePath('/teacher');
+  revalidatePath('/teacher/review');
+  return { success: true };
+}
+
+const setTeacherRankSchema = classroomTeacherSchema.extend({ rank: z.enum(TEACHER_RANKS) });
+
+/** Sets a non-owner teacher's display-only rank (ครู / ผู้ช่วยครู). Owner or superadmin only. */
+export async function setClassroomTeacherRank(input: z.infer<typeof setTeacherRankSchema>): Promise<ActionResult> {
+  const parsed = setTeacherRankSchema.safeParse(input);
+  if (!parsed.success) return actionError('ข้อมูลไม่ถูกต้อง');
+  const data = parsed.data;
+
+  const loaded = await loadManagedClassroom(data.classroomId);
+  if ('error' in loaded) return actionError(loaded.error);
+
+  const decision = decideSetTeacherRank({
+    targetUserId: data.userId,
+    createdBy: loaded.classroom.createdBy,
+    memberRole: await memberRoleOf(data.classroomId, data.userId),
+    rank: data.rank,
+  });
+  if (!decision.ok) return actionError(decision.error);
+
+  await db.update(classroomMembers).set({ teacherRank: data.rank }).where(and(
     eq(classroomMembers.classroomId, data.classroomId),
     eq(classroomMembers.userId, data.userId),
     eq(classroomMembers.role, 'teacher'),
   ));
 
   revalidateClassroom(data.classroomId);
-  revalidatePath('/teacher');
+  revalidatePath('/teacher/review');
   return { success: true };
 }
 

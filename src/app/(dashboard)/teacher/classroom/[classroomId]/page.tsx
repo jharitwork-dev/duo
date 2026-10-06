@@ -24,6 +24,7 @@ import { StudentRoster } from '@/components/classroom/student-roster';
 import { ClassroomDangerZone } from '@/components/classroom/classroom-danger-zone';
 import { ClassroomTeachers, type ClassroomTeacherRow } from '@/components/classroom/classroom-teachers';
 import { canManageClassroomTeachers } from '@/lib/classroom-teachers';
+import { effectiveTeacherRank } from '@/lib/group-teachers';
 import { listApprovedTeachers } from '@/lib/user-directory';
 import { effectiveGroupLimit } from '@/lib/group-rules';
 import { getClassroomDashboard } from '@/server/queries/deadline';
@@ -66,10 +67,17 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
   const canManageTeachers = canManageClassroomTeachers({ role, userId, createdBy: classroom.createdBy });
   const teacherRows: ClassroomTeacherRow[] = classroom.members
     .filter((m) => m.role === 'teacher')
-    .map((m) => ({ userId: m.userId, name: m.name, email: m.email, imageUrl: m.imageUrl, isOwner: m.userId === classroom.createdBy }));
+    .map((m) => ({
+      userId: m.userId,
+      name: m.name,
+      email: m.email,
+      imageUrl: m.imageUrl,
+      isOwner: m.userId === classroom.createdBy,
+      rank: effectiveTeacherRank({ userId: m.userId, createdBy: classroom.createdBy, rank: m.teacherRank }),
+    }));
   if (!teacherRows.some((t) => t.isOwner)) {
     const { owner } = classroom;
-    teacherRows.push({ userId: owner.userId, name: owner.name, email: owner.email, imageUrl: owner.imageUrl, isOwner: true });
+    teacherRows.push({ userId: owner.userId, name: owner.name, email: owner.email, imageUrl: owner.imageUrl, isOwner: true, rank: 'teacher' });
   }
   teacherRows.sort((a, b) => Number(b.isOwner) - Number(a.isOwner) || a.name.localeCompare(b.name, 'th'));
   const memberIds = new Set(classroom.members.map((m) => m.userId));

@@ -134,6 +134,7 @@ export async function getClassroomById(
       id: classroomMembers.id,
       userId: classroomMembers.userId,
       role: classroomMembers.role,
+      teacherRank: classroomMembers.teacherRank,
       joinedAt: classroomMembers.joinedAt,
     })
     .from(classroomMembers)

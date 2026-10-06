@@ -17,7 +17,11 @@ import { EditGroupDialog } from '@/components/group/edit-group-dialog';
 import { DeleteGroupButton } from '@/components/group/delete-group-button';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 import { PageHeader } from '@/components/cocoon/page-header';
-import { BTN_INFO, EMPTY_CARD, PAGE_BODY } from '@/components/cocoon/ui';
+import { BTN_INFO, CARD, EMPTY_CARD, PAGE_BODY } from '@/components/cocoon/ui';
+import { GroupTeachersControl } from '@/components/group/responsible-teachers';
+import { getGroupTeachersByClassroom } from '@/server/queries/group-teachers';
+import { canManageClassroomTeachers } from '@/lib/classroom-teachers';
+import { effectiveTeacherRank, isClassroomTeacher, sortResponsibleTeachers, type ResponsibleTeacher } from '@/lib/group-teachers';
 
 export default async function GroupPage({
   params,
@@ -30,11 +34,12 @@ export default async function GroupPage({
   const { classroomId, groupId } = await params;
 
   // Superadmins may open any classroom's group, even without a membership row.
-  const allowAnyClassroom = (await getCurrentRole()) === ROLES.SUPERADMIN;
+  const role = await getCurrentRole();
+  const allowAnyClassroom = role === ROLES.SUPERADMIN;
   const group = await getGroupById(groupId, userId, { allowAnyClassroom });
   if (!group || group.classroomId !== classroomId) redirect(`/teacher/classroom/${classroomId}`);
 
-  const [phases, classroom, classroomGroups, commentCounts, reviewStatuses, deadlineCells] = await Promise.all([
+  const [phases, classroom, classroomGroups, commentCounts, reviewStatuses, deadlineCells, groupTeachers] = await Promise.all([
     getActivePhases(groupId),
     getClassroomById(classroomId, userId, { allowAnyClassroom }),
     getGroupsByClassroom(classroomId),
@@ -42,12 +47,39 @@ export default async function GroupPage({
     getGroupCommentCounts(groupId, userId).catch(() => ({}) as Record<string, number>),
     getGroupTodoReviewStatuses(groupId, userId).catch(() => ({}) as Record<string, TodoReviewSummary>),
     getGroupDeadlineCells(groupId, userId).catch(() => ({}) as Record<string, DashboardCell>),
+    getGroupTeachersByClassroom(classroomId).catch(() => ({}) as Record<string, ResponsibleTeacher[]>),
   ]);
   const classroomHref = `/teacher/classroom/${classroomId}`;
   const managePhasesHref = `${classroomHref}?tab=phases`;
   const groupOptions = [...classroomGroups]
     .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
     .map((g) => ({ id: g.id, name: g.name }));
+
+  // "ครูที่ดูแล": classroom teachers (owner + teacher members) by publicName with display rank.
+  const teacherControl = classroom
+    ? (() => {
+        const createdBy = classroom.createdBy;
+        const classroomTeachers = classroom.members
+          .filter((m) => m.role === 'teacher')
+          .map((m) => ({
+            userId: m.userId,
+            name: m.publicName,
+            rank: effectiveTeacherRank({ userId: m.userId, createdBy, rank: m.teacherRank }),
+          }));
+        if (!classroomTeachers.some((t) => t.userId === createdBy)) {
+          classroomTeachers.push({ userId: createdBy, name: classroom.owner.publicName, rank: 'teacher' });
+        }
+        return {
+          classroomTeachers: sortResponsibleTeachers(classroomTeachers),
+          canSelfAssign: isClassroomTeacher({
+            userId,
+            createdBy,
+            memberRole: classroom.members.find((m) => m.userId === userId)?.role ?? null,
+          }),
+          canManage: canManageClassroomTeachers({ role, userId, createdBy }),
+        };
+      })()
+    : null;
 
   return (
     <>
@@ -79,6 +111,18 @@ export default async function GroupPage({
       />
 
       <div className={`${PAGE_BODY} space-y-4 lg:space-y-5`}>
+        {teacherControl && (
+          <section className={CARD}>
+            <GroupTeachersControl
+              groupId={group.id}
+              currentUserId={userId}
+              canSelfAssign={teacherControl.canSelfAssign}
+              canManage={teacherControl.canManage}
+              assigned={groupTeachers[group.id] ?? []}
+              classroomTeachers={teacherControl.classroomTeachers}
+            />
+          </section>
+        )}
         {phases.length === 0 ? (
           <div className={EMPTY_CARD}>
             <p className="text-[18px] leading-normal font-bold text-cocoon-ink">ห้องเรียนนี้ยังไม่มี Phase</p>

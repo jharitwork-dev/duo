@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { UserMinus } from 'lucide-react';
-import { addClassroomTeacher, removeClassroomTeacher } from '@/server/actions/classroom';
+import { addClassroomTeacher, removeClassroomTeacher, setClassroomTeacherRank } from '@/server/actions/classroom';
 import { MemberIdentity } from '@/components/cocoon/member-identity';
 import { ConfirmDialog } from '@/components/cocoon/confirm-dialog';
 import { BTN_PRIMARY, CARD, CARD_META, CARD_TITLE, PILL_CAPACITY, SELECT } from '@/components/cocoon/ui';
 import type { TeacherOption } from '@/lib/user-directory';
+import { TEACHER_RANKS, TEACHER_RANK_LABEL, isTeacherRank, type TeacherRank } from '@/lib/group-teachers';
 
 export interface ClassroomTeacherRow {
   userId: string;
@@ -16,6 +17,8 @@ export interface ClassroomTeacherRow {
   email: string | null;
   imageUrl: string | null;
   isOwner: boolean;
+  /** Display-only rank (owner is always 'teacher'). */
+  rank: TeacherRank;
 }
 
 interface ClassroomTeachersProps {
@@ -53,6 +56,24 @@ export function ClassroomTeachers({ classroomId, teachers, canManage, availableT
     }
   }
 
+  async function handleRank(teacher: ClassroomTeacherRow, rank: string) {
+    if (!isTeacherRank(rank) || rank === teacher.rank) return;
+    setPending(true);
+    try {
+      const result = await setClassroomTeacherRank({ classroomId, userId: teacher.userId, rank });
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success('บันทึกตำแหน่งแล้ว');
+      router.refresh();
+    } catch {
+      toast.error('ทำรายการไม่สำเร็จ');
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function handleRemove(teacher: ClassroomTeacherRow) {
     try {
       const result = await removeClassroomTeacher({ classroomId, userId: teacher.userId });
@@ -77,6 +98,28 @@ export function ClassroomTeachers({ classroomId, teachers, canManage, availableT
           <li key={teacher.userId} className="flex items-center justify-between gap-3 py-3">
             <div className="flex min-w-0 items-center gap-2">
               <MemberIdentity name={teacher.name} email={teacher.email} imageUrl={teacher.imageUrl} />
+              {canManage && !teacher.isOwner ? (
+                <>
+                  <label htmlFor={`rank-${classroomId}-${teacher.userId}`} className="sr-only">
+                    ตำแหน่งของ {teacher.name}
+                  </label>
+                  <select
+                    id={`rank-${classroomId}-${teacher.userId}`}
+                    value={teacher.rank}
+                    disabled={pending}
+                    onChange={(e) => handleRank(teacher, e.target.value)}
+                    className={`${SELECT} w-auto shrink-0`}
+                  >
+                    {TEACHER_RANKS.map((r) => (
+                      <option key={r} value={r}>
+                        {TEACHER_RANK_LABEL[r]}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              ) : (
+                <span className={PILL_CAPACITY}>{TEACHER_RANK_LABEL[teacher.isOwner ? 'teacher' : teacher.rank]}</span>
+              )}
               {teacher.isOwner && <span className={PILL_CAPACITY}>เจ้าของห้อง</span>}
             </div>
             {canManage && !teacher.isOwner && (
@@ -127,7 +170,11 @@ export function ClassroomTeachers({ classroomId, teachers, canManage, availableT
         onOpenChange={(open) => !open && setRemoving(null)}
         title={removing ? `นำ ${removing.name} ออกจากห้องเรียน?` : ''}
         consequences={
-          removing ? [`${removing.name} จะไม่เห็นและแก้ไขห้องเรียนนี้อีก`, 'เพิ่มกลับเข้ามาใหม่ได้ภายหลัง'] : []
+          removing ? [
+                `${removing.name} จะไม่เห็นและแก้ไขห้องเรียนนี้อีก`,
+                'การดูแลกลุ่มในห้องนี้ของครูคนนี้จะถูกนำออกด้วย',
+                'เพิ่มกลับเข้ามาใหม่ได้ภายหลัง',
+              ] : []
         }
         confirmLabel="นำครูออก"
         onConfirm={async () => {
