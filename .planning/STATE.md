@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 Phase: 4
 Plan: quick 261004-03i (deadlines + dashboard) planning; next 261004-gic (review), 261004-gid (teacher attachments)
 Status: In progress — phases 1, 2, 3, 5 complete via quick tasks
-Last activity: 2026-10-04 - Completed + deployed quick task 261004-j6h (classroom-level tasks); dialog overflow fix 8663cdd
+Last activity: 2026-10-06 - Completed quick task 261005-x9e: superadmin/owner assign classroom teachers
 
 Progress: [███████▌░░] 75%
 
@@ -127,11 +127,12 @@ None yet.
 | 261004-j6h | Classroom-level tasks (งานของห้องเรียน): sync to all groups, locked title/deadline/mode, per-group field overrides, keep-submitted delete, deadline ordering (full: checked, verified 7/7; migration applied + deployed) | 2026-10-04 | 49016ab | [261004-j6h-classroom-level-locked-tasks-shared-by-a](./quick/261004-j6h-classroom-level-locked-tasks-shared-by-a/) |
 | fast | Official CI hand + book stickers replace distorted redraws (decor, auth hero, student home, node icon) | 2026-10-04 | 8f0dad6 | — |
 | fast | Profile: users edit their own display name (Clerk updateUser, students + teachers) | 2026-10-04 | e3b6e3b | — |
+| 261005-x9e | Superadmin/owner assign teachers to a classroom (ครูประจำห้อง card, teacher-member classroom lists, /admin all-classrooms; full: checked, verified 5/5 code + human UAT pending; no migration; deployed) | 2026-10-06 | 2330462 | [261005-x9e-superadmin-and-classroom-owner-assign-te](./quick/261005-x9e-superadmin-and-classroom-owner-assign-te/) |
 
 ## Session Continuity
 
 Last session: 2026-10-04
-Stopped at: fast — CI hand/book stickers (8f0dad6)
+Stopped at: quick 261005-x9e deployed (classroom teacher assignment)
 Resume file: None
 
 ## Session Handoff (2026-10-04, context near limit)
