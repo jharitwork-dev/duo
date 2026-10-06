@@ -128,6 +128,7 @@ None yet.
 | fast | Official CI hand + book stickers replace distorted redraws (decor, auth hero, student home, node icon) | 2026-10-04 | 8f0dad6 | — |
 | fast | Profile: users edit their own display name (Clerk updateUser, students + teachers) | 2026-10-04 | e3b6e3b | — |
 | 261005-x9e | Superadmin/owner assign teachers to a classroom (ครูประจำห้อง card, teacher-member classroom lists, /admin all-classrooms; full: checked, verified 5/5 code + human UAT pending; no migration; deployed) | 2026-10-06 | 2330462 | [261005-x9e-superadmin-and-classroom-owner-assign-te](./quick/261005-x9e-superadmin-and-classroom-owner-assign-te/) |
+| fast | Superadmin can open any classroom's group page + to-do detail (allowAnyClassroom on getGroupById/getTodoDetail) | 2026-10-06 | 54aadc7 | — |
 
 ## Session Continuity
 
