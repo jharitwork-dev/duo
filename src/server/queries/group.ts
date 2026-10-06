@@ -28,7 +28,11 @@ export async function getGroupsByClassroom(classroomId: string) {
  * Returns a single group with its members.
  * Verifies user has access (is a classroom member).
  */
-export async function getGroupById(groupId: string, userId: string) {
+export async function getGroupById(
+  groupId: string,
+  userId: string,
+  opts?: { allowAnyClassroom?: boolean },
+) {
   const group = await db.query.groups.findFirst({
     where: eq(groups.id, groupId),
   });
@@ -45,7 +49,8 @@ export async function getGroupById(groupId: string, userId: string) {
     ),
   });
 
-  if (!membership) {
+  // Superadmin callers may open any classroom's group.
+  if (!membership && !opts?.allowAnyClassroom) {
     return null;
   }
 

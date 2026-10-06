@@ -34,9 +34,9 @@ export async function getTodoById(todoId: string) {
 /**
  * Returns todo detail with attachments.
  * Verifies the user has access through the membership chain:
- * todo -> group -> classroom -> classroomMember
+ * todo -> group -> classroom -> classroomMember (skipped for superadmin callers via allowAnyClassroom)
  */
-export async function getTodoDetail(todoId: string, userId: string) {
+export async function getTodoDetail(todoId: string, userId: string, opts?: { allowAnyClassroom?: boolean }) {
   // Fetch the todo with attachments
   const todo = await db.query.todos.findFirst({
     where: eq(todos.id, todoId),
@@ -62,7 +62,7 @@ export async function getTodoDetail(todoId: string, userId: string) {
     ),
   });
 
-  if (!membership) {
+  if (!membership && !opts?.allowAnyClassroom) {
     throw new Error('Access denied: user is not a member of this classroom');
   }
 

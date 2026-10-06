@@ -5,6 +5,8 @@ import { cn } from 'cn';
 import { getGroupById, getGroupsByClassroom } from '@/server/queries/group';
 import { getActivePhases } from '@/server/queries/phase';
 import { getClassroomById } from '@/server/queries/classroom';
+import { getCurrentRole } from '@/lib/auth';
+import { ROLES } from '@/lib/constants';
 import { getGroupCommentCounts } from '@/server/queries/comment';
 import { getGroupTodoReviewStatuses } from '@/server/queries/submission';
 import type { TodoReviewSummary } from '@/lib/todo-review-status';
@@ -27,12 +29,14 @@ export default async function GroupPage({
 
   const { classroomId, groupId } = await params;
 
-  const group = await getGroupById(groupId, userId);
+  // Superadmins may open any classroom's group, even without a membership row.
+  const allowAnyClassroom = (await getCurrentRole()) === ROLES.SUPERADMIN;
+  const group = await getGroupById(groupId, userId, { allowAnyClassroom });
   if (!group || group.classroomId !== classroomId) redirect(`/teacher/classroom/${classroomId}`);
 
   const [phases, classroom, classroomGroups, commentCounts, reviewStatuses, deadlineCells] = await Promise.all([
     getActivePhases(groupId),
-    getClassroomById(classroomId, userId),
+    getClassroomById(classroomId, userId, { allowAnyClassroom }),
     getGroupsByClassroom(classroomId),
     // Row chips / pills are informational: never let them break the editor page.
     getGroupCommentCounts(groupId, userId).catch(() => ({}) as Record<string, number>),

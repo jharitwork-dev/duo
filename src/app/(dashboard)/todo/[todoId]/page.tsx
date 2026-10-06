@@ -38,7 +38,7 @@ export default async function TodoDetailPage({ params, searchParams }: Props) {
     return <StudentTodoView todoId={todoId} userId={userId} />;
   }
 
-  const todo = await getTodoDetail(todoId, userId);
+  const todo = await getTodoDetail(todoId, userId, { allowAnyClassroom: role === ROLES.SUPERADMIN });
   if (!todo) {
     redirect('/student');
   }
