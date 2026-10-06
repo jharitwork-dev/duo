@@ -51,12 +51,15 @@ export function reviewListHref(params: {
   classroom?: string | null;
   phase?: string | null;
   tab?: ReviewTab | null;
+  /** "กลุ่มที่ฉันดูแล" filter (261006-ij6). */
+  mine?: boolean | null;
   done?: 'approved' | 'rejected' | null;
 }): string {
   const search = new URLSearchParams();
   if (params.classroom) search.set('classroom', params.classroom);
   if (params.phase) search.set('phase', params.phase);
   if (params.tab && params.tab !== 'pending') search.set('tab', params.tab);
+  if (params.mine) search.set('mine', '1');
   if (params.done) search.set('done', params.done);
   const query = search.toString();
   return query ? `/teacher/review?${query}` : '/teacher/review';

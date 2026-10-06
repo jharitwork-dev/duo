@@ -23,11 +23,14 @@ export function ReviewTabs({
   counts,
   classroomId,
   phaseId,
+  mine,
 }: {
   tab: ReviewTab;
   counts: Record<ReviewTab, number>;
   classroomId: string;
   phaseId: string | null;
+  /** Keep the "กลุ่มที่ฉันดูแล" filter across tab links. */
+  mine?: boolean;
 }) {
   return (
     <nav aria-label="สถานะงาน" className={SEGMENT_LIST}>
@@ -36,7 +39,7 @@ export function ReviewTabs({
         return (
           <Link
             key={t}
-            href={reviewListHref({ classroom: classroomId, phase: phaseId, tab: t })}
+            href={reviewListHref({ classroom: classroomId, phase: phaseId, tab: t, mine })}
             aria-current={active ? 'page' : undefined}
             className={cn(SEGMENT_TRIGGER, active ? ACTIVE[t] : INACTIVE[t])}
           >

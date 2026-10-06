@@ -5,6 +5,7 @@ import { StatusPill } from '@/components/cocoon/status-pill';
 import { formatSubmissionDate } from '@/lib/format';
 import type { ReviewListItem } from '@/server/queries/review';
 import { BTN_WARN } from './review-ui';
+import { ResponsibleTeachersLabel } from '@/components/group/responsible-teachers';
 
 
 const LINK_BTN = 'inline-flex h-[44px] items-center justify-center lg:h-[49px] lg:min-w-[139px]';
@@ -27,6 +28,7 @@ export function ReviewCard({ item }: { item: ReviewListItem }) {
           {item.ownerLabel && <span className="font-medium text-cocoon-subtle"> · {item.ownerLabel}</span>}
         </span>
       </p>
+      <ResponsibleTeachersLabel teachers={item.responsibleTeachers} compact className="mt-0" />
       <h2 className="text-[18px] leading-snug font-bold break-words text-cocoon-ink lg:mt-2 lg:text-[22px]">
         {item.todoTitle}
       </h2>

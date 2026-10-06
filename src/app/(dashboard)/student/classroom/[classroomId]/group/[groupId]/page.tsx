@@ -13,6 +13,9 @@ import { buildNodeDeadlines } from '@/lib/node-deadline';
 import { getUnreadTeacherCommentTodoIds } from '@/server/queries/comment';
 import { GroupPhaseView } from '@/components/student/group-phase-view';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
+import { ResponsibleTeachersLabel } from '@/components/group/responsible-teachers';
+import { getGroupTeachersByClassroom } from '@/server/queries/group-teachers';
+import type { ResponsibleTeacher } from '@/lib/group-teachers';
 import { PhaseStepper } from '@/components/student/phase-stepper';
 import { NodePath } from '@/components/student/node-path';
 import { NodePathDesktop } from '@/components/student/node-path-desktop';
@@ -145,6 +148,10 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
   const currentId = pickCurrentTodoId(rows, locked, statuses);
   // Self-grouping classrooms: students may leave (and the self_create creator may delete) their group.
   const groupMode = await getClassroomGroupMode(group.classroomId);
+  // "ครูที่ดูแล" (261006-ij6): publicName only; decorative, never break the home page.
+  const groupTeachers = await getGroupTeachersByClassroom(group.classroomId).catch(
+    () => ({}) as Record<string, ResponsibleTeacher[]>,
+  );
 
   return (
     <>
@@ -154,6 +161,7 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
       <h1 className="mt-[27px] px-[33px] text-[20px] leading-normal font-bold text-cocoon-blue lg:mt-[22px] lg:px-0 lg:text-[28px]">
         งานของฉัน
       </h1>
+      <ResponsibleTeachersLabel teachers={groupTeachers[group.id] ?? []} className="mx-[33px] mt-2 lg:mx-0" />
 
       {isPreview && (
         <p

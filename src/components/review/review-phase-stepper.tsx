@@ -10,12 +10,15 @@ export function ReviewPhaseStepper({
   pendingByPhase,
   classroomId,
   tab,
+  mine,
 }: {
   phases: { id: string; name: string }[];
   activePhaseId: string | null;
   pendingByPhase: Record<string, number>;
   classroomId: string;
   tab: ReviewTab;
+  /** Keep the "กลุ่มที่ฉันดูแล" filter across phase links. */
+  mine?: boolean;
 }) {
   if (phases.length === 0) return null;
   const activeIndex = Math.max(
@@ -42,7 +45,7 @@ export function ReviewPhaseStepper({
             return (
               <li key={phase.id} className="flex flex-col items-center">
                 <Link
-                  href={reviewListHref({ classroom: classroomId, phase: phase.id, tab })}
+                  href={reviewListHref({ classroom: classroomId, phase: phase.id, tab, mine })}
                   title={phase.name}
                   aria-current={active ? 'step' : undefined}
                   className={cn(

@@ -11,6 +11,8 @@ import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { buildReviewItems, type ReviewTab } from '@/lib/review';
 import type { WorkPageDoc } from '@/lib/work-page';
 import { getUserDirectory } from '@/lib/user-directory';
+import type { ResponsibleTeacher } from '@/lib/group-teachers';
+import { getGroupTeachersByClassroom } from '@/server/queries/group-teachers';
 import { assertClassroomEditor, assertTodoEditor } from '@/server/phase-helpers';
 import { getTeacherClassrooms } from '@/server/queries/classroom';
 import { isInSubmissionScope } from '@/server/queries/submission';
@@ -33,6 +35,8 @@ export interface ReviewListItem {
   tab: ReviewTab;
   /** Student name for individual to-dos, else null. */
   ownerLabel: string | null;
+  /** "ครูที่ดูแล" of the item's group (publicName + rank). */
+  responsibleTeachers: ResponsibleTeacher[];
 }
 
 export type PhaseCounts = Record<ReviewTab, number>;
@@ -44,6 +48,10 @@ export interface ReviewListData {
   phaseId: string | null;
   items: ReviewListItem[];
   countsByPhase: Record<string, PhaseCounts>;
+  /** "กลุ่มที่ฉันดูแล" filter active. */
+  mine: boolean;
+  /** Groups of the selected classroom the caller is responsible for. */
+  myGroupCount: number;
 }
 
 const emptyCounts = (): PhaseCounts => ({ pending: 0, rejected: 0, approved: 0 });
@@ -54,7 +62,7 @@ const emptyCounts = (): PhaseCounts => ({ pending: 0, rejected: 0, approved: 0 }
  */
 export async function getReviewList(
   userId: string,
-  params: { classroomId?: string; phaseId?: string },
+  params: { classroomId?: string; phaseId?: string; mine?: boolean },
 ): Promise<ReviewListData> {
   const owned = (await getTeacherClassrooms(userId))
     .filter((c) => !c.isArchived)
@@ -81,8 +89,21 @@ export async function getReviewList(
     phaseId: null,
     items: [],
     countsByPhase: {},
+    mine: !!params.mine,
+    myGroupCount: 0,
   };
   if (!classroomId) return empty;
+
+  // Labels are informational: a failure must not break the review queue.
+  const groupTeachers = await getGroupTeachersByClassroom(classroomId).catch(
+    () => ({}) as Record<string, ResponsibleTeacher[]>,
+  );
+  const myGroupIds = new Set(
+    Object.entries(groupTeachers)
+      .filter(([, ts]) => ts.some((t) => t.userId === userId))
+      .map(([id]) => id),
+  );
+  empty.myGroupCount = myGroupIds.size;
 
   const [phaseRows, groupRows] = await Promise.all([
     db
@@ -142,6 +163,8 @@ export async function getReviewList(
   const sourceRows = subRows.flatMap((s) => {
     const todo = todoById.get(s.todoId);
     if (!todo) return [];
+    // "กลุ่มที่ฉันดูแล": filter before building items so tab/phase counts match the list.
+    if (params.mine && !myGroupIds.has(todo.groupId)) return [];
     // Group to-dos only count the owning group's rounds (to-dos are per-group copies).
     if (todo.submissionMode === 'group' && s.groupId !== todo.groupId) return [];
     return [
@@ -181,9 +204,19 @@ export async function getReviewList(
     attempt: i.attempt,
     tab: i.tab,
     ownerLabel: i.submissionMode === 'individual' ? (directory.get(i.submittedBy)?.name ?? null) : null,
+    responsibleTeachers: i.groupId ? (groupTeachers[i.groupId] ?? []) : [],
   }));
 
-  return { classrooms: classroomList, classroomId, phases: phaseRows, phaseId, items, countsByPhase };
+  return {
+    classrooms: classroomList,
+    classroomId,
+    phases: phaseRows,
+    phaseId,
+    items,
+    countsByPhase,
+    mine: !!params.mine,
+    myGroupCount: myGroupIds.size,
+  };
 }
 
 /**

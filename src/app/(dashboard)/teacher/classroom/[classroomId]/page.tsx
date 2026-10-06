@@ -24,7 +24,8 @@ import { StudentRoster } from '@/components/classroom/student-roster';
 import { ClassroomDangerZone } from '@/components/classroom/classroom-danger-zone';
 import { ClassroomTeachers, type ClassroomTeacherRow } from '@/components/classroom/classroom-teachers';
 import { canManageClassroomTeachers } from '@/lib/classroom-teachers';
-import { effectiveTeacherRank } from '@/lib/group-teachers';
+import { effectiveTeacherRank, type ResponsibleTeacher } from '@/lib/group-teachers';
+import { getGroupTeachersByClassroom } from '@/server/queries/group-teachers';
 import { listApprovedTeachers } from '@/lib/user-directory';
 import { effectiveGroupLimit } from '@/lib/group-rules';
 import { getClassroomDashboard } from '@/server/queries/deadline';
@@ -47,7 +48,7 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
   const { classroomId } = await params;
   const { tab } = await searchParams;
 
-  const [classroom, phases, archivedPhases, templates, overview, classroomTasks] = await Promise.all([
+  const [classroom, phases, archivedPhases, templates, overview, classroomTasks, groupTeachers] = await Promise.all([
     getClassroomById(classroomId, userId, { allowAnyClassroom: role === ROLES.SUPERADMIN }),
     getClassroomPhases(classroomId),
     getArchivedPhases(classroomId),
@@ -56,6 +57,8 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
     getClassroomDashboard(classroomId, userId).catch(() => null),
     // Only rendered after getClassroomById authorized the caller (notFound below otherwise).
     getClassroomTasksByPhase(classroomId),
+    // Informational "ครูที่ดูแล" labels; only rendered after authorization.
+    getGroupTeachersByClassroom(classroomId).catch(() => ({}) as Record<string, ResponsibleTeacher[]>),
   ]);
   if (!classroom) {
     notFound();
@@ -172,6 +175,7 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
                     group={group}
                     members={overview.members}
                     now={now}
+                    responsibleTeachers={groupTeachers[group.id] ?? []}
                   />
                 ))}
               </section>
@@ -229,6 +233,7 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
                   members={group.members}
                   pendingCount={groupCardById.get(group.id)?.pendingCount}
                   overdueCount={groupCardById.get(group.id)?.overdueCount}
+                  responsibleTeachers={groupTeachers[group.id] ?? []}
                 />
               ))}
             </div>

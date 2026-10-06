@@ -11,6 +11,8 @@ import { DeleteGroupButton } from '@/components/group/delete-group-button';
 import { OverflowMenu } from '@/components/cocoon/overflow-menu';
 import { BTN_INFO, CARD, PILL_CAPACITY, PILL_FULL } from '@/components/cocoon/ui';
 import { capacityLabel, effectiveGroupLimit, isGroupFull } from '@/lib/group-rules';
+import { ResponsibleTeachersLabel } from '@/components/group/responsible-teachers';
+import type { ResponsibleTeacher } from '@/lib/group-teachers';
 
 interface ClassroomMember extends MemberDisplay {
   id: string;
@@ -37,6 +39,8 @@ interface GroupCardProps {
   /** Dashboard counts (261004-03i); chips render only when > 0. */
   pendingCount?: number;
   overdueCount?: number;
+  /** "ครูที่ดูแล" (261006-ij6). */
+  responsibleTeachers?: ResponsibleTeacher[];
 }
 
 export function GroupCard({
@@ -51,6 +55,7 @@ export function GroupCard({
   members,
   pendingCount = 0,
   overdueCount = 0,
+  responsibleTeachers,
 }: GroupCardProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -83,6 +88,7 @@ export function GroupCard({
           />
         </div>
       </div>
+      <ResponsibleTeachersLabel teachers={responsibleTeachers ?? []} showEmpty compact className="-mt-3" />
       {(pendingCount > 0 || overdueCount > 0) && (
         <div className="-mt-2 flex flex-wrap gap-1.5">
           {pendingCount > 0 && (

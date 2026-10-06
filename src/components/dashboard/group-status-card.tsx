@@ -5,6 +5,8 @@ import { MemberAvatar } from '@/components/cocoon/member-identity';
 import { formatSubmissionDate } from '@/lib/format';
 import { formatDeadlineRelative } from '@/lib/deadline';
 import type { GroupCard } from '@/lib/deadline-dashboard';
+import { ResponsibleTeachersLabel } from '@/components/group/responsible-teachers';
+import type { ResponsibleTeacher } from '@/lib/group-teachers';
 
 export type MemberDirectoryProp = Record<string, { name: string; imageUrl: string | null }>;
 
@@ -49,11 +51,14 @@ export function GroupStatusCard({
   group,
   members,
   now,
+  responsibleTeachers,
 }: {
   classroomId: string;
   group: GroupCard;
   members: MemberDirectoryProp;
   now: Date;
+  /** "ครูที่ดูแล" (261006-ij6); omitted on /teacher home. */
+  responsibleTeachers?: ResponsibleTeacher[];
 }) {
   const shown = group.memberIds.slice(0, MAX_AVATARS);
   const extra = group.memberIds.length - shown.length;
@@ -73,6 +78,9 @@ export function GroupStatusCard({
           <p className="truncate text-[13px] font-medium text-cocoon-blue">
             {group.currentPhase ? `Phase ${group.currentPhase.index + 1} · ${group.currentPhase.name}` : 'ยังไม่มี Phase'}
           </p>
+          {responsibleTeachers !== undefined && (
+            <ResponsibleTeachersLabel teachers={responsibleTeachers} showEmpty compact />
+          )}
         </div>
         {group.memberIds.length > 0 && (
           <div className="flex shrink-0 -space-x-2" aria-label={`สมาชิก ${group.memberIds.length} คน`}>
