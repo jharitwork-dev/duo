@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 Phase: 4
 Plan: quick 261004-03i (deadlines + dashboard) planning; next 261004-gic (review), 261004-gid (teacher attachments)
 Status: In progress — phases 1, 2, 3, 5 complete via quick tasks
-Last activity: 2026-10-06 - Completed quick task 261005-x9e: superadmin/owner assign classroom teachers
+Last activity: 2026-10-06 - Completed quick task 261006-ij6: group responsible teachers + teacher rank
 
 Progress: [███████▌░░] 75%
 
@@ -129,11 +129,12 @@ None yet.
 | fast | Profile: users edit their own display name (Clerk updateUser, students + teachers) | 2026-10-04 | e3b6e3b | — |
 | 261005-x9e | Superadmin/owner assign teachers to a classroom (ครูประจำห้อง card, teacher-member classroom lists, /admin all-classrooms; full: checked, verified 5/5 code + human UAT pending; no migration; deployed) | 2026-10-06 | 2330462 | [261005-x9e-superadmin-and-classroom-owner-assign-te](./quick/261005-x9e-superadmin-and-classroom-owner-assign-te/) |
 | fast | Superadmin can open any classroom's group page + to-do detail (allowAnyClassroom on getGroupById/getTodoDetail) | 2026-10-06 | 54aadc7 | — |
+| 261006-ij6 | Group responsible teachers (ครูที่ดูแล labels: group cards, group page, student home, review + กลุ่มที่ฉันดูแล filter) + classroom teacher rank ครู/ผู้ช่วยครู (full: checked, verified 8/8 code + human UAT pending; migration applied + deployed) | 2026-10-06 | af30d63 | [261006-ij6-group-responsible-teachers-and-classroom](./quick/261006-ij6-group-responsible-teachers-and-classroom/) |
 
 ## Session Continuity
 
 Last session: 2026-10-04
-Stopped at: quick 261005-x9e deployed (classroom teacher assignment)
+Stopped at: quick 261006-ij6 deployed (group teachers + rank)
 Resume file: None
 
 ## Session Handoff (2026-10-04, context near limit)
