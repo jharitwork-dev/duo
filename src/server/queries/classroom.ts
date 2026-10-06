@@ -2,11 +2,19 @@ import { db } from '@/db';
 import { classrooms, classroomMembers } from '@/db/schema/classrooms';
 import { groups } from '@/db/schema/groups';
 import { groupMembers } from '@/db/schema/groups';
-import { eq, and, sql, inArray } from 'drizzle-orm';
+import { eq, and, sql, inArray, or, desc } from 'drizzle-orm';
 import { getUserDirectory } from '@/lib/user-directory';
 
+/** Subquery: ids of classrooms where the user holds a 'teacher' membership row. */
+export function teacherMemberClassroomIds(userId: string) {
+  return db
+    .select({ id: classroomMembers.classroomId })
+    .from(classroomMembers)
+    .where(and(eq(classroomMembers.userId, userId), eq(classroomMembers.role, 'teacher')));
+}
+
 /**
- * Returns all classrooms created by a teacher, with member and group counts.
+ * Returns all classrooms created by OR teacher member of the user, with member and group counts.
  */
 export async function getTeacherClassrooms(userId: string) {
   const result = await db
@@ -28,9 +36,25 @@ export async function getTeacherClassrooms(userId: string) {
       )`.mapWith(Number),
     })
     .from(classrooms)
-    .where(eq(classrooms.createdBy, userId));
+    .where(or(eq(classrooms.createdBy, userId), inArray(classrooms.id, teacherMemberClassroomIds(userId))));
 
   return result;
+}
+
+/** Every classroom (superadmin /admin list) with the owner's display name, newest first. */
+export async function getAllClassroomsForAdmin() {
+  const rows = await db
+    .select({
+      id: classrooms.id,
+      name: classrooms.name,
+      isArchived: classrooms.isArchived,
+      createdBy: classrooms.createdBy,
+      createdAt: classrooms.createdAt,
+    })
+    .from(classrooms)
+    .orderBy(desc(classrooms.createdAt));
+  const directory = await getUserDirectory(rows.map((r) => r.createdBy));
+  return rows.map((r) => ({ ...r, ownerName: directory.get(r.createdBy)?.name ?? 'ไม่ระบุชื่อ' }));
 }
 
 /**
@@ -60,9 +84,13 @@ export async function getStudentClassrooms(userId: string) {
 
 /**
  * Returns a single classroom with groups and members.
- * Verifies user is a member (security: Pitfall 2).
+ * Verifies user is a member (security: Pitfall 2) unless `allowAnyClassroom` (superadmin callers only).
  */
-export async function getClassroomById(classroomId: string, userId: string) {
+export async function getClassroomById(
+  classroomId: string,
+  userId: string,
+  opts?: { allowAnyClassroom?: boolean },
+) {
   // Verify user is a member or the creator
   const membership = await db.query.classroomMembers.findFirst({
     where: and(
@@ -80,7 +108,7 @@ export async function getClassroomById(classroomId: string, userId: string) {
   }
 
   // Allow access if member or creator
-  if (!membership && classroom.createdBy !== userId) {
+  if (!opts?.allowAnyClassroom && !membership && classroom.createdBy !== userId) {
     return null;
   }
 
@@ -124,6 +152,7 @@ export async function getClassroomById(classroomId: string, userId: string) {
   const directory = await getUserDirectory([
     ...members.map((m) => m.userId),
     ...memberships.map((m) => m.userId),
+    classroom.createdBy,
   ]);
   const display = (userId: string) => directory.get(userId)!;
 
@@ -136,6 +165,8 @@ export async function getClassroomById(classroomId: string, userId: string) {
         .map((m) => ({ userId: m.userId, ...display(m.userId) })),
     })),
     members: members.map((member) => ({ ...member, ...display(member.userId) })),
+    // Owner shown even when a legacy classroom has no owner member row.
+    owner: { userId: classroom.createdBy, ...display(classroom.createdBy) },
   };
 }
 

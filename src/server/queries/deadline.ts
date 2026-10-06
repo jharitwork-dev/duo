@@ -161,7 +161,7 @@ export async function getClassroomDashboard(
 }
 
 async function teacherActiveClassrooms(userId: string) {
-  // Created by the user → already authorised (the same list /teacher shows).
+  // Owned or teacher member → already authorised (the same list /teacher shows).
   return (await getTeacherClassrooms(userId)).filter((c) => !c.isArchived);
 }
 

@@ -2,6 +2,7 @@
 import 'server-only';
 import { clerkClient } from '@clerk/nextjs/server';
 import { publicDisplayName } from '@/lib/comment-thread';
+import { ROLES } from '@/lib/constants';
 
 export interface UserDisplay {
   /** Teacher-facing: may fall back to the email. Never show to students. */
@@ -43,4 +44,40 @@ export async function getUserDirectory(userIds: string[]): Promise<Map<string, U
     if (!directory.has(id)) directory.set(id, { name: UNKNOWN_NAME, publicName: UNKNOWN_NAME, email: null, imageUrl: null });
   }
   return directory;
+}
+
+export interface TeacherOption {
+  userId: string;
+  name: string;
+  email: string | null;
+  imageUrl: string | null;
+}
+
+const TEACHER_PAGE_SIZE = 500;
+const TEACHER_MAX_PAGES = 5;
+
+/** Every Clerk user whose global role is 'teacher' (approved), sorted by name (Thai collation). */
+export async function listApprovedTeachers(): Promise<TeacherOption[]> {
+  const client = await clerkClient();
+  const teachers: TeacherOption[] = [];
+  for (let page = 0; page < TEACHER_MAX_PAGES; page++) {
+    const { data } = await client.users.getUserList({
+      limit: TEACHER_PAGE_SIZE,
+      offset: page * TEACHER_PAGE_SIZE,
+      orderBy: '-created_at',
+    });
+    for (const user of data) {
+      if ((user.publicMetadata as { role?: string } | undefined)?.role !== ROLES.TEACHER) continue;
+      const email = user.primaryEmailAddress?.emailAddress ?? user.emailAddresses[0]?.emailAddress ?? null;
+      const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+      teachers.push({
+        userId: user.id,
+        name: fullName || user.username || email || UNKNOWN_NAME,
+        email,
+        imageUrl: user.hasImage ? user.imageUrl : null,
+      });
+    }
+    if (data.length < TEACHER_PAGE_SIZE) break;
+  }
+  return teachers.sort((a, b) => a.name.localeCompare(b.name, 'th'));
 }

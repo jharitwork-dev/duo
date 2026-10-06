@@ -15,6 +15,13 @@ import { revalidatePath } from 'next/cache';
 import { assertClassroomEditor, cleanupR2Objects, collectFileKeys } from '@/server/phase-helpers';
 import { GROUP_MODES, checkDeleteConfirmation } from '@/lib/group-rules';
 import { actionError, type ActionResult } from '@/lib/action-result';
+import { clerkClient } from '@clerk/nextjs/server';
+import {
+  ERR_ALREADY_TEACHER,
+  canManageClassroomTeachers,
+  decideAddTeacher,
+  decideRemoveTeacher,
+} from '@/lib/classroom-teachers';
 
 function revalidateClassroom(classroomId: string) {
   revalidatePath(`/teacher/classroom/${classroomId}`);
@@ -198,6 +205,98 @@ export async function removeStudent(input: z.infer<typeof removeStudentSchema>):
   });
 
   revalidateClassroom(data.classroomId);
+  return { success: true };
+}
+
+const classroomTeacherSchema = z.object({
+  classroomId: z.string().min(1),
+  userId: z.string().min(1),
+});
+
+/** Loads the classroom and checks the caller is a superadmin or its owner (teacher members are NOT enough). */
+async function loadManagedClassroom(
+  classroomId: string,
+): Promise<{ error: string } | { classroom: { id: string; createdBy: string } }> {
+  const role = await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const currentUserId = await getCurrentUserId();
+  const classroom = await db.query.classrooms.findFirst({
+    where: eq(classrooms.id, classroomId),
+    columns: { id: true, createdBy: true },
+  });
+  if (!classroom) return { error: 'ไม่พบห้องเรียน' };
+  if (!canManageClassroomTeachers({ role, userId: currentUserId, createdBy: classroom.createdBy })) {
+    return { error: 'เฉพาะเจ้าของห้องเรียนหรือแอดมินเท่านั้นที่จัดการครูได้' };
+  }
+  return { classroom };
+}
+
+async function memberRoleOf(classroomId: string, userId: string) {
+  const member = await db.query.classroomMembers.findFirst({
+    where: and(eq(classroomMembers.classroomId, classroomId), eq(classroomMembers.userId, userId)),
+    columns: { role: true },
+  });
+  return member?.role ?? null;
+}
+
+/** Adds an approved teacher (global role 'teacher') to the classroom. Owner or superadmin only. */
+export async function addClassroomTeacher(input: z.infer<typeof classroomTeacherSchema>): Promise<ActionResult> {
+  const parsed = classroomTeacherSchema.safeParse(input);
+  if (!parsed.success) return actionError('ข้อมูลไม่ถูกต้อง');
+  const data = parsed.data;
+
+  const loaded = await loadManagedClassroom(data.classroomId);
+  if ('error' in loaded) return actionError(loaded.error);
+
+  let targetRole: string | null;
+  try {
+    const user = await (await clerkClient()).users.getUser(data.userId);
+    targetRole = (user.publicMetadata as { role?: string } | undefined)?.role ?? null;
+  } catch {
+    return actionError('ไม่พบผู้ใช้');
+  }
+
+  const decision = decideAddTeacher({
+    targetRole,
+    existingMemberRole: await memberRoleOf(data.classroomId, data.userId),
+  });
+  if (!decision.ok) return actionError(decision.error);
+
+  try {
+    await db.insert(classroomMembers).values({ classroomId: data.classroomId, userId: data.userId, role: 'teacher' });
+  } catch {
+    // Unique (classroom_id, user_id) — a concurrent add won the race.
+    return actionError(ERR_ALREADY_TEACHER);
+  }
+
+  revalidateClassroom(data.classroomId);
+  revalidatePath('/teacher');
+  return { success: true };
+}
+
+/** Removes a non-owner teacher from the classroom. Owner or superadmin only. */
+export async function removeClassroomTeacher(input: z.infer<typeof classroomTeacherSchema>): Promise<ActionResult> {
+  const parsed = classroomTeacherSchema.safeParse(input);
+  if (!parsed.success) return actionError('ข้อมูลไม่ถูกต้อง');
+  const data = parsed.data;
+
+  const loaded = await loadManagedClassroom(data.classroomId);
+  if ('error' in loaded) return actionError(loaded.error);
+
+  const decision = decideRemoveTeacher({
+    targetUserId: data.userId,
+    createdBy: loaded.classroom.createdBy,
+    memberRole: await memberRoleOf(data.classroomId, data.userId),
+  });
+  if (!decision.ok) return actionError(decision.error);
+
+  await db.delete(classroomMembers).where(and(
+    eq(classroomMembers.classroomId, data.classroomId),
+    eq(classroomMembers.userId, data.userId),
+    eq(classroomMembers.role, 'teacher'),
+  ));
+
+  revalidateClassroom(data.classroomId);
+  revalidatePath('/teacher');
   return { success: true };
 }
 
