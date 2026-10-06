@@ -20,6 +20,9 @@ export const classroomMembers = pgTable('classroom_members', {
   classroomId: text('classroom_id').notNull().references(() => classrooms.id, { onDelete: 'cascade' }),
   userId: text('user_id').notNull(),
   role: text('role', { enum: ['teacher', 'student'] }).notNull(),
+  // Display-only per-classroom rank for role 'teacher' rows: 'teacher' (ครู) | 'assistant' (ผู้ช่วยครู).
+  // null = ครู (new teachers). Ignored for students and for the owner (always ครู). No permission effect.
+  teacherRank: text('teacher_rank', { enum: ['teacher', 'assistant'] }),
   joinedAt: timestamp('joined_at').defaultNow().notNull(),
 }, (t) => [
   unique().on(t.classroomId, t.userId),
