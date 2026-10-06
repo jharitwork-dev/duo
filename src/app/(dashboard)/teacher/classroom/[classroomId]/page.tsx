@@ -22,6 +22,9 @@ import { PageHeader } from '@/components/cocoon/page-header';
 import { EMPTY_CARD, PAGE_BODY, SEGMENT_LIST, SEGMENT_TRIGGER } from '@/components/cocoon/ui';
 import { StudentRoster } from '@/components/classroom/student-roster';
 import { ClassroomDangerZone } from '@/components/classroom/classroom-danger-zone';
+import { ClassroomTeachers, type ClassroomTeacherRow } from '@/components/classroom/classroom-teachers';
+import { canManageClassroomTeachers } from '@/lib/classroom-teachers';
+import { listApprovedTeachers } from '@/lib/user-directory';
 import { effectiveGroupLimit } from '@/lib/group-rules';
 import { getClassroomDashboard } from '@/server/queries/deadline';
 import { GroupStatusCard } from '@/components/dashboard/group-status-card';
@@ -38,13 +41,13 @@ interface ClassroomDashboardProps {
 }
 
 export default async function ClassroomDashboard({ params, searchParams }: ClassroomDashboardProps) {
-  await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
+  const role = await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
   const userId = await getCurrentUserId();
   const { classroomId } = await params;
   const { tab } = await searchParams;
 
   const [classroom, phases, archivedPhases, templates, overview, classroomTasks] = await Promise.all([
-    getClassroomById(classroomId, userId),
+    getClassroomById(classroomId, userId, { allowAnyClassroom: role === ROLES.SUPERADMIN }),
     getClassroomPhases(classroomId),
     getArchivedPhases(classroomId),
     getTemplates(userId),
@@ -58,6 +61,21 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
   }
 
   const groups = classroom.groups;
+
+  // "ครูประจำห้อง": owner first (even if a legacy classroom has no owner member row), then by name.
+  const canManageTeachers = canManageClassroomTeachers({ role, userId, createdBy: classroom.createdBy });
+  const teacherRows: ClassroomTeacherRow[] = classroom.members
+    .filter((m) => m.role === 'teacher')
+    .map((m) => ({ userId: m.userId, name: m.name, email: m.email, imageUrl: m.imageUrl, isOwner: m.userId === classroom.createdBy }));
+  if (!teacherRows.some((t) => t.isOwner)) {
+    const { owner } = classroom;
+    teacherRows.push({ userId: owner.userId, name: owner.name, email: owner.email, imageUrl: owner.imageUrl, isOwner: true });
+  }
+  teacherRows.sort((a, b) => Number(b.isOwner) - Number(a.isOwner) || a.name.localeCompare(b.name, 'th'));
+  const memberIds = new Set(classroom.members.map((m) => m.userId));
+  const availableTeachers = canManageTeachers
+    ? (await listApprovedTeachers().catch(() => [])).filter((t) => !memberIds.has(t.userId) && t.userId !== classroom.createdBy)
+    : [];
   const groupOptions = groups.map((g) => ({ id: g.id, name: g.name }));
 
   const students = classroom.members.filter((m) => m.role === 'student');
@@ -255,6 +273,12 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
               maxGroupSize={classroom.maxGroupSize}
               groupMode={classroom.groupMode}
               members={classroom.members}
+            />
+            <ClassroomTeachers
+              classroomId={classroomId}
+              teachers={teacherRows}
+              canManage={canManageTeachers}
+              availableTeachers={availableTeachers}
             />
             <ClassroomDangerZone
               classroomId={classroomId}

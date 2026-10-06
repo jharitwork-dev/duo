@@ -1,9 +1,12 @@
+import Link from 'next/link';
 import { clerkClient } from '@clerk/nextjs/server';
+import { ChevronRight } from 'lucide-react';
 import { requireRole } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 import { PageHeader } from '@/components/cocoon/page-header';
-import { CARD, CARD_TITLE, PAGE_BODY } from '@/components/cocoon/ui';
+import { CARD, CARD_META, CARD_TITLE, PAGE_BODY } from '@/components/cocoon/ui';
+import { getAllClassroomsForAdmin } from '@/server/queries/classroom';
 import { AdminActions } from './admin-actions';
 import { UserRoleList, type AdminUserRow } from './user-role-list';
 import { getCurrentUserId } from '@/lib/auth';
@@ -13,7 +16,10 @@ export default async function AdminDashboard() {
 
   const currentUserId = await getCurrentUserId();
   const client = await clerkClient();
-  const usersResponse = await client.users.getUserList({ limit: 200, orderBy: '-created_at' });
+  const [usersResponse, allClassrooms] = await Promise.all([
+    client.users.getUserList({ limit: 200, orderBy: '-created_at' }),
+    getAllClassroomsForAdmin(),
+  ]);
 
   const allUsers: AdminUserRow[] = usersResponse.data.map((user) => {
     const email = user.primaryEmailAddress?.emailAddress ?? user.emailAddresses[0]?.emailAddress ?? null;
@@ -61,6 +67,33 @@ export default async function AdminDashboard() {
             </div>
           </section>
         )}
+
+        <section className="mb-10">
+          <h2 className={`${CARD_TITLE} mb-1`}>ห้องเรียนทั้งหมด ({allClassrooms.length})</h2>
+          <p className={`${CARD_META} mb-4`}>เปิดห้องเรียนเพื่อจัดการ “ครูประจำห้อง” ในแท็บตั้งค่า</p>
+          {allClassrooms.length === 0 ? (
+            <p className={CARD_META}>ยังไม่มีห้องเรียน</p>
+          ) : (
+            <div className="grid gap-3 lg:grid-cols-2 lg:gap-4">
+              {allClassrooms.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/teacher/classroom/${c.id}?tab=settings`}
+                  className={`${CARD} flex items-center justify-between gap-3 transition-colors hover:border-cocoon-blue/30`}
+                >
+                  <div className="min-w-0">
+                    <p className="text-[16px] leading-normal font-bold break-words text-cocoon-ink">{c.name}</p>
+                    <p className={CARD_META}>
+                      เจ้าของ: {c.ownerName}
+                      {c.isArchived && ' · เก็บแล้ว'}
+                    </p>
+                  </div>
+                  <ChevronRight className="size-5 shrink-0 text-cocoon-muted" />
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
 
         <section>
           <h2 className={`${CARD_TITLE} mb-1`}>ผู้ใช้ทั้งหมด ({allUsers.length})</h2>
