@@ -4,7 +4,7 @@
 import { db } from '@/db';
 import { classroomMembers, classrooms } from '@/db/schema/classrooms';
 import { groups, groupTeachers } from '@/db/schema/groups';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import {
   effectiveTeacherRank,
   isClassroomTeacher,
@@ -52,4 +52,19 @@ export async function getGroupTeachersByClassroom(
   }
   for (const id of Object.keys(result)) result[id] = sortResponsibleTeachers(result[id]);
   return result;
+}
+
+/**
+ * Group ids in `classroomIds` the user is responsible for ("กลุ่มที่ฉันดูแล", quick task 261008-0y9).
+ * One query. Callers must already be authorized for these classrooms.
+ */
+export async function getMyGroupIds(userId: string, classroomIds: string[]): Promise<Set<string>> {
+  const ids = [...new Set(classroomIds)];
+  if (ids.length === 0) return new Set();
+  const rows = await db
+    .select({ groupId: groupTeachers.groupId })
+    .from(groupTeachers)
+    .innerJoin(groups, eq(groups.id, groupTeachers.groupId))
+    .where(and(eq(groupTeachers.userId, userId), inArray(groups.classroomId, ids)));
+  return new Set(rows.map((r) => r.groupId));
 }

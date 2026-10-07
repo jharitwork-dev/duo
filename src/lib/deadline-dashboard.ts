@@ -257,6 +257,22 @@ function rowKey(todo: SnapshotTodo): string {
   return todo.assignmentId ?? `${todo.phaseId}::${todo.title.trim().toLowerCase()}`;
 }
 
+/**
+ * "กลุ่มที่ฉันดูแล" (quick task 261008-0y9): keep only `groupIds` (and their to-dos/progress) so cards,
+ * matrix columns and counts all describe the same subset. Phases and the classroom stay as-is.
+ */
+export function restrictSnapshotToGroups(snapshot: ClassroomSnapshot, groupIds: ReadonlySet<string>): ClassroomSnapshot {
+  const todos = snapshot.todos.filter((t) => groupIds.has(t.groupId));
+  const todoIds = new Set(todos.map((t) => t.id));
+  return {
+    ...snapshot,
+    groups: snapshot.groups.filter((g) => groupIds.has(g.id)),
+    todos,
+    submissions: snapshot.submissions.filter((s) => todoIds.has(s.todoId)),
+    progress: snapshot.progress.filter((p) => groupIds.has(p.groupId)),
+  };
+}
+
 export function buildClassroomDashboard(snapshot: ClassroomSnapshot, now: Date): ClassroomDashboard {
   const phases = sortPhases(snapshot.phases);
   const phaseIndex = new Map(phases.map((p, i) => [p.id, i]));

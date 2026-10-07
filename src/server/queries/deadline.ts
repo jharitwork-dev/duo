@@ -18,6 +18,7 @@ import {
   buildStudentDeadlineItems,
   buildStudentDeadlineSections,
   cellsForGroup,
+  restrictSnapshotToGroups,
   summarizeDashboards,
   type ClassroomDashboard,
   type ClassroomSnapshot,
@@ -29,6 +30,7 @@ import {
 import { getUserDirectory } from '@/lib/user-directory';
 import { assertClassroomEditor, assertGroupEditor } from '@/server/phase-helpers';
 import { getTeacherClassrooms } from '@/server/queries/classroom';
+import { getMyGroupIds } from '@/server/queries/group-teachers';
 
 export type MemberDirectory = Record<string, { name: string; imageUrl: string | null }>;
 
@@ -146,14 +148,24 @@ const EMPTY_DASHBOARD = (classroom: { id: string; name: string }): ClassroomDash
   counts: { pending: 0, overdue: 0, dueSoon: 0, late: 0 },
 });
 
+/** Dashboard query options. `mine`: only groups the user is responsible for (quick task 261008-0y9). */
+export interface DashboardOptions {
+  mine?: boolean;
+}
+
 /** Classroom "ภาพรวม" tab. Throws for non-editors. */
 export async function getClassroomDashboard(
   classroomId: string,
   userId: string,
+  options: DashboardOptions = {},
 ): Promise<{ dashboard: ClassroomDashboard; members: MemberDirectory }> {
   const classroom = await assertClassroomEditor(classroomId, userId);
-  const snapshots = await loadClassroomSnapshots([classroomId]);
-  const snapshot = snapshots.get(classroomId);
+  const [snapshots, myIds] = await Promise.all([
+    loadClassroomSnapshots([classroomId]),
+    options.mine ? getMyGroupIds(userId, [classroomId]) : Promise.resolve(null),
+  ]);
+  const loaded = snapshots.get(classroomId);
+  const snapshot = loaded && myIds ? restrictSnapshotToGroups(loaded, myIds) : loaded;
   if (!snapshot) return { dashboard: EMPTY_DASHBOARD({ id: classroom.id, name: classroom.name }), members: {} };
   const dashboard = buildClassroomDashboard(snapshot, new Date());
   const members = await memberDirectory([snapshot]);
@@ -168,13 +180,24 @@ async function teacherActiveClassrooms(userId: string) {
 export type TeacherClassroomRow = Awaited<ReturnType<typeof getTeacherClassrooms>>[number];
 
 /** /teacher home dashboard across the user's non-archived classrooms (one batched snapshot). */
-export async function getTeacherDashboard(userId: string): Promise<{
+export async function getTeacherDashboard(
+  userId: string,
+  options: DashboardOptions = {},
+): Promise<{
   classrooms: { classroom: TeacherClassroomRow; dashboard: ClassroomDashboard }[];
   counts: DashboardCounts;
   members: MemberDirectory;
 }> {
   const list = await teacherActiveClassrooms(userId);
-  const snapshots = await loadClassroomSnapshots(list.map((c) => c.id));
+  const ids = list.map((c) => c.id);
+  const [loaded, myIds] = await Promise.all([
+    loadClassroomSnapshots(ids),
+    options.mine ? getMyGroupIds(userId, ids) : Promise.resolve(null),
+  ]);
+  // "กลุ่มที่ฉันดูแล" (261008-0y9): restricted dashboards contain exactly the user's groups.
+  const snapshots = myIds
+    ? new Map([...loaded].map(([id, snap]) => [id, restrictSnapshotToGroups(snap, myIds)]))
+    : loaded;
   const now = new Date();
   const entries = list.map((classroom) => {
     const snapshot = snapshots.get(classroom.id);
