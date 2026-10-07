@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { requireRole, getCurrentUserId } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
-import { cn } from 'cn';
-import { BTN_INFO, EMPTY_CARD, PILL_CAPACITY } from '@/components/cocoon/ui';
+import { BTN_INFO, EMPTY_CARD } from '@/components/cocoon/ui';
+import { MineFilterToggle, MINE_FILTER_EMPTY_HINT } from '@/components/group/mine-filter-toggle';
 import { ReviewPhaseStepper } from '@/components/review/review-phase-stepper';
 import { ReviewTabs } from '@/components/review/review-tabs';
 import { ReviewCard } from '@/components/review/review-card';
@@ -105,19 +105,11 @@ export default async function TeacherReviewPage({ searchParams }: Props) {
                 <Title />
               </div>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                <Link
+                <MineFilterToggle
                   href={reviewListHref({ classroom: data.classroomId, phase: data.phaseId, tab, mine: !data.mine })}
-                  aria-current={data.mine ? 'true' : undefined}
-                  className={cn(
-                    PILL_CAPACITY,
-                    'h-[36px] justify-center self-start px-4 text-[14px] outline-none focus-visible:ring-2 focus-visible:ring-cocoon-blue/40 lg:self-auto',
-                    data.mine
-                      ? 'bg-cocoon-blue text-white'
-                      : 'border border-cocoon-blue/40 bg-white hover:bg-cocoon-blue-soft',
-                  )}
-                >
-                  กลุ่มที่ฉันดูแล
-                </Link>
+                  active={data.mine}
+                  className="self-start lg:self-auto"
+                />
                 <ReviewTabs
                   tab={tab}
                   counts={counts}
@@ -129,7 +121,7 @@ export default async function TeacherReviewPage({ searchParams }: Props) {
             </div>
             {data.mine && data.myGroupCount === 0 && (
               <p className="mt-3 text-[14px] leading-normal font-medium text-cocoon-muted lg:text-right">
-                คุณยังไม่ได้ดูแลกลุ่มใดในห้องนี้ — ตั้งค่าได้ที่หน้ากลุ่ม
+                {MINE_FILTER_EMPTY_HINT}
               </p>
             )}
             {tab === 'rejected' && (

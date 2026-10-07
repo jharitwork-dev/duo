@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 import { PageHeader } from '@/components/cocoon/page-header';
 import { BTN_PRIMARY, EMPTY_CARD, PAGE_BODY } from '@/components/cocoon/ui';
+import { MineFilterToggle } from '@/components/group/mine-filter-toggle';
 
 function NewClassroomButton({ className }: { className?: string }) {
   return (
@@ -22,21 +23,37 @@ function NewClassroomButton({ className }: { className?: string }) {
   );
 }
 
-export default async function TeacherDashboard() {
+interface Props {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
+export default async function TeacherDashboard({ searchParams }: Props) {
   await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
   const userId = await getCurrentUserId();
-  const [all, overview] = await Promise.all([getTeacherClassrooms(userId), getTeacherDashboard(userId)]);
+  // "กลุ่มที่ฉันดูแล" filter (quick task 261008-0y9): ?mine=1 restricts sections + chips to my groups.
+  const mine = first((await searchParams).mine) === '1';
+  const [all, overview] = await Promise.all([getTeacherClassrooms(userId), getTeacherDashboard(userId, { mine })]);
   const classrooms = all.filter((c) => !c.isArchived);
   const archived = all.filter((c) => c.isArchived);
   const now = new Date();
+  const sections = mine ? overview.classrooms.filter((e) => e.dashboard.groups.length > 0) : overview.classrooms;
 
   return (
     <>
       <CocoonHeader variant="home" />
       <PageHeader
         title="ภาพรวม"
-        subtitle="สถานะงานทุกกลุ่มในห้องเรียนของคุณ"
-        actions={classrooms.length > 0 ? <NewClassroomButton /> : undefined}
+        subtitle={mine ? 'สถานะงานของกลุ่มที่คุณดูแล' : 'สถานะงานทุกกลุ่มในห้องเรียนของคุณ'}
+        actions={
+          classrooms.length > 0 ? (
+            <>
+              <MineFilterToggle href={mine ? '/teacher' : '/teacher?mine=1'} active={mine} />
+              <NewClassroomButton />
+            </>
+          ) : undefined
+        }
       />
 
       <div className={PAGE_BODY}>
@@ -50,8 +67,16 @@ export default async function TeacherDashboard() {
           <div className="space-y-8 lg:space-y-12">
             <DashboardSummaryChips counts={overview.counts} />
 
-            {overview.classrooms.map(({ classroom, dashboard }) => {
-              const overviewHref = `/teacher/classroom/${classroom.id}?tab=overview`;
+            {mine && sections.length === 0 && (
+              <div className={EMPTY_CARD}>
+                <p className="text-[14px] leading-normal font-medium text-cocoon-muted">
+                  คุณยังไม่ได้ดูแลกลุ่มใด — ตั้งค่าได้ที่หน้ากลุ่มในแต่ละห้องเรียน
+                </p>
+              </div>
+            )}
+
+            {sections.map(({ classroom, dashboard }) => {
+              const overviewHref = `/teacher/classroom/${classroom.id}?tab=overview${mine ? '&mine=1' : ''}`;
               return (
                 <section key={classroom.id} aria-labelledby={`dash-${classroom.id}`} className="space-y-3 lg:space-y-4">
                   <h2 id={`dash-${classroom.id}`} className="text-[20px] leading-normal font-bold text-cocoon-blue lg:text-[22px]">
