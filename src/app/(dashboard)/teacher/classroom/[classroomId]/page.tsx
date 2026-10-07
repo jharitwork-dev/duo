@@ -31,6 +31,7 @@ import { effectiveGroupLimit } from '@/lib/group-rules';
 import { getClassroomDashboard } from '@/server/queries/deadline';
 import { GroupStatusCard } from '@/components/dashboard/group-status-card';
 import { ClassroomMatrix } from '@/components/dashboard/classroom-matrix';
+import { MineFilterToggle, MINE_FILTER_EMPTY_HINT } from '@/components/group/mine-filter-toggle';
 
 const TABS = ['overview', 'students', 'groups', 'phases', 'settings'] as const;
 type TabValue = (typeof TABS)[number];
@@ -39,14 +40,17 @@ const TAB_TRIGGER = cn(SEGMENT_TRIGGER, 'px-1.5 text-[14px] lg:px-6 lg:text-[16p
 
 interface ClassroomDashboardProps {
   params: Promise<{ classroomId: string }>;
-  searchParams: Promise<{ tab?: string | string[] }>;
+  searchParams: Promise<{ tab?: string | string[]; mine?: string | string[] }>;
 }
 
 export default async function ClassroomDashboard({ params, searchParams }: ClassroomDashboardProps) {
   const role = await requireRole(ROLES.TEACHER, ROLES.SUPERADMIN);
   const userId = await getCurrentUserId();
   const { classroomId } = await params;
-  const { tab } = await searchParams;
+  const sp = await searchParams;
+  const { tab } = sp;
+  // "กลุ่มที่ฉันดูแล" filter (quick task 261008-0y9): ?mine=1 on the overview + groups tabs.
+  const mine = (Array.isArray(sp.mine) ? sp.mine[0] : sp.mine) === '1';
 
   const [classroom, phases, archivedPhases, templates, overview, classroomTasks, groupTeachers] = await Promise.all([
     getClassroomById(classroomId, userId, { allowAnyClassroom: role === ROLES.SUPERADMIN }),
@@ -54,7 +58,7 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
     getArchivedPhases(classroomId),
     getTemplates(userId),
     // Informational: a dashboard failure must not break the classroom editor.
-    getClassroomDashboard(classroomId, userId).catch(() => null),
+    getClassroomDashboard(classroomId, userId, { mine }).catch(() => null),
     // Only rendered after getClassroomById authorized the caller (notFound below otherwise).
     getClassroomTasksByPhase(classroomId),
     // Informational "ครูที่ดูแล" labels; only rendered after authorization.
@@ -65,6 +69,15 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
   }
 
   const groups = classroom.groups;
+  // Same derivation as src/server/queries/review.ts. Only overview + groups tabs are filtered (261008-0y9).
+  const myGroupIds = new Set(
+    Object.entries(groupTeachers)
+      .filter(([, ts]) => ts.some((t) => t.userId === userId))
+      .map(([id]) => id),
+  );
+  const visibleGroups = mine ? groups.filter((g) => myGroupIds.has(g.id)) : groups;
+  // Toggled destination; keeps the current tab.
+  const mineHref = (t: 'overview' | 'groups') => `/teacher/classroom/${classroomId}?tab=${t}${mine ? '' : '&mine=1'}`;
 
   // "ครูประจำห้อง": owner first (even if a legacy classroom has no owner member row), then by name.
   const canManageTeachers = canManageClassroomTeachers({ role, userId, createdBy: classroom.createdBy });
@@ -154,9 +167,18 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
               </Link>
             </div>
           )}
+          {groups.length > 0 && (
+            <div className="flex justify-end">
+              <MineFilterToggle href={mineHref('overview')} active={mine} />
+            </div>
+          )}
           {!overview ? (
             <div className={EMPTY_CARD}>
               <p className="text-[14px] leading-normal font-medium text-cocoon-muted">โหลดภาพรวมไม่สำเร็จ ลองรีเฟรชหน้า</p>
+            </div>
+          ) : mine && overview.dashboard.groups.length === 0 ? (
+            <div className={EMPTY_CARD}>
+              <p className="text-[14px] leading-normal font-medium text-cocoon-muted">{MINE_FILTER_EMPTY_HINT}</p>
             </div>
           ) : overview.dashboard.groups.length === 0 ? (
             <div className={EMPTY_CARD}>
@@ -202,10 +224,13 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
         <TabsContent value="groups" className={PAGE_BODY}>
           <div className="mb-4 flex items-center justify-between gap-3 lg:mb-6">
             <h2 className="text-[18px] leading-normal font-bold text-cocoon-blue lg:text-[20px]">
-              กลุ่มทั้งหมด ({groups.length})
+              {mine ? `กลุ่มที่ฉันดูแล (${visibleGroups.length})` : `กลุ่มทั้งหมด (${groups.length})`}
             </h2>
             {groups.length > 0 && (
-              <CreateGroupForm classroomId={classroomId} classroomMaxGroupSize={classroom.maxGroupSize} />
+              <div className="flex flex-wrap items-center gap-3">
+                <MineFilterToggle href={mineHref('groups')} active={mine} />
+                <CreateGroupForm classroomId={classroomId} classroomMaxGroupSize={classroom.maxGroupSize} />
+              </div>
             )}
           </div>
 
@@ -217,9 +242,13 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
               </p>
               <CreateGroupForm classroomId={classroomId} classroomMaxGroupSize={classroom.maxGroupSize} />
             </div>
+          ) : mine && visibleGroups.length === 0 ? (
+            <div className={EMPTY_CARD}>
+              <p className="text-[14px] leading-normal font-medium text-cocoon-muted">{MINE_FILTER_EMPTY_HINT}</p>
+            </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:gap-8 xl:grid-cols-3">
-              {groups.map((group) => (
+              {visibleGroups.map((group) => (
                 <GroupCard
                   key={group.id}
                   id={group.id}
