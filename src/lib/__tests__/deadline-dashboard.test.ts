@@ -7,6 +7,7 @@ import {
   buildStudentDeadlineSections,
   cellsForGroup,
   filterMatrixRows,
+  restrictSnapshotToGroups,
   summarizeDashboards,
   type ClassroomSnapshot,
   type SnapshotGroup,
@@ -153,6 +154,74 @@ describe('buildClassroomDashboard: matrix', () => {
     snap.submissions = [sub('ti', 'g2', 'b1', 'rejected', at(-HOUR)), sub('ti', 'g2', 'b1', 'pending', at(3 * DAY))];
     const cell = buildClassroomDashboard(snap, at(4 * DAY)).rows[0].cells.g2!;
     expect(cell).toMatchObject({ deadlineStatus: 'on_time', reviewStatus: 'pending', submittedCount: 1, ownerCount: 1 });
+  });
+});
+
+// "กลุ่มที่ฉันดูแล" filter (quick task 261008-0y9)
+describe('restrictSnapshotToGroups', () => {
+  const now = at(2 * DAY);
+  const withProgress = (): ClassroomSnapshot => ({
+    ...matrixSnapshot(),
+    progress: [
+      { groupId: 'g1', phaseId: 'p1', status: 'completed' },
+      { groupId: 'g2', phaseId: 'p1', status: 'active' },
+    ],
+  });
+
+  it('keeps only the given group, its to-dos, submissions and progress; phases/classroom unchanged', () => {
+    const full = withProgress();
+    const r = restrictSnapshotToGroups(full, new Set(['g1']));
+    expect(r.groups.map((g) => g.id)).toEqual(['g1']);
+    expect(r.todos.map((t) => t.id).sort()).toEqual(['t1a', 't2a', 't4a', 't4dup']);
+    expect(r.todos.every((t) => t.groupId === 'g1')).toBe(true);
+    expect(r.submissions).toHaveLength(2);
+    expect(r.submissions.every((s) => s.todoId === 't1a')).toBe(true);
+    expect(r.progress).toEqual([{ groupId: 'g1', phaseId: 'p1', status: 'completed' }]);
+    expect(r.phases).toEqual(full.phases);
+    expect(r.classroom).toEqual(full.classroom);
+  });
+
+  it('dashboard of the restricted snapshot describes only that group', () => {
+    const full = buildClassroomDashboard(matrixSnapshot(), now);
+    const dash = buildClassroomDashboard(restrictSnapshotToGroups(matrixSnapshot(), new Set(['g1'])), now);
+    expect(dash.groups.map((g) => g.id)).toEqual(['g1']);
+    for (const row of dash.rows) expect(Object.keys(row.cells)).toEqual(['g1']);
+    expect(dash.rows.some((r) => r.title === 'Reflection')).toBe(false);
+    const g1 = full.groups.find((g) => g.id === 'g1')!;
+    expect(dash.counts.pending).toBe(g1.pendingCount);
+    expect(dash.counts.overdue).toBe(g1.overdueCount);
+    // g1: t1a pending on_time, t2a overdue, t4a/t4dup upcoming
+    expect(dash.counts).toEqual({ pending: 1, overdue: 1, dueSoon: 0, late: 0 });
+    expect(dash.groups[0]).toEqual(g1);
+  });
+
+  it('multiple groups: drops the others to-dos and submissions', () => {
+    const r = restrictSnapshotToGroups(matrixSnapshot(), new Set(['g1', 'g3']));
+    expect(r.groups.map((g) => g.id)).toEqual(['g1', 'g3']);
+    expect(r.todos.some((t) => t.id === 't1b' || t.id === 't2b')).toBe(false);
+    expect(r.submissions.some((s) => s.todoId === 't2b')).toBe(false);
+    expect(r.submissions).toHaveLength(5);
+  });
+
+  it('empty set → empty dashboard', () => {
+    const r = restrictSnapshotToGroups(withProgress(), new Set());
+    expect(r.groups).toEqual([]);
+    expect(r.todos).toEqual([]);
+    expect(r.submissions).toEqual([]);
+    expect(r.progress).toEqual([]);
+    const dash = buildClassroomDashboard(r, now);
+    expect(dash.groups).toEqual([]);
+    expect(dash.rows).toEqual([]);
+    expect(dash.counts).toEqual({ pending: 0, overdue: 0, dueSoon: 0, late: 0 });
+  });
+
+  it('does not mutate the input snapshot', () => {
+    const full = withProgress();
+    restrictSnapshotToGroups(full, new Set(['g2']));
+    expect(full.groups).toHaveLength(3);
+    expect(full.todos).toHaveLength(8);
+    expect(full.submissions).toHaveLength(6);
+    expect(full.progress).toHaveLength(2);
   });
 });
 
