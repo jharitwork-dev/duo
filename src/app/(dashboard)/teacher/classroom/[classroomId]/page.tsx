@@ -32,11 +32,13 @@ import { getClassroomDashboard } from '@/server/queries/deadline';
 import { GroupStatusCard } from '@/components/dashboard/group-status-card';
 import { ClassroomMatrix } from '@/components/dashboard/classroom-matrix';
 import { MineFilterToggle, MINE_FILTER_EMPTY_HINT } from '@/components/group/mine-filter-toggle';
+import { getClassroomForms } from '@/server/queries/form';
+import { FormsTab } from '@/components/form/forms-tab';
 
-const TABS = ['overview', 'students', 'groups', 'phases', 'settings'] as const;
+const TABS = ['overview', 'students', 'groups', 'phases', 'forms', 'settings'] as const;
 type TabValue = (typeof TABS)[number];
-// Five segments: tighter padding on mobile so they fit the full-width pill at 360px.
-const TAB_TRIGGER = cn(SEGMENT_TRIGGER, 'px-1.5 text-[14px] lg:px-6 lg:text-[16px]');
+// Six segments: tighter padding + 13px labels on mobile so they fit the full-width pill at 360px.
+const TAB_TRIGGER = cn(SEGMENT_TRIGGER, 'px-1 text-[13px] lg:px-6 lg:text-[16px]');
 
 interface ClassroomDashboardProps {
   params: Promise<{ classroomId: string }>;
@@ -52,7 +54,7 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
   // "กลุ่มที่ฉันดูแล" filter (quick task 261008-0y9): ?mine=1 on the overview + groups tabs.
   const mine = (Array.isArray(sp.mine) ? sp.mine[0] : sp.mine) === '1';
 
-  const [classroom, phases, archivedPhases, templates, overview, classroomTasks, groupTeachers] = await Promise.all([
+  const [classroom, phases, archivedPhases, templates, overview, classroomTasks, groupTeachers, classroomForms] = await Promise.all([
     getClassroomById(classroomId, userId, { allowAnyClassroom: role === ROLES.SUPERADMIN }),
     getClassroomPhases(classroomId),
     getArchivedPhases(classroomId),
@@ -63,6 +65,8 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
     getClassroomTasksByPhase(classroomId),
     // Informational "ครูที่ดูแล" labels; only rendered after authorization.
     getGroupTeachersByClassroom(classroomId).catch(() => ({}) as Record<string, ResponsibleTeacher[]>),
+    // Self-authorizing (null for non-editors); a failure must not break the classroom editor.
+    getClassroomForms(classroomId, userId).catch(() => null),
   ]);
   if (!classroom) {
     notFound();
@@ -101,6 +105,7 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
     ? (await listApprovedTeachers().catch(() => [])).filter((t) => !memberIds.has(t.userId) && t.userId !== classroom.createdBy)
     : [];
   const groupOptions = groups.map((g) => ({ id: g.id, name: g.name }));
+  const forms = classroomForms ?? [];
 
   const students = classroom.members.filter((m) => m.role === 'student');
   const assignedUserIds = [...new Set(groups.flatMap((g) => g.members.map((m) => m.userId)))];
@@ -146,6 +151,9 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
               </TabsTrigger>
               <TabsTrigger value="phases" className={TAB_TRIGGER}>
                 Phase
+              </TabsTrigger>
+              <TabsTrigger value="forms" className={TAB_TRIGGER}>
+                แบบฟอร์ม
               </TabsTrigger>
               <TabsTrigger value="settings" className={TAB_TRIGGER}>
                 ตั้งค่า
@@ -301,6 +309,10 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
               <ArchivedPhaseList phases={archivedPhases} />
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="forms" className={PAGE_BODY}>
+          <FormsTab classroomId={classroomId} forms={forms} groupCount={groups.length} />
         </TabsContent>
 
         <TabsContent value="settings" className={PAGE_BODY}>
