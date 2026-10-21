@@ -6,6 +6,8 @@ import { getStudentClassrooms } from '@/server/queries/classroom';
 import { getStudentGroup } from '@/server/queries/group';
 import { JoinCodeInput } from '@/components/student/join-code-input';
 import { CocoonHeader } from '@/components/cocoon/cocoon-header';
+import { getPendingFormCounts } from '@/server/queries/form-response';
+import { PendingFormsPill } from '@/components/student/student-form-cards';
 
 export default async function StudentDashboard() {
   await requireRole(ROLES.STUDENT);
@@ -48,6 +50,11 @@ export default async function StudentDashboard() {
   }
 
   // Multiple classrooms: show classroom cards
+  // Pending form counts (261021-r1c): decorative, never break the home page.
+  const pendingFormCounts = await getPendingFormCounts(
+    userId,
+    classrooms.map((c) => c.id),
+  ).catch(() => ({}) as Record<string, number>);
   return (
     <>
       <CocoonHeader variant="home" />
@@ -79,6 +86,7 @@ export default async function StudentDashboard() {
                 <p className="mt-1 text-[12px] leading-normal font-medium text-cocoon-muted">
                   {classroom.groupCount} กลุ่ม
                 </p>
+                <PendingFormsPill count={pendingFormCounts[classroom.id] ?? 0} className="mt-2" />
               </Link>
             </li>
           ))}

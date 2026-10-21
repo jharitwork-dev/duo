@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PendingFormsPill } from './student-form-cards';
 
 interface ClassroomCardData {
   id: string;
@@ -14,9 +15,11 @@ interface ClassroomCardData {
 
 interface ClassroomCardsProps {
   classrooms: ClassroomCardData[];
+  /** classroomId → number of forms the student still has to answer (261021-r1c). */
+  pendingFormCounts?: Record<string, number>;
 }
 
-export function ClassroomCards({ classrooms }: ClassroomCardsProps) {
+export function ClassroomCards({ classrooms, pendingFormCounts }: ClassroomCardsProps) {
   const router = useRouter();
 
   return (
@@ -44,6 +47,7 @@ export function ClassroomCards({ classrooms }: ClassroomCardsProps) {
             <p className="text-muted-foreground text-xs">
               {classroom.groupCount} กลุ่ม
             </p>
+            <PendingFormsPill count={pendingFormCounts?.[classroom.id] ?? 0} className="mt-2" />
           </CardContent>
         </Card>
       ))}

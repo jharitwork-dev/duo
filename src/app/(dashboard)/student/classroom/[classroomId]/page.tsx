@@ -9,6 +9,8 @@ import { HandIllustration } from '@/components/cocoon/illustrations';
 import { StudentGroupPicker } from '@/components/group/student-group-picker';
 import { EMPTY_CARD, PAGE_BODY } from '@/components/cocoon/ui';
 import { effectiveGroupLimit } from '@/lib/group-rules';
+import { getStudentForms } from '@/server/queries/form-response';
+import { StudentFormCards } from '@/components/student/student-form-cards';
 
 interface Props {
   params: Promise<{ classroomId: string }>;
@@ -34,6 +36,8 @@ export default async function StudentClassroomPage({ params }: Props) {
   }
 
   const groupMode = classroom.groupMode;
+  // Classroom forms (261021-r1c): decorative, never break the page.
+  const studentForms = await getStudentForms(classroomId, userId).catch(() => []);
 
   return (
     <>
@@ -43,6 +47,7 @@ export default async function StudentClassroomPage({ params }: Props) {
         subtitle={classroom.description || undefined}
       />
       <div className={PAGE_BODY}>
+        <StudentFormCards forms={studentForms} className="mx-0 mb-6 lg:mb-8" />
         {groupMode === 'teacher' ? (
           <div className={`${EMPTY_CARD} lg:mx-auto lg:max-w-[560px]`}>
             <HandIllustration className="h-20 w-auto" />

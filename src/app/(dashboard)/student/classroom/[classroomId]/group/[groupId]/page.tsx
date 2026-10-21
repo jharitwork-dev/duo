@@ -16,6 +16,8 @@ import { CocoonHeader } from '@/components/cocoon/cocoon-header';
 import { ResponsibleTeachersLabel } from '@/components/group/responsible-teachers';
 import { getGroupTeachersByClassroom } from '@/server/queries/group-teachers';
 import type { ResponsibleTeacher } from '@/lib/group-teachers';
+import { getStudentForms } from '@/server/queries/form-response';
+import { StudentFormCards } from '@/components/student/student-form-cards';
 import { PhaseStepper } from '@/components/student/phase-stepper';
 import { NodePath } from '@/components/student/node-path';
 import { NodePathDesktop } from '@/components/student/node-path-desktop';
@@ -149,9 +151,11 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
   // Self-grouping classrooms: students may leave (and the self_create creator may delete) their group.
   const groupMode = await getClassroomGroupMode(group.classroomId);
   // "ครูที่ดูแล" (261006-ij6): publicName only; decorative, never break the home page.
-  const groupTeachers = await getGroupTeachersByClassroom(group.classroomId).catch(
-    () => ({}) as Record<string, ResponsibleTeacher[]>,
-  );
+  // Classroom forms (261021-r1c) are decorative here as well: a failure renders no section.
+  const [groupTeachers, studentForms] = await Promise.all([
+    getGroupTeachersByClassroom(group.classroomId).catch(() => ({}) as Record<string, ResponsibleTeacher[]>),
+    getStudentForms(group.classroomId, userId).catch(() => []),
+  ]);
 
   return (
     <>
@@ -162,6 +166,7 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
         งานของฉัน
       </h1>
       <ResponsibleTeachersLabel teachers={groupTeachers[group.id] ?? []} className="mx-[33px] mt-2 lg:mx-0" />
+      <StudentFormCards forms={studentForms} className="mt-4" />
 
       {isPreview && (
         <p
