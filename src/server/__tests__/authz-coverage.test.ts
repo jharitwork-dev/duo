@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ACTIONS_DIR = path.resolve(__dirname, '../actions');
-const SCANNED = ['classroom.ts', 'group.ts', 'phase.ts', 'todo.ts', 'template.ts', 'impact.ts', 'review.ts', 'todo-attachment.ts', 'classroom-task.ts'];
+const SCANNED = ['classroom.ts', 'group.ts', 'phase.ts', 'todo.ts', 'template.ts', 'impact.ts', 'review.ts', 'todo-attachment.ts', 'classroom-task.ts', 'form.ts'];
 const EDITOR_CHECK = /assert(Classroom|ClassroomTask|Group|Phase|Todo)Editor\(/;
 const GROUP_DELETE_CHECK = /authorizeGroupDelete\(/;
 // Template-owner checks / creation of a brand-new classroom (no classroom to check yet).

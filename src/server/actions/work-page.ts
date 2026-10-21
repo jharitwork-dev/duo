@@ -17,6 +17,7 @@ import { cleanupR2Objects } from '@/lib/r2-cleanup';
 import { getUserDirectory } from '@/lib/user-directory';
 import { actionError, type ActionResult } from '@/lib/action-result';
 import type { SubmissionStatus } from '@/lib/node-path';
+import { formTaskWorkPageBlock } from '@/lib/forms';
 import {
   WORK_PAGE_LOCK_MESSAGE,
   canSubmitWorkPage,
@@ -119,6 +120,9 @@ export async function saveWorkPage(
   const { todoId, baseUpdatedAt } = parsed.data;
 
   const access = await resolveWorkPageAccess(todoId, userId);
+  // Form-linked to-dos (261021-r1c) are completed through the form only.
+  const formBlock = formTaskWorkPageBlock(access.todo);
+  if (formBlock) return actionError(formBlock);
   const valid = validateWorkPageContent(parsed.data.content);
   if (!valid.ok) return actionError(ERR_CONTENT);
 
@@ -184,6 +188,9 @@ export async function submitWorkPage(
   const { todoId, baseUpdatedAt } = parsed.data;
 
   const access = await resolveWorkPageAccess(todoId, userId);
+  // Form-linked to-dos (261021-r1c) are completed through the form only.
+  const formBlock = formTaskWorkPageBlock(access.todo);
+  if (formBlock) return actionError(formBlock);
   const { todo, groupId, classroomId } = access;
   const fileRequirement = todo.fileRequirement;
 
@@ -279,6 +286,9 @@ export async function updateSubmittedWorkPage(
   const { todoId, submissionId, baseUpdatedAt } = parsed.data;
 
   const access = await resolveWorkPageAccess(todoId, userId);
+  // Form-linked to-dos (261021-r1c) are completed through the form only.
+  const formBlock = formTaskWorkPageBlock(access.todo);
+  if (formBlock) return actionError(formBlock);
   const { todo, groupId, classroomId } = access;
   const fileRequirement = todo.fileRequirement;
 
@@ -409,6 +419,9 @@ export async function createWorkPageUploadUrl(
   const data = parsed.data;
 
   const access = await resolveWorkPageAccess(data.todoId, userId);
+  // Form-linked to-dos (261021-r1c) are completed through the form only.
+  const formBlock = formTaskWorkPageBlock(access.todo);
+  if (formBlock) return actionError(formBlock);
   if (!getR2Config()) return actionError(ERR_NO_STORAGE);
   const gate = fileGate(access);
   if (gate) return actionError(gate);
@@ -447,6 +460,9 @@ export async function attachWorkPageFile(
   const data = parsed.data;
 
   const access = await resolveWorkPageAccess(data.todoId, userId);
+  // Form-linked to-dos (261021-r1c) are completed through the form only.
+  const formBlock = formTaskWorkPageBlock(access.todo);
+  if (formBlock) return actionError(formBlock);
   const gate = fileGate(access);
   if (gate) return actionError(gate);
   if (!validateSubmissionFile(data.contentType, data.size)) return actionError(ERR_FILE);
