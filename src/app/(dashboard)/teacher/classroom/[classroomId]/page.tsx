@@ -305,6 +305,14 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
                 initialPhases={phases}
                 groups={groupOptions}
                 classroomTasks={classroomTasks}
+                forms={forms.map((f) => ({
+                  id: f.id,
+                  title: f.title,
+                  status: f.effectiveStatus,
+                  responseMode: f.responseMode,
+                  restricted: f.audienceGroupIds.length > 0,
+                  audienceGroupCount: f.audienceGroupIds.length,
+                }))}
               />
               <ArchivedPhaseList phases={archivedPhases} />
             </div>

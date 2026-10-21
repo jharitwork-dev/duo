@@ -107,6 +107,21 @@ export default async function TodoDetailPage({ params, searchParams }: Props) {
         <TodoDetail notes={todo.notes} description={todo.description} />
 
         <div className="space-y-4 lg:space-y-8">
+          {isTeacher && todo.formId && (
+            // Form-linked phase task (261021-r1c): students complete it through the form.
+            <section className={cn(CARD, 'space-y-3')}>
+              <h2 className={CARD_TITLE}>งานนี้เป็นแบบฟอร์ม</h2>
+              <p className="text-[14px] leading-normal text-cocoon-muted">
+                นักเรียนส่งงานนี้ด้วยการตอบแบบฟอร์ม — ส่งแล้วงานจะเข้าสถานะรอตรวจ
+              </p>
+              <Link
+                href={`/teacher/classroom/${classroom.id}/forms/${todo.formId}/responses?group=${group.id}`}
+                className={cn(BTN_TERTIARY, 'inline-flex h-10 items-center text-[14px]')}
+              >
+                ดูคำตอบแบบฟอร์ม
+              </Link>
+            </section>
+          )}
           <section className={CARD}>
             <h2 className={CARD_TITLE}>สิ่งที่ต้องส่ง</h2>
             {items.length > 0 ? (

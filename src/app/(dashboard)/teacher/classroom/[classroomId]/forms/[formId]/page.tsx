@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/cocoon/page-header';
 import { BTN_TERTIARY, PAGE_BODY } from '@/components/cocoon/ui';
 import { FormBuilder } from '@/components/form/form-builder';
 import { FormStatusPill } from '@/components/form/form-pills';
+import { AddFormToPhaseButton } from '@/components/form/add-form-to-phase-dialog';
 
 const HEADER_LINK = cn(BTN_TERTIARY, 'inline-flex h-10 items-center text-[14px]');
 
@@ -30,6 +31,9 @@ export default async function FormBuilderPage({
   const status = effectiveFormStatus(form, new Date());
   const backHref = `/teacher/classroom/${classroomId}?tab=forms`;
   const base = `/teacher/classroom/${classroomId}/forms/${formId}`;
+  const linkedPhaseIds = new Set(data.linkedTasks.map((t) => t.phaseId));
+  const groupIds = new Set(data.groups.map((g) => g.id));
+  const restrictedGroupCount = data.audienceGroupIds.filter((id) => groupIds.has(id)).length;
 
   return (
     <>
@@ -53,6 +57,14 @@ export default async function FormBuilderPage({
             <a href={`/forms/${formId}`} target="_blank" rel="noopener noreferrer" className={HEADER_LINK}>
               ดูตัวอย่าง
             </a>
+            <AddFormToPhaseButton
+              mode="pick-phase"
+              formId={formId}
+              formStatus={form.status}
+              restrictedGroupCount={restrictedGroupCount}
+              phases={data.phases.map((p) => ({ id: p.id, name: p.name, alreadyLinked: linkedPhaseIds.has(p.id) }))}
+              className={cn(HEADER_LINK, 'bg-cocoon-blue-soft')}
+            />
           </>
         }
       />

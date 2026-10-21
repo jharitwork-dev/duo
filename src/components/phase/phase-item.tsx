@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useSortable } from '@dnd-kit/react/sortable';
-import { GripVertical, ChevronDown, MoreHorizontal, Archive, Pencil, ListPlus } from 'lucide-react';
+import { GripVertical, ChevronDown, MoreHorizontal, Archive, Pencil, ListPlus, ClipboardList } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleTrigger,
@@ -27,6 +27,7 @@ import { formatDeadline } from '@/lib/deadline';
 import type { ClassroomPhase } from './phase-list';
 import type { ClassroomTaskView } from '@/server/queries/classroom-task';
 import { ClassroomTaskSection } from '@/components/classroom-task/classroom-task-section';
+import { AddFormToPhaseDialog, type PickFormOption } from '@/components/form/add-form-to-phase-dialog';
 
 const PILL =
   'inline-flex h-[24px] items-center rounded-full border border-cocoon-line px-2.5 text-[12px] font-medium whitespace-nowrap text-cocoon-subtle';
@@ -37,12 +38,15 @@ export function PhaseItem({
   index,
   groups,
   classroomTasks = [],
+  forms = [],
 }: {
   phase: ClassroomPhase;
   index: number;
   groups: GroupOption[];
   /** Classroom-level tasks of this phase, deadline-ordered (261004-j6h). */
   classroomTasks?: ClassroomTaskView[];
+  /** Classroom forms for "เพิ่มงานจากแบบฟอร์ม" (261021-r1c). */
+  forms?: PickFormOption[];
 }) {
   const { ref, handleRef, isDragging } = useSortable({
     id: phase.id,
@@ -51,6 +55,7 @@ export function PhaseItem({
   });
   const [isOpen, setIsOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [formPickerOpen, setFormPickerOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -121,6 +126,10 @@ export function PhaseItem({
                 <ListPlus className="mr-2 size-4" />
                 เพิ่มงานให้หลายกลุ่ม
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFormPickerOpen(true)} disabled={forms.length === 0}>
+                <ClipboardList className="mr-2 size-4" />
+                เพิ่มงานจากแบบฟอร์ม
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleArchive}
@@ -158,6 +167,15 @@ export function PhaseItem({
         open={assignOpen}
         onOpenChange={setAssignOpen}
         onCreated={() => router.refresh()}
+      />
+
+      <AddFormToPhaseDialog
+        mode="pick-form"
+        phaseId={phase.id}
+        phaseName={phase.name}
+        forms={forms}
+        open={formPickerOpen}
+        onOpenChange={setFormPickerOpen}
       />
     </div>
   );

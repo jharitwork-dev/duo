@@ -10,6 +10,7 @@ import { reorderPhases } from '@/server/actions/phase';
 import type { getClassroomPhases } from '@/server/queries/phase';
 import type { GroupOption } from '@/components/todo/assign-todo-dialog';
 import type { ClassroomTaskView } from '@/server/queries/classroom-task';
+import type { PickFormOption } from '@/components/form/add-form-to-phase-dialog';
 
 export type ClassroomPhase = Awaited<ReturnType<typeof getClassroomPhases>>[number];
 
@@ -22,12 +23,15 @@ export function PhaseList({
   initialPhases,
   groups,
   classroomTasks = {},
+  forms = [],
 }: {
   classroomId: string;
   initialPhases: ClassroomPhase[];
   groups: GroupOption[];
   /** Classroom-level tasks keyed by phase id (261004-j6h). A prop (not state) so refreshes show. */
   classroomTasks?: Record<string, ClassroomTaskView[]>;
+  /** Classroom forms for the "เพิ่มงานจากแบบฟอร์ม" phase menu item (261021-r1c). */
+  forms?: PickFormOption[];
 }) {
   const [phases, setPhases] = useState(initialPhases);
   const [, startTransition] = useTransition();
@@ -71,6 +75,7 @@ export function PhaseList({
             index={index}
             groups={groups}
             classroomTasks={classroomTasks[phase.id] ?? []}
+            forms={forms}
           />
         ))}
       </DragDropProvider>
