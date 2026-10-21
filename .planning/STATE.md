@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 Phase: 4
 Plan: quick 261004-03i (deadlines + dashboard) planning; next 261004-gic (review), 261004-gid (teacher attachments)
 Status: In progress — phases 1, 2, 3, 5 complete via quick tasks
-Last activity: 2026-10-08 - Completed quick task 261008-0y9: teacher กลุ่มที่ฉันดูแล filter on home + classroom
+Last activity: 2026-10-21 - Completed quick task 261021-r1c: classroom forms (builder, Typeform flow, responses/CSV, form as phase task)
 
 Progress: [███████▌░░] 75%
 
@@ -131,6 +131,7 @@ None yet.
 | fast | Superadmin can open any classroom's group page + to-do detail (allowAnyClassroom on getGroupById/getTodoDetail) | 2026-10-06 | 54aadc7 | — |
 | 261006-ij6 | Group responsible teachers (ครูที่ดูแล labels: group cards, group page, student home, review + กลุ่มที่ฉันดูแล filter) + classroom teacher rank ครู/ผู้ช่วยครู (full: checked, verified 8/8 code + human UAT pending; migration applied + deployed) | 2026-10-06 | af30d63 | [261006-ij6-group-responsible-teachers-and-classroom](./quick/261006-ij6-group-responsible-teachers-and-classroom/) |
 | 261008-0y9 | Teacher กลุ่มที่ฉันดูแล filter (?mine=1) on /teacher home (sections + chips) and classroom overview (cards + matrix) + groups tabs; shared MineFilterToggle | 2026-10-08 | 51b7e26 | [261008-0y9-teacher-mine-filter-on-home-and-classroo](./quick/261008-0y9-teacher-mine-filter-on-home-and-classroo/) |
+| 261021-r1c | Classroom forms: teacher form builder (6 question types, individual/group mode, audience), Typeform-style student flow in build.Innovator CI, teacher-only responses + CSV export, form as phase task → normal review (full: 4 plans, checked x2, verified 9/9 code + human UAT pending; migration 2026-10-21-forms applied) | 2026-10-21 | f196c36 | [261021-r1c-classroom-forms-teacher-builder-student-](./quick/261021-r1c-classroom-forms-teacher-builder-student-/) |
 
 ## Session Continuity
 
