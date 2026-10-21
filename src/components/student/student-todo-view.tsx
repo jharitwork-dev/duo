@@ -1,5 +1,10 @@
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { cn } from 'cn';
+import { getFormForRespondent } from '@/server/queries/form-response';
+import type { FormStatus } from '@/lib/forms';
+import { BTN_PRIMARY, CARD, CARD_META, CARD_TITLE } from '@/components/cocoon/ui';
 import { getSubmissionHistory } from '@/server/queries/submission';
 import { getStudentWorkPage, type StudentWorkPageData } from '@/server/queries/work-page';
 import { parseDeliverables } from '@/lib/todo-deliverables';
@@ -28,8 +33,18 @@ export async function StudentTodoView({ todoId, userId }: { todoId: string; user
   if (!data || !workPage) redirect('/student');
 
   const { todo, classroomId, groupId, submissions } = data;
+  // Form-linked to-do (261021-r1c): answered only through the form; decorative fetch, null on failure.
+  const formView = todo.formId ? await getFormForRespondent(todo.formId, userId).catch(() => null) : null;
+  const formTask: FormTaskInfo | null = todo.formId
+    ? {
+        formId: todo.formId,
+        status: formView?.form.effectiveStatus ?? null,
+        answered: !!formView?.response,
+      }
+    : null;
   return (
     <StudentTodoScreen
+      formTask={formTask}
       todo={{
         id: todo.id,
         title: todo.title,
@@ -52,7 +67,72 @@ export async function StudentTodoView({ todoId, userId }: { todoId: string; user
   );
 }
 
+/** Form-linked to-do state for FormTaskCard. `status` null = form not visible (draft / missing). */
+export interface FormTaskInfo {
+  formId: string;
+  status: FormStatus | null;
+  answered: boolean;
+}
+
+/**
+ * Replaces the work page on form-linked to-dos: the only path to submit is the form itself
+ * (the work-page actions reject these to-dos server-side with FORM_TASK_WORK_PAGE_ERROR).
+ */
+export function FormTaskCard({
+  todoId,
+  formTask,
+  phaseViewable,
+}: {
+  todoId: string;
+  formTask: FormTaskInfo;
+  phaseViewable: boolean;
+}) {
+  const href = `/forms/${formTask.formId}?todo=${todoId}`;
+  const unavailable = formTask.status === null || formTask.status === 'draft';
+  const closed = formTask.status === 'closed';
+  const label = formTask.answered ? 'ดู / แก้ไขคำตอบ' : 'ตอบแบบฟอร์ม';
+
+  return (
+    <section className={cn(CARD, 'space-y-3')} aria-label="งานนี้ตอบผ่านแบบฟอร์ม">
+      <h2 className={CARD_TITLE}>งานนี้ตอบผ่านแบบฟอร์ม</h2>
+      <p className={CARD_META}>ส่งแบบฟอร์มแล้วงานจะเข้าสถานะรอตรวจ</p>
+      {!phaseViewable && !unavailable && !closed && (
+        <p
+          role="status"
+          className="rounded-[12px] border border-cocoon-line bg-black/5 px-4 py-2.5 text-[14px] leading-normal font-bold text-cocoon-muted"
+        >
+          Phase นี้ยังไม่ปลดล็อค — ส่งแบบฟอร์มได้แต่ยังไม่นับเป็นการส่งงาน
+        </p>
+      )}
+      {unavailable ? (
+        <button
+          type="button"
+          disabled
+          className={cn(BTN_PRIMARY, 'w-full cursor-not-allowed opacity-50 hover:bg-primary')}
+        >
+          ครูยังไม่เปิดแบบฟอร์มนี้
+        </button>
+      ) : closed ? (
+        <>
+          <p className="text-[14px] leading-normal font-bold text-cocoon-muted">แบบฟอร์มปิดรับคำตอบแล้ว</p>
+          {formTask.answered && (
+            <Link href={href} className={cn(BTN_PRIMARY, 'flex w-full items-center justify-center')}>
+              ดูคำตอบ
+            </Link>
+          )}
+        </>
+      ) : (
+        <Link href={href} className={cn(BTN_PRIMARY, 'flex w-full items-center justify-center')}>
+          {label}
+        </Link>
+      )}
+    </section>
+  );
+}
+
 interface StudentTodoScreenProps {
+  /** Set when the to-do is a form task (261021-r1c): FormTaskCard replaces the work page. */
+  formTask?: FormTaskInfo | null;
   todo: {
     id: string;
     title: string;
@@ -71,7 +151,7 @@ interface StudentTodoScreenProps {
 }
 
 /** Presentational to-do screen (plain props, no data access). */
-export function StudentTodoScreen({ todo, workPage, submissions, groupHome }: StudentTodoScreenProps) {
+export function StudentTodoScreen({ todo, workPage, submissions, groupHome, formTask }: StudentTodoScreenProps) {
   const [firstLineRaw, ...restLines] = (todo.description ?? '').split(/\r?\n/);
   const firstLine = firstLineRaw?.trim() ?? '';
   const moreDescription = restLines.join('\n').trim();
@@ -150,24 +230,28 @@ export function StudentTodoScreen({ todo, workPage, submissions, groupHome }: St
           {latest?.status === 'approved' && latest.reviewerComment && (
             <ReviewerNoteCard tone="approved" title="ข้อความจากผู้ตรวจ" comment={latest.reviewerComment} />
           )}
-          <StudentWorkPage
-            todoId={todo.id}
-            todoTitle={todo.title}
-            submissionMode={todo.submissionMode}
-            initial={workPage.page}
-            files={workPage.files}
-            fileRequirement={workPage.fileRequirement}
-            storageReady={workPage.storageReady}
-            canEdit={workPage.canEdit}
-            phaseViewable={workPage.phaseViewable}
-            latestStatus={workPage.latestStatus}
-            resubmit={resubmit}
-            deadline={workPage.deadline}
-            lock={workPage.lock}
-            latestSubmission={workPage.latestSubmission}
-            latestAttempt={latest?.attempt}
-            serverNow={workPage.serverNow}
-          />
+          {formTask ? (
+            <FormTaskCard todoId={todo.id} formTask={formTask} phaseViewable={workPage.phaseViewable} />
+          ) : (
+            <StudentWorkPage
+              todoId={todo.id}
+              todoTitle={todo.title}
+              submissionMode={todo.submissionMode}
+              initial={workPage.page}
+              files={workPage.files}
+              fileRequirement={workPage.fileRequirement}
+              storageReady={workPage.storageReady}
+              canEdit={workPage.canEdit}
+              phaseViewable={workPage.phaseViewable}
+              latestStatus={workPage.latestStatus}
+              resubmit={resubmit}
+              deadline={workPage.deadline}
+              lock={workPage.lock}
+              latestSubmission={workPage.latestSubmission}
+              latestAttempt={latest?.attempt}
+              serverNow={workPage.serverNow}
+            />
+          )}
         </div>
 
         {submissions.length > 0 && (
