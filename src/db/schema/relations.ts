@@ -9,6 +9,7 @@ import { submissions, submissionFiles } from './submissions';
 import { workPages, workPageFiles } from './workPages';
 import { comments, commentReads } from './comments';
 import { phaseTemplates } from './phaseTemplates';
+import { forms, formGroups, formQuestions, formResponses } from './forms';
 
 // Classrooms relations
 export const classroomsRelations = relations(classrooms, ({ many }) => ({
@@ -62,6 +63,10 @@ export const classroomTasksRelations = relations(classroomTasks, ({ one, many })
   }),
   files: many(classroomTaskFiles),
   copies: many(todos),
+  form: one(forms, {
+    fields: [classroomTasks.formId],
+    references: [forms.id],
+  }),
 }));
 
 export const classroomTaskFilesRelations = relations(classroomTaskFiles, ({ one }) => ({
@@ -96,6 +101,10 @@ export const todosRelations = relations(todos, ({ one, many }) => ({
   classroomTask: one(classroomTasks, {
     fields: [todos.classroomTaskId],
     references: [classroomTasks.id],
+  }),
+  form: one(forms, {
+    fields: [todos.formId],
+    references: [forms.id],
   }),
   attachments: many(todoAttachments),
   submissions: many(submissions),
@@ -167,5 +176,45 @@ export const workPageFilesRelations = relations(workPageFiles, ({ one }) => ({
   workPage: one(workPages, {
     fields: [workPageFiles.workPageId],
     references: [workPages.id],
+  }),
+}));
+
+// Classroom forms (261021-r1c)
+export const formsRelations = relations(forms, ({ one, many }) => ({
+  classroom: one(classrooms, {
+    fields: [forms.classroomId],
+    references: [classrooms.id],
+  }),
+  audience: many(formGroups),
+  questions: many(formQuestions),
+  responses: many(formResponses),
+}));
+
+export const formGroupsRelations = relations(formGroups, ({ one }) => ({
+  form: one(forms, {
+    fields: [formGroups.formId],
+    references: [forms.id],
+  }),
+  group: one(groups, {
+    fields: [formGroups.groupId],
+    references: [groups.id],
+  }),
+}));
+
+export const formQuestionsRelations = relations(formQuestions, ({ one }) => ({
+  form: one(forms, {
+    fields: [formQuestions.formId],
+    references: [forms.id],
+  }),
+}));
+
+export const formResponsesRelations = relations(formResponses, ({ one }) => ({
+  form: one(forms, {
+    fields: [formResponses.formId],
+    references: [forms.id],
+  }),
+  group: one(groups, {
+    fields: [formResponses.groupId],
+    references: [groups.id],
   }),
 }));

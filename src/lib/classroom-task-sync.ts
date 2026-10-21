@@ -26,6 +26,8 @@ export interface TaskFieldValues {
   submissionMode: 'group' | 'individual';
   fileRequirement: FileRequirement;
   deadline: Date | null;
+  /** Linked classroom form (quick 261021-r1c); locked like title — always pushed to copies. */
+  formId?: string | null;
 }
 
 export interface ClassroomTaskSpec extends TaskFieldValues {
@@ -88,6 +90,7 @@ function fieldValues(t: TaskFieldValues): TaskFieldValues {
     submissionMode: t.submissionMode,
     fileRequirement: t.fileRequirement,
     deadline: t.deadline,
+    formId: t.formId ?? null,
   };
 }
 
@@ -140,6 +143,8 @@ export function planClassroomTaskSync(input: {
     for (const field of LOCKED_FIELDS) {
       if (!sameField(field, copy, task)) Object.assign(set, { [field]: task[field] });
     }
+    // form_id is locked too (never overridable); undefined and null are the same "no form".
+    if ((copy.formId ?? null) !== (task.formId ?? null)) set.formId = task.formId ?? null;
     for (const field of SYNCED_OVERRIDABLE) {
       if (overridden.has(field)) continue;
       if (!sameField(field, copy, task)) Object.assign(set, { [field]: task[field] });

@@ -2,6 +2,7 @@ import { pgTable, text, timestamp, integer, index } from 'drizzle-orm/pg-core';
 import { createId } from '@/lib/ids';
 import { FILE_REQUIREMENTS } from '@/lib/work-page';
 import { phases } from './phases';
+import { forms } from './forms';
 
 /**
  * Classroom-level task ("งานของห้องเรียน", quick task 261004-j6h).
@@ -24,8 +25,10 @@ export const classroomTasks = pgTable(
     createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    // Form-linked task (261021-r1c); synced to every copy like a locked field.
+    formId: text('form_id').references(() => forms.id, { onDelete: 'set null' }),
   },
-  (t) => [index('classroom_tasks_phase_id_idx').on(t.phaseId)],
+  (t) => [index('classroom_tasks_phase_id_idx').on(t.phaseId), index('classroom_tasks_form_id_idx').on(t.formId)],
 );
 
 /** Teacher files attached to a classroom task; copies get todo_attachments rows sharing file_key. */

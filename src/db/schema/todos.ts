@@ -1,10 +1,11 @@
-import { pgTable, text, timestamp, integer, boolean, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, boolean, uniqueIndex, index } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { createId } from '@/lib/ids';
 import { FILE_REQUIREMENTS } from '@/lib/work-page';
 import { phases } from './phases';
 import { groups } from './groups';
 import { classroomTasks } from './classroomTasks';
+import { forms } from './forms';
 
 export const todos = pgTable(
   'todos',
@@ -42,11 +43,14 @@ export const todos = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
+    // Form-linked task (261021-r1c): completed by answering the form, never via the work page.
+    formId: text('form_id').references(() => forms.id, { onDelete: 'set null' }),
   },
   (t) => [
     uniqueIndex('todos_classroom_task_group_unique')
       .on(t.classroomTaskId, t.groupId)
       .where(sql`${t.classroomTaskId} is not null`),
+    index('todos_form_id_idx').on(t.formId),
   ],
 );
 

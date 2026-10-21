@@ -333,6 +333,7 @@ export async function syncClassroomTasks(
         submissionMode: todos.submissionMode,
         fileRequirement: todos.fileRequirement,
         deadline: todos.deadline,
+        formId: todos.formId,
         overriddenFields: todos.overriddenFields,
       })
       .from(todos)
@@ -392,6 +393,7 @@ export async function syncClassroomTasks(
     submissionMode: t.submissionMode,
     fileRequirement: t.fileRequirement,
     deadline: t.deadline,
+    formId: t.formId,
     files: filesByTask.get(t.id) ?? [],
   }));
   const copies: CopyState[] = copyRows.map((c) => ({
@@ -404,6 +406,7 @@ export async function syncClassroomTasks(
     submissionMode: c.submissionMode,
     fileRequirement: c.fileRequirement,
     deadline: c.deadline,
+    formId: c.formId,
     overriddenFields: c.overriddenFields ?? [],
     attachmentKeys: keysByCopy.get(c.id) ?? [],
     hasSubmission: submitted.has(c.id),

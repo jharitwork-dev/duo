@@ -8,4 +8,5 @@ export * from './submissions';
 export * from './workPages';
 export * from './comments';
 export * from './phaseTemplates';
+export * from './forms';
 export * from './relations';

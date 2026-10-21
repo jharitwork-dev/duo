@@ -116,6 +116,7 @@ describe('planClassroomTaskSync', () => {
       submissionMode: 'group',
       fileRequirement: 'optional',
       deadline: D1,
+      formId: null,
     });
     expect(ins.files.map((f) => f.fileKey)).toEqual(['k1', 'k2']);
     expect(plan.updates).toEqual([]);
@@ -269,5 +270,35 @@ describe('summarizeDelete', () => {
       kept: 1,
     });
     expect(summarizeDelete([])).toEqual({ removed: 0, kept: 0 });
+  });
+});
+
+describe('form_id sync (quick 261021-r1c)', () => {
+  it('carries formId on inserts', () => {
+    const t = task({ formId: 'f1' });
+    const plan = planClassroomTaskSync({ groupIds: ['g1', 'g2'], tasks: [t], copies: [] });
+    expect(plan.inserts.map((i) => i.values.formId)).toEqual(['f1', 'f1']);
+  });
+
+  it('pushes a changed formId to every copy, even overridden ones', () => {
+    const old = task({ formId: null });
+    const t = task({ formId: 'f2' });
+    const a = copyOf(old, 'g1');
+    const b = copyOf(old, 'g2', { overriddenFields: ['description', 'notes', 'fileRequirement', 'attachments'] });
+    const plan = planClassroomTaskSync({ groupIds: ['g1', 'g2'], tasks: [t], copies: [a, b] });
+    expect(plan.updates).toEqual([
+      { todoId: a.todoId, set: { formId: 'f2' } },
+      { todoId: b.todoId, set: { formId: 'f2' } },
+    ]);
+  });
+
+  it('treats undefined and null formId as equal', () => {
+    const t = task({ formId: null });
+    const c = copyOf(task(), 'g1');
+    delete c.formId;
+    expect(isEmpty(planClassroomTaskSync({ groupIds: ['g1'], tasks: [t], copies: [c] }))).toBe(true);
+    const t2 = task();
+    const c2 = copyOf(task(), 'g1', { formId: null });
+    expect(isEmpty(planClassroomTaskSync({ groupIds: ['g1'], tasks: [t2], copies: [c2] }))).toBe(true);
   });
 });
