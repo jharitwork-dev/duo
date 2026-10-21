@@ -11,14 +11,21 @@ import { todos } from '@/db/schema/todos';
 import { classroomTasks } from '@/db/schema/classroomTasks';
 import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 import {
+  buildFormCsv,
   effectiveFormStatus,
   expectedRespondents,
+  formCsvFileName,
   parseQuestionConfig,
+  summarizeResponses,
+  type FormAnswers,
   type FormQuestionDef,
   type FormStatus,
+  type QuestionSummary,
   type ResponseMode,
 } from '@/lib/forms';
 import { loadClassroomAccess, type DbLike } from '@/server/phase-helpers';
+import { getMyGroupIds } from '@/server/queries/group-teachers';
+import { getUserDirectory } from '@/lib/user-directory';
 
 export type FormRow = typeof forms.$inferSelect;
 
@@ -276,4 +283,170 @@ export async function getFormForEditor(formId: string, userId: string): Promise<
     hasResponses: responseCount > 0,
     linkedTasks: linked.map(({ phaseId, phaseName, kind }) => ({ phaseId, phaseName, kind })),
   };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Responses view + CSV (teacher, self-authorizing)
+
+export interface FormResponseFilters {
+  /** Restrict to one group of the classroom (ignored when not in the classroom). */
+  groupId?: string | null;
+  /** "กลุ่มที่ฉันดูแล": groups the caller is a responsible teacher of. */
+  mine?: boolean;
+}
+
+export interface FormResponseRow {
+  id: string;
+  submittedAt: Date;
+  updatedAt: Date;
+  groupId: string | null;
+  groupName: string;
+  respondentName: string;
+  email: string;
+  answers: FormAnswers;
+}
+
+export interface FormResponsesView {
+  form: FormRow;
+  classroom: { id: string; name: string };
+  questions: FormQuestionDef[];
+  audienceGroupIds: string[];
+  groups: { id: string; name: string }[];
+  /** Effective filters after validation. */
+  filters: { groupId: string | null; mine: boolean };
+  rows: FormResponseRow[];
+  summary: QuestionSummary[];
+  notAnswered: { kind: 'students' | 'groups'; items: { id: string; name: string; groupName?: string }[] };
+  counts: { answered: number; expected: number };
+}
+
+export async function getFormResponsesView(
+  formId: string,
+  userId: string,
+  filters: FormResponseFilters = {},
+): Promise<FormResponsesView | null> {
+  const form = await loadFormRow(formId);
+  if (!form) return null;
+  const { classroom, allowed } = await loadClassroomAccess(form.classroomId, userId);
+  if (!classroom || !allowed) return null;
+
+  const [questions, audienceGroupIds, roster, responseRows, myGroups] = await Promise.all([
+    loadFormQuestions(formId),
+    loadFormAudience(formId),
+    loadClassroomRoster(form.classroomId),
+    db
+      .select()
+      .from(formResponses)
+      .where(eq(formResponses.formId, formId))
+      .orderBy(desc(formResponses.submittedAt)),
+    filters.mine ? getMyGroupIds(userId, [form.classroomId]) : Promise.resolve(null),
+  ]);
+
+  const groupName = new Map(roster.groups.map((g) => [g.id, g.name]));
+  const groupOfStudent = new Map<string, string>();
+  for (const g of roster.groups) for (const m of g.memberIds) if (!groupOfStudent.has(m)) groupOfStudent.set(m, g.id);
+
+  const groupId = filters.groupId && groupName.has(filters.groupId) ? filters.groupId : null;
+  const mine = Boolean(filters.mine);
+  // null = no group restriction.
+  let allowedGroups: Set<string> | null = null;
+  if (groupId) allowedGroups = new Set([groupId]);
+  if (myGroups) allowedGroups = new Set([...(allowedGroups ?? groupName.keys())].filter((id) => myGroups.has(id)));
+  const inScope = (gid: string | null | undefined) => allowedGroups === null || (!!gid && allowedGroups.has(gid));
+
+  const responseGroupId = (r: (typeof responseRows)[number]) =>
+    r.groupId ?? (form.responseMode === 'individual' ? (groupOfStudent.get(r.userId) ?? null) : null);
+  const visibleResponses = responseRows.filter((r) => inScope(responseGroupId(r)));
+
+  const expected = expectedRespondents({
+    mode: form.responseMode,
+    audienceGroupIds,
+    groups: roster.groups,
+    classroomStudentIds: roster.studentIds,
+  });
+  const answeredOwners = new Set(responseRows.map((r) => r.ownerKey));
+  const expectedInScope =
+    expected.kind === 'groups'
+      ? expected.ids.filter((id) => inScope(id))
+      : expected.ids.filter((id) => inScope(groupOfStudent.get(id)));
+  const missing = expectedInScope.filter((id) => !answeredOwners.has(id));
+
+  const directory = await getUserDirectory([
+    ...visibleResponses.map((r) => r.userId),
+    ...(expected.kind === 'students' ? missing : []),
+  ]);
+
+  const rows: FormResponseRow[] = visibleResponses.map((r) => {
+    const gid = responseGroupId(r);
+    const person = directory.get(r.userId);
+    return {
+      id: r.id,
+      submittedAt: r.submittedAt,
+      updatedAt: r.updatedAt,
+      groupId: gid,
+      groupName: gid ? (groupName.get(gid) ?? '') : '',
+      respondentName: person?.name ?? '',
+      email: person?.email ?? '',
+      answers: r.answers ?? {},
+    };
+  });
+
+  const notAnswered: FormResponsesView['notAnswered'] =
+    expected.kind === 'groups'
+      ? { kind: 'groups', items: missing.map((id) => ({ id, name: groupName.get(id) ?? '' })) }
+      : {
+          kind: 'students',
+          items: missing
+            .map((id) => {
+              const gid = groupOfStudent.get(id);
+              return { id, name: directory.get(id)?.name ?? '', groupName: gid ? groupName.get(gid) : undefined };
+            })
+            .sort((a, b) => a.name.localeCompare(b.name, 'th')),
+        };
+
+  return {
+    form,
+    classroom: { id: classroom.id, name: classroom.name },
+    questions,
+    audienceGroupIds,
+    groups: roster.groups.map((g) => ({ id: g.id, name: g.name })),
+    filters: { groupId, mine },
+    rows,
+    summary: summarizeResponses(
+      questions,
+      rows.map((r) => r.answers),
+    ),
+    notAnswered,
+    counts: { answered: expectedInScope.length - missing.length, expected: expectedInScope.length },
+  };
+}
+
+/** Path of the authorized file-answer redirect (no file extension — see src/middleware.ts). */
+export function formFileAnswerPath(classroomId: string, formId: string, responseId: string, questionId: string): string {
+  const qs = new URLSearchParams({ response: responseId, question: questionId });
+  return `/teacher/classroom/${classroomId}/forms/${formId}/file?${qs.toString()}`;
+}
+
+/** CSV export for the route handler; null when the caller is not a classroom editor. */
+export async function buildFormCsvForRequest(
+  formId: string,
+  userId: string,
+  filters: FormResponseFilters,
+  origin: string,
+): Promise<{ csv: string; fileName: { ascii: string; utf8: string }; classroomId: string } | null> {
+  const view = await getFormResponsesView(formId, userId, filters);
+  if (!view) return null;
+  const csv = buildFormCsv({
+    questions: view.questions,
+    rows: view.rows.map((r) => ({
+      submittedAt: r.submittedAt,
+      classroomName: view.classroom.name,
+      groupName: r.groupName,
+      respondentName: r.respondentName,
+      email: r.email,
+      answers: r.answers,
+      fileLink: (questionId) => `${origin}${formFileAnswerPath(view.classroom.id, formId, r.id, questionId)}`,
+    })),
+  });
+  return { csv, fileName: formCsvFileName(view.form.title, new Date()), classroomId: view.classroom.id };
 }
