@@ -321,3 +321,32 @@ describe('authorization + sync coverage of classroom-level tasks (261004-j6h)', 
     expect(fn('todo-attachment.ts', 'removeTodoAttachment')).toContain('classroomTaskFiles');
   });
 });
+
+describe('authorization coverage of student form actions (261021-r1c)', () => {
+  const fns = exportedFunctions('form-response.ts');
+  const code = (body: string) => body.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  it('exports exactly the three student form actions', () => {
+    expect(fns.map((f) => f.name).sort()).toEqual(['createFormUploadUrl', 'getMyFormFileUrl', 'saveFormResponse']);
+  });
+
+  it.each(fns.map((f) => [f.name, f]))('%s requires a student and resolves the respondent server-side', (_name, fn) => {
+    const body = code((fn as ExportedFn).body);
+    expect(body).toMatch(/requireRole\(ROLES\.STUDENT\)/);
+    expect(body).toMatch(/resolveRespondent\(/);
+    // The group always comes from the server, never from input.
+    expect(body).not.toMatch(/data\.groupId|input\.groupId|parsed\.data\.groupId/);
+  });
+
+  it('saveFormResponse validates, re-checks the locked form and guards submission updates on pending', () => {
+    const body = code(fns.find((f) => f.name === 'saveFormResponse')!.body);
+    expect(body).toMatch(/validateAnswers\(/);
+    expect(body).toMatch(/db\.transaction\(/);
+    expect(body).toMatch(/loadFormRow\([^)]*lock: true/);
+    expect(body).toMatch(/latestScopedSubmission\(/);
+    expect(body).toMatch(/planFormSubmissionBridge\(/);
+    expect(body).toMatch(/insert\(submissions\)/);
+    expect(body).toContain("eq(submissions.status, 'pending')");
+    expect(body.indexOf('cleanupR2Objects(')).toBeGreaterThan(body.indexOf('db.transaction('));
+  });
+});
