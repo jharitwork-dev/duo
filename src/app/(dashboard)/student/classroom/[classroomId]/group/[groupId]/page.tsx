@@ -18,6 +18,8 @@ import { getGroupTeachersByClassroom } from '@/server/queries/group-teachers';
 import type { ResponsibleTeacher } from '@/lib/group-teachers';
 import { getStudentForms } from '@/server/queries/form-response';
 import { StudentFormCards } from '@/components/student/student-form-cards';
+import { getStudentMaterials } from '@/server/queries/material';
+import { StudentMaterialCards } from '@/components/student/student-material-cards';
 import { PhaseStepper } from '@/components/student/phase-stepper';
 import { NodePath } from '@/components/student/node-path';
 import { NodePathDesktop } from '@/components/student/node-path-desktop';
@@ -152,10 +154,14 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
   const groupMode = await getClassroomGroupMode(group.classroomId);
   // "ครูที่ดูแล" (261006-ij6): publicName only; decorative, never break the home page.
   // Classroom forms (261021-r1c) are decorative here as well: a failure renders no section.
-  const [groupTeachers, studentForms] = await Promise.all([
+  // สื่อการเรียน (261113-lz7): classroom-wide + the selected phase's materials (also in a locked-phase
+  // preview — there is nothing to submit); decorative, a failure renders no section.
+  const [groupTeachers, studentForms, studentMaterials] = await Promise.all([
     getGroupTeachersByClassroom(group.classroomId).catch(() => ({}) as Record<string, ResponsibleTeacher[]>),
     getStudentForms(group.classroomId, userId).catch(() => []),
+    getStudentMaterials(group.classroomId, userId).catch(() => []),
   ]);
+  const visibleMaterials = studentMaterials.filter((m) => m.phaseId === null || m.phaseId === selected?.id);
 
   return (
     <>
@@ -167,6 +173,7 @@ export default async function StudentGroupPage({ params, searchParams }: Props) 
       </h1>
       <ResponsibleTeachersLabel teachers={groupTeachers[group.id] ?? []} className="mx-[33px] mt-2 lg:mx-0" />
       <StudentFormCards forms={studentForms} className="mt-4" />
+      <StudentMaterialCards materials={visibleMaterials} className="mt-4" />
 
       {isPreview && (
         <p
