@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ACTIONS_DIR = path.resolve(__dirname, '../actions');
-const SCANNED = ['classroom.ts', 'group.ts', 'phase.ts', 'todo.ts', 'template.ts', 'impact.ts', 'review.ts', 'todo-attachment.ts', 'classroom-task.ts', 'form.ts'];
+const SCANNED = ['classroom.ts', 'group.ts', 'phase.ts', 'todo.ts', 'template.ts', 'impact.ts', 'review.ts', 'todo-attachment.ts', 'classroom-task.ts', 'form.ts', 'material.ts'];
 const EDITOR_CHECK = /assert(Classroom|ClassroomTask|Group|Phase|Todo)Editor\(/;
 const GROUP_DELETE_CHECK = /authorizeGroupDelete\(/;
 // Template-owner checks / creation of a brand-new classroom (no classroom to check yet).
@@ -348,5 +348,61 @@ describe('authorization coverage of student form actions (261021-r1c)', () => {
     expect(body).toMatch(/insert\(submissions\)/);
     expect(body).toContain("eq(submissions.status, 'pending')");
     expect(body.indexOf('cleanupR2Objects(')).toBeGreaterThan(body.indexOf('db.transaction('));
+  });
+});
+
+describe('authorization coverage of learning material actions (261113-lz7)', () => {
+  const fns = exportedFunctions('material.ts');
+  const code = (body: string) => body.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  it('exports the expected actions', () => {
+    expect(fns.map((f) => f.name).sort()).toEqual(
+      [
+        'addMaterialFile',
+        'createMaterial',
+        'createMaterialUploadUrl',
+        'deleteMaterial',
+        'getMaterialFileUrl',
+        'removeMaterialFile',
+        'updateMaterial',
+      ].sort(),
+    );
+  });
+
+  it.each(fns.filter((f) => f.name !== 'getMaterialFileUrl').map((f) => [f.name, f]))(
+    '%s requires the teacher role and the classroom editor check',
+    (_n, fn) => {
+      const body = code((fn as ExportedFn).body);
+      expect(body).toContain('requireRole(ROLES.TEACHER, ROLES.SUPERADMIN)');
+      expect(body).toContain('assertClassroomEditor(');
+      expect(body.includes('deleteObject('), 'must use cleanupR2Objects').toBe(false);
+    },
+  );
+
+  it('getMaterialFileUrl gates on the material viewer rule (members, not only teachers)', () => {
+    const body = code(fns.find((f) => f.name === 'getMaterialFileUrl')!.body);
+    expect(body).toMatch(/authorizeMaterialViewer\(/);
+    expect(body).not.toContain('requireRole(ROLES.TEACHER');
+  });
+
+  it('addMaterialFile verifies the key scope', () => {
+    expect(code(fns.find((f) => f.name === 'addMaterialFile')!.body)).toContain('isMaterialFileKeyInScope(');
+  });
+
+  it('phase and classroom deletes collect material file keys for R2 cleanup', () => {
+    for (const [file, name] of [
+      ['phase.ts', 'deletePhase'],
+      ['classroom.ts', 'deleteClassroom'],
+    ] as const) {
+      const f = exportedFunctions(file).find((x) => x.name === name)!;
+      expect(code(f.body), `${file}:${name}`).toContain('materialFiles');
+    }
+  });
+
+  it('progress / phase unlocking never references materials (D-03)', () => {
+    for (const rel of ['../phase-helpers.ts', '../../lib/phase-progress.ts']) {
+      const src = code(fs.readFileSync(path.resolve(__dirname, rel), 'utf8'));
+      expect(src, rel).not.toMatch(/materials|materialFiles/);
+    }
   });
 });

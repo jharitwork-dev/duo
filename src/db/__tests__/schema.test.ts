@@ -101,6 +101,25 @@ describe('Database Schema', () => {
     expect(schema.todos.overriddenFields.notNull).toBe(true);
   });
 
+  it('has the learning material tables (261113-lz7)', () => {
+    expect(schema.materials).toBeDefined();
+    expect(schema.materialFiles).toBeDefined();
+    expect(schema.materials.classroomId.name).toBe('classroom_id');
+    expect(schema.materials.classroomId.notNull).toBe(true);
+    expect(schema.materials.phaseId.name).toBe('phase_id');
+    expect(schema.materials.phaseId.notNull).toBe(false);
+    expect(schema.materials.title.notNull).toBe(true);
+    expect(schema.materials.description.notNull).toBe(false);
+    expect(schema.materials.linkUrl.name).toBe('link_url');
+    expect(schema.materials.orderIndex.default).toBe(0);
+    expect(schema.materialFiles.materialId.name).toBe('material_id');
+    expect(schema.materialFiles.materialId.notNull).toBe(true);
+    expect(schema.materialFiles.fileKey.name).toBe('file_key');
+    expect(schema.materialFiles.fileName.name).toBe('file_name');
+    expect(schema.materialFiles.contentType.name).toBe('content_type');
+    expect(schema.materialFiles.fileSize.name).toBe('file_size');
+  });
+
   it('createId generates unique values', () => {
     const ids = new Set(Array.from({ length: 100 }, () => createId()));
     expect(ids.size).toBe(100);
