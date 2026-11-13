@@ -34,8 +34,10 @@ import { ClassroomMatrix } from '@/components/dashboard/classroom-matrix';
 import { MineFilterToggle, MINE_FILTER_EMPTY_HINT } from '@/components/group/mine-filter-toggle';
 import { getClassroomForms } from '@/server/queries/form';
 import { FormsTab } from '@/components/form/forms-tab';
+import { getClassroomMaterials } from '@/server/queries/material';
+import { MaterialsTab } from '@/components/material/materials-tab';
 
-const TABS = ['overview', 'students', 'groups', 'phases', 'forms', 'settings'] as const;
+const TABS = ['overview', 'students', 'groups', 'phases', 'forms', 'materials', 'settings'] as const;
 type TabValue = (typeof TABS)[number];
 // Six segments: tighter padding + 13px labels on mobile so they fit the full-width pill at 360px.
 const TAB_TRIGGER = cn(SEGMENT_TRIGGER, 'px-1 text-[13px] lg:px-6 lg:text-[16px]');
@@ -54,7 +56,7 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
   // "กลุ่มที่ฉันดูแล" filter (quick task 261008-0y9): ?mine=1 on the overview + groups tabs.
   const mine = (Array.isArray(sp.mine) ? sp.mine[0] : sp.mine) === '1';
 
-  const [classroom, phases, archivedPhases, templates, overview, classroomTasks, groupTeachers, classroomForms] = await Promise.all([
+  const [classroom, phases, archivedPhases, templates, overview, classroomTasks, groupTeachers, classroomForms, materials] = await Promise.all([
     getClassroomById(classroomId, userId, { allowAnyClassroom: role === ROLES.SUPERADMIN }),
     getClassroomPhases(classroomId),
     getArchivedPhases(classroomId),
@@ -67,6 +69,8 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
     getGroupTeachersByClassroom(classroomId).catch(() => ({}) as Record<string, ResponsibleTeacher[]>),
     // Self-authorizing (null for non-editors); a failure must not break the classroom editor.
     getClassroomForms(classroomId, userId).catch(() => null),
+    // สื่อการเรียน (261113-lz7): only rendered after authorization; a failure must not break the page.
+    getClassroomMaterials(classroomId).catch(() => []),
   ]);
   if (!classroom) {
     notFound();
@@ -154,6 +158,9 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
               </TabsTrigger>
               <TabsTrigger value="forms" className={TAB_TRIGGER}>
                 แบบฟอร์ม
+              </TabsTrigger>
+              <TabsTrigger value="materials" className={TAB_TRIGGER}>
+                สื่อการเรียน
               </TabsTrigger>
               <TabsTrigger value="settings" className={TAB_TRIGGER}>
                 ตั้งค่า
@@ -321,6 +328,14 @@ export default async function ClassroomDashboard({ params, searchParams }: Class
 
         <TabsContent value="forms" className={PAGE_BODY}>
           <FormsTab classroomId={classroomId} forms={forms} groupCount={groups.length} />
+        </TabsContent>
+
+        <TabsContent value="materials" className={PAGE_BODY}>
+          <MaterialsTab
+            classroomId={classroomId}
+            materials={materials}
+            phases={phases.map((p) => ({ id: p.id, name: p.name }))}
+          />
         </TabsContent>
 
         <TabsContent value="settings" className={PAGE_BODY}>
