@@ -9,6 +9,7 @@ import { groups, groupMembers, groupTeachers } from '@/db/schema/groups';
 import { phases } from '@/db/schema/phases';
 import { todos } from '@/db/schema/todos';
 import { classroomTasks } from '@/db/schema/classroomTasks';
+import { materials, materialFiles } from '@/db/schema/materials';
 import { eq, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
@@ -405,8 +406,14 @@ export async function deleteClassroom(
       todoIds: todoRows.map((t) => t.id),
       classroomTaskIds: taskRows.map((t) => t.id),
     });
+    // Learning materials cascade with the classroom; their keys are never shared (261113-lz7, D-02).
+    const materialKeys = await tx
+      .select({ key: materialFiles.fileKey })
+      .from(materialFiles)
+      .innerJoin(materials, eq(materials.id, materialFiles.materialId))
+      .where(eq(materials.classroomId, classroom.id));
     await tx.delete(classrooms).where(eq(classrooms.id, classroom.id));
-    return fileKeys;
+    return [...new Set([...fileKeys, ...materialKeys.map((m) => m.key)])];
   });
 
   await cleanupR2Objects(keys);

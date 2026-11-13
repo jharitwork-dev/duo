@@ -9,4 +9,5 @@ export * from './workPages';
 export * from './comments';
 export * from './phaseTemplates';
 export * from './forms';
+export * from './materials';
 export * from './relations';

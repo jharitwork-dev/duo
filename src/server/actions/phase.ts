@@ -7,6 +7,7 @@ import { groups } from '@/db/schema/groups';
 import { groupPhaseProgress, PHASE_STATUSES } from '@/db/schema/groupPhaseProgress';
 import { todos } from '@/db/schema/todos';
 import { classroomTasks } from '@/db/schema/classroomTasks';
+import { materials, materialFiles } from '@/db/schema/materials';
 import { submissions } from '@/db/schema/submissions';
 import { eq, and, max, inArray, count } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -256,10 +257,16 @@ export async function deletePhase(input: z.infer<typeof deletePhaseSchema>): Pro
       todoIds: todoRows.map((t) => t.id),
       classroomTaskIds: taskRows.map((t) => t.id),
     });
-    // Cascades: todos -> submissions/files/comments/attachments, group_phase_progress.
+    // Learning materials of the phase cascade too; their keys are never shared (261113-lz7, D-02).
+    const materialKeys = await tx
+      .select({ key: materialFiles.fileKey })
+      .from(materialFiles)
+      .innerJoin(materials, eq(materials.id, materialFiles.materialId))
+      .where(eq(materials.phaseId, phase.id));
+    // Cascades: todos -> submissions/files/comments/attachments, group_phase_progress, materials.
     await tx.delete(phases).where(eq(phases.id, phase.id));
     await syncClassroomProgress(tx, classroom.id);
-    return fileKeys;
+    return [...new Set([...fileKeys, ...materialKeys.map((m) => m.key)])];
   });
 
   await cleanupR2Objects(keys);
